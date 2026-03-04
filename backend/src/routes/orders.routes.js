@@ -300,23 +300,15 @@ router.post('/:orderId/checkout',
                 order.status = 'completed';
                 // Trigger auto-deletion of virtual totem if applicable
                 const Restaurant = require('../models/Restaurant');
-                const Ticket = require('../models/Ticket');
                 const restaurant = await Restaurant.findOne();
                 if (restaurant) {
                     const totem = restaurant.totems.find(t => t.id === order.totemId);
                     if (totem && totem.isVirtual) {
-                        // Delete associated tickets (they won't show in history)
-                        await Ticket.deleteMany({ orderId: order._id });
-
-                        // Delete the totem from the restaurant list
+                        // Delete ONLY the totem from the restaurant list
+                        // WE KEEP Tickets and Order for history as per user request
                         restaurant.totems = restaurant.totems.filter(t => t.id !== order.totemId);
                         await restaurant.save();
-
-                        // Delete the order itself (not needed anymore for virtual totem)
-                        await Order.findByIdAndDelete(order._id);
-
-                        console.log(`[CLEANUP] Full cleanup for virtual totem ${order.totemId} completed.`);
-                        return res.json({ tickets: generatedTickets, orderStatus: 'completed', cleaned: true });
+                        console.log(`[CLEANUP] Virtual totem ${order.totemId} deleted. History (Order/Tickets) preserved.`);
                     }
                 }
             }
