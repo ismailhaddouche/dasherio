@@ -21,7 +21,7 @@ const io = new Server(server, {
 });
 app.set('io', io);
 
-// Conexión a la Base de Datos con autenticación
+// Database Connection with authentication and retry logic
 const startDB = async () => {
     const mongoUser = process.env.MONGO_INITDB_ROOT_USERNAME;
     const mongoPass = process.env.MONGO_INITDB_ROOT_PASSWORD;
@@ -31,14 +31,26 @@ const startDB = async () => {
 
     const mongoURI = `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:${mongoPort}/${dbName}?authSource=admin`;
 
-    try {
-        await mongoose.connect(mongoURI, {
-            serverSelectionTimeoutMS: 5000
-        });
-        console.log('✅ Conectado a MongoDB');
-    } catch (err) {
-        console.error(`❌ Error al conectar a MongoDB: ${err.message}`);
-        process.exit(1);
+    let connected = false;
+    let retries = 5;
+
+    while (!connected && retries > 0) {
+        try {
+            await mongoose.connect(mongoURI, {
+                serverSelectionTimeoutMS: 5000
+            });
+            connected = true;
+            console.log('✅ Connected to MongoDB');
+        } catch (err) {
+            retries--;
+            console.error(`❌ Error connecting to MongoDB: ${err.message}. Retries left: ${retries}`);
+            if (retries === 0) {
+                console.error('CRITICAL: Could not connect to MongoDB after 5 attempts. Exiting...');
+                process.exit(1);
+            }
+            // Wait 5 seconds before retrying
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
     }
 };
 
