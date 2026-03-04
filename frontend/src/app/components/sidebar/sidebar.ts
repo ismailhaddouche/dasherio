@@ -36,9 +36,9 @@ import { TranslateModule } from '@ngx-translate/core';
             <lucide-icon name="users" class="icon"></lucide-icon>
             <span class="label" *ngIf="!isCollapsed">{{ 'NAV.USERS' | translate }}</span>
           </a>
-          <a *ngIf="auth.hasRole('waiter')" routerLink="/admin/waiter" routerLinkActive="active" class="nav-item">
-            <lucide-icon name="hand-platter" class="icon"></lucide-icon>
-            <span class="label" *ngIf="!isCollapsed">{{ 'SIDEBAR.WAITER' | translate }}</span>
+          <a *ngIf="auth.hasRole('admin')" routerLink="/admin/config" routerLinkActive="active" class="nav-item">
+            <lucide-icon name="settings" class="icon"></lucide-icon>
+            <span class="label" *ngIf="!isCollapsed">{{ 'NAV.SETTINGS' | translate }}</span>
           </a>
         </div>
 
@@ -52,9 +52,9 @@ import { TranslateModule } from '@ngx-translate/core';
             <lucide-icon name="wallet" class="icon"></lucide-icon>
             <span class="label" *ngIf="!isCollapsed">{{ 'NAV.POS' | translate }}</span>
           </a>
-          <a *ngIf="auth.hasRole('admin')" routerLink="/admin/config" routerLinkActive="active" class="nav-item">
-            <lucide-icon name="settings" class="icon"></lucide-icon>
-            <span class="label" *ngIf="!isCollapsed">{{ 'NAV.SETTINGS' | translate }}</span>
+          <a *ngIf="auth.hasRole('waiter')" routerLink="/admin/waiter" routerLinkActive="active" class="nav-item">
+            <lucide-icon name="hand-platter" class="icon"></lucide-icon>
+            <span class="label" *ngIf="!isCollapsed">{{ 'SIDEBAR.WAITER' | translate }}</span>
           </a>
         </div>
       </nav>
