@@ -60,13 +60,13 @@ export class FilterOccupiedPipe implements PipeTransform {
                             <span class="h-date">{{ ticket.timestamp | date:'shortTime' }}</span>
                         </div>
                         <div class="h-items">
-                            {{ ticket.itemsSummary.length }} items
+                            {{ ticket.itemsSummary.length }} {{ 'POS.ITEMS' | translate }}
                         </div>
                         <div class="h-bottom">
                             <div class="h-total">{{ ticket.amount | currency:'EUR' }}</div>
                             <div class="h-actions">
-                                <button class="btn-icon print" (click)="vm.printTicket(ticket)" title="Imprimir"><lucide-icon name="printer" [size]="16"></lucide-icon></button>
-                                <button class="btn-icon delete" (click)="vm.deleteTicket(ticket._id)" title="Eliminar"><lucide-icon name="trash-2" [size]="16"></lucide-icon></button>
+                                <button class="btn-icon print" (click)="vm.printTicket(ticket)" [title]="'POS.PRINT_TITLE' | translate"><lucide-icon name="printer" [size]="16"></lucide-icon></button>
+                                <button class="btn-icon delete" (click)="vm.deleteTicket(ticket._id)" [title]="'POS.DELETE_TITLE' | translate"><lucide-icon name="trash-2" [size]="16"></lucide-icon></button>
                             </div>
                         </div>
                     </div>
@@ -110,7 +110,7 @@ export class FilterOccupiedPipe implements PipeTransform {
                       <div class="user-strip glass-card clickable" 
                            [class.orphan-warning]="user.id === 'orphan'"
                            (click)="vm.payByUser(user.id)"
-                           title="Cobrar solo a este comensal">
+                           [title]="'POS.CHARGE_ONLY_THIS' | translate">
                         <div class="user-info">
                           <span class="user-name"><lucide-icon name="user" [size]="14" class="inline-icon"></lucide-icon> {{ user.name }}</span>
                           <span class="user-total">{{ user.total | currency:'EUR' }}</span>

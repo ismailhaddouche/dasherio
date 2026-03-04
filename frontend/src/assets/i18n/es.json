@@ -105,7 +105,11 @@
         "CUSTOM_NAME_PH": "Ej: Servicio extra, Descorche, etc.",
         "PRICE": "Precio (€)",
         "ADD": "Añadir",
-        "TOTAL_SIMPLE": "TOTAL"
+        "TOTAL_SIMPLE": "TOTAL",
+        "PRINT_TITLE": "Imprimir",
+        "DELETE_TITLE": "Eliminar",
+        "ITEMS": "items",
+        "CHARGE_ONLY_THIS": "Cobrar solo a este comensal"
     },
     "CHECKOUT": {
         "BACK": "← Botón Volver",
@@ -261,7 +265,14 @@
         "SAVE": "Guardar Cambios",
         "SUBTITLE": "Crea y gestiona cuentas con roles específicos (KDS, POS, Admin).",
         "LOADING": "Cargando usuarios...",
-        "NO_PRINTER": "Sin impresora asignada"
+        "NO_PRINTER": "Sin impresora asignada",
+        "EDITING": "Editando a",
+        "GO_BACK": "Volver",
+        "NEW_USER_PH": "Nuevo Usuario (ej: camarero1)",
+        "CREATE_USER": "Crear Usuario",
+        "PRINTER_ASSIGNED": "🖨️ Impresora Asignada",
+        "EDIT": "Editar",
+        "SYSTEM": "Sistema"
     },
     "SIDEBAR": {
         "MAIN": "Principal",

@@ -105,7 +105,11 @@
         "CUSTOM_NAME_PH": "E.g., Extra service, Corkage, etc.",
         "PRICE": "Price (€)",
         "ADD": "Add",
-        "TOTAL_SIMPLE": "TOTAL"
+        "TOTAL_SIMPLE": "TOTAL",
+        "PRINT_TITLE": "Print",
+        "DELETE_TITLE": "Delete",
+        "ITEMS": "items",
+        "CHARGE_ONLY_THIS": "Charge only this diner"
     },
     "CHECKOUT": {
         "BACK": "← Back",
@@ -261,7 +265,14 @@
         "SAVE": "Save Changes",
         "SUBTITLE": "Create and manage accounts with specific roles (KDS, POS, Admin).",
         "LOADING": "Loading users...",
-        "NO_PRINTER": "No printer assigned"
+        "NO_PRINTER": "No printer assigned",
+        "EDITING": "Editing",
+        "GO_BACK": "Go back",
+        "NEW_USER_PH": "New user (e.g. waiter1)",
+        "CREATE_USER": "Create User",
+        "PRINTER_ASSIGNED": "🖨️ Printer Assigned",
+        "EDIT": "Edit",
+        "SYSTEM": "System"
     },
     "SIDEBAR": {
         "MAIN": "Main",

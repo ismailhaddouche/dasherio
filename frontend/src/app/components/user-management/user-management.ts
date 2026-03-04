@@ -19,7 +19,7 @@ import { TranslateModule } from '@ngx-translate/core';
           <div>
               <h1 class="view-title">
                   <lucide-icon name="pen-line" [size]="28" class="text-muted"></lucide-icon> 
-                  Editando a {{ editUser.username }}
+                  {{ 'USER_MGMT.EDITING' | translate }} {{ editUser.username }}
               </h1>
               <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
                   <span class="text-muted" style="font-size: 0.9rem;">{{ 'USER_MGMT.SYSTEM_ROLE' | translate }}</span>
@@ -27,7 +27,7 @@ import { TranslateModule } from '@ngx-translate/core';
               </div>
           </div>
           <button class="btn-secondary" (click)="vm.closeEditModal()" style="padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); color: var(--text-base); border: 1px solid var(--glass-border); cursor: pointer;">
-            <lucide-icon name="chevron-left" [size]="18"></lucide-icon> Volver
+            <lucide-icon name="chevron-left" [size]="18"></lucide-icon> {{ 'USER_MGMT.GO_BACK' | translate }}
           </button>
         </header>
 
@@ -82,7 +82,7 @@ import { TranslateModule } from '@ngx-translate/core';
           </div>
           
           <div class="user-add-controls">
-              <input type="text" #usernameInput placeholder="Nuevo Usuario (ej: camarero1)" class="glass-input">
+              <input type="text" #usernameInput [placeholder]="'USER_MGMT.NEW_USER_PH' | translate" class="glass-input">
               <select #roleInput class="glass-input">
                   <option value="waiter">{{ 'ROLES.waiter' | translate }}</option>
                   <option value="kitchen">{{ 'ROLES.kitchen' | translate }}</option>
@@ -90,7 +90,7 @@ import { TranslateModule } from '@ngx-translate/core';
                   <option value="admin">{{ 'ROLES.admin' | translate }}</option>
               </select>
               <button class="btn-primary" (click)="vm.addUser(usernameInput.value, roleInput.value); usernameInput.value=''">
-                  Crear Usuario
+                  {{ 'USER_MGMT.CREATE_USER' | translate }}
               </button>
           </div>
         </header>
@@ -112,7 +112,7 @@ import { TranslateModule } from '@ngx-translate/core';
                     </div>
                     <div class="u-created">
                       @if (user.printerId) {
-                          <span>🖨️ Impresora Asignada</span>
+                          <span>{{ 'USER_MGMT.PRINTER_ASSIGNED' | translate }}</span>
                       } @else {
                           <span>{{ 'USER_MGMT.NO_PRINTER' | translate }}</span>
                       }
@@ -120,14 +120,14 @@ import { TranslateModule } from '@ngx-translate/core';
                     
                     <div class="user-actions">
                       <button class="btn-edit" (click)="vm.openEditModal(user)">
-                        <lucide-icon name="pen-line" [size]="14" class="inline-icon"></lucide-icon> Editar
+                        <lucide-icon name="pen-line" [size]="14" class="inline-icon"></lucide-icon> {{ 'USER_MGMT.EDIT' | translate }}
                       </button>
                       @if (user.username !== 'admin') {
                           <button class="btn-del" (click)="vm.deleteUser(user._id)">
                             <lucide-icon name="trash-2" [size]="14" class="inline-icon"></lucide-icon>
                           </button>
                       } @else {
-                          <span class="admin-lock"><lucide-icon name="lock" [size]="12" class="inline-icon"></lucide-icon> Sistema</span>
+                          <span class="admin-lock"><lucide-icon name="lock" [size]="12" class="inline-icon"></lucide-icon> {{ 'USER_MGMT.SYSTEM' | translate }}</span>
                       }
                     </div>
                 </div>
