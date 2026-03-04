@@ -255,12 +255,28 @@ $DOCKER_CMD up -d --build
 
 # 7. Initial Store Setup
 echo -e "\n${CYAN}${MSG_INIT}${NC}"
-# Wait for backend and database to be ready
-sleep 15
-$DOCKER_CMD exec -e MONGO_URI="$MONGODB_URI" \
-               -e INIT_ADMIN_PASS="$ADMIN_PASS" \
-               -e INIT_WAITER_PASS="$WAITER_PASS" \
-               backend sh -c "node init-store.js"
+
+# Esperar activamente a que el backend esté healthy (hasta 120 segundos)
+echo -e "${YELLOW}Waiting for backend to be ready...${NC}"
+MAX_WAIT=120
+WAITED=0
+until $DOCKER_CMD exec backend node -e "const http=require('http');http.get('http://localhost:3000/api/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))" 2>/dev/null; do
+    sleep 5
+    WAITED=$((WAITED + 5))
+    echo -e "  Backend not ready yet... ${WAITED}s/${MAX_WAIT}s"
+    if [ $WAITED -ge $MAX_WAIT ]; then
+        echo -e "${RED}Backend did not start in time. You can run init manually later.${NC}"
+        break
+    fi
+done
+
+if [ $WAITED -lt $MAX_WAIT ]; then
+    echo -e "${GREEN}Backend ready! Initializing store...${NC}"
+    $DOCKER_CMD exec -e MONGO_URI="$MONGODB_URI" \
+                   -e INIT_ADMIN_PASS="$ADMIN_PASS" \
+                   -e INIT_WAITER_PASS="$WAITER_PASS" \
+                   backend sh -c "node init-store.js"
+fi
 
 # 8. Summary
 echo -e "\n${GREEN}============================================${NC}"
