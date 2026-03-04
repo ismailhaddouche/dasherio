@@ -129,14 +129,16 @@ while true; do
             IP_OPT=${IP_OPT:-1}
             
             if [ "$IP_OPT" = "2" ]; then
-                CADDY_DOMAIN=$(curl -s ifconfig.me)
+                # Forzar IPv4 con el flag -4
+                CADDY_DOMAIN=$(curl -4 -s ifconfig.me)
                 if [ -z "$CADDY_DOMAIN" ]; then
                     echo -e "${RED}Error detecting Public IP. Please check internet connection.${NC}"
                     continue
                 fi
                 echo -e "${GREEN}Detected Public IP: ${CADDY_DOMAIN}${NC}"
             else
-                CADDY_DOMAIN=$(hostname -I | awk '{print $1}')
+                # Filtrar solo la primera IPv4 encontrada
+                CADDY_DOMAIN=$(hostname -I | tr ' ' '\n' | grep -v ':' | head -n 1)
                 if [ -z "$CADDY_DOMAIN" ]; then
                      CADDY_DOMAIN="127.0.0.1"
                 fi
