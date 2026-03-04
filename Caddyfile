@@ -6,7 +6,8 @@
 }
 
 # Primary Domain (Dynamic from .env)
-{$DOMAIN} {
+# Using http:// prefix allows access via IP without attempting SSL
+http://{$CADDY_DOMAIN} {
     # API Backend
     handle /api/* {
         reverse_proxy backend:3000
