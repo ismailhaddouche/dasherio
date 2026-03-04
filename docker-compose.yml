@@ -11,7 +11,7 @@ services:
     networks:
       - disher-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,6 +29,8 @@ services:
     restart: always
     environment:
       - MONGODB_URI=${MONGODB_URI}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
       - PORT=3000
       - NODE_ENV=production
       - DOMAIN=${DOMAIN}
@@ -42,7 +44,7 @@ services:
     volumes:
       - uploads-data:/app/public/uploads
     healthcheck:
-      test: ["CMD", "node", "-e", "const http=require('http');const r=http.get('http://localhost:3000/api/health',s=>{process.exit(s.statusCode===200?0:1)});r.on('error',()=>process.exit(1))"]
+      test: [ "CMD", "node", "-e", "const http=require('http');const r=http.get('http://localhost:3000/api/health',s=>{process.exit(s.statusCode===200?0:1)});r.on('error',()=>process.exit(1))" ]
       interval: 15s
       timeout: 5s
       retries: 5
