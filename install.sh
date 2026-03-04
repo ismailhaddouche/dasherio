@@ -208,6 +208,7 @@ echo -e "  ${MSG_ACCESS}${PROTOCOL}://${CADDY_DOMAIN}"
 echo -e "\n${YELLOW}${MSG_CRED}${NC}"
 echo -e "  ${MSG_USRADM}${CYAN}admin${NC}"
 echo -e "  ${MSG_PWDADM}${CYAN}$ADMIN_PASS${NC}"
+echo -e "\n  ${MSG_ACCESS}${PROTOCOL}://${CADDY_DOMAIN}"
 echo -e "\n  ${MSG_USRWT}${CYAN}waiter${NC}"
 echo -e "  ${MSG_PWDWT}${CYAN}$WAITER_PASS${NC}"
 
