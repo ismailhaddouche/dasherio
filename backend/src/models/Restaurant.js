@@ -57,7 +57,8 @@ const RestaurantSchema = new mongoose.Schema({
         facebook: String,
         twitter: String,
         website: String
-    }
+    },
+    defaultLanguage: { type: String, enum: ['es', 'en'], default: 'es' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Restaurant', RestaurantSchema);

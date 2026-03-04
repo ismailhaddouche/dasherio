@@ -8,6 +8,7 @@ const RESTAURANT_NAME = process.env.INIT_NAME || 'Mi Restaurante';
 const RESTAURANT_SLUG = process.env.INIT_SLUG || 'mi-restaurante';
 const ADMIN_USER = process.env.INIT_ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.INIT_ADMIN_PASS;
+const DEFAULT_LANG = process.env.INIT_DEFAULT_LANG || 'es';
 const RESET_DB = process.env.INIT_RESET || 'false';
 
 async function initStore() {
@@ -53,6 +54,7 @@ async function initStore() {
             await Restaurant.create({
                 name: RESTAURANT_NAME,
                 slug: RESTAURANT_SLUG,
+                defaultLanguage: DEFAULT_LANG
             });
         } else {
             console.log(`Restaurante '${RESTAURANT_SLUG}' ya existe.`);

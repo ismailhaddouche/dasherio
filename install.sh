@@ -215,6 +215,10 @@ CADDY_DOMAIN=${CADDY_DOMAIN}
 DOMAIN=${CADDY_DOMAIN}
 PROTOCOL=${PROTOCOL}
 HTTP_PORT=${HTTP_PORT}
+
+# Language
+DEFAULT_LANG=$( [ "${LANG_OPT}" = "2" ] && echo "en" || echo "es" )
+INIT_DEFAULT_LANG=\${DEFAULT_LANG}
 EOF
 
 # 5. Docker Detection

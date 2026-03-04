@@ -36,6 +36,7 @@ services:
       - DOMAIN=${DOMAIN}
       - INSTALL_MODE=${INSTALL_MODE:-local}
       - JWT_SECRET=${JWT_SECRET}
+      - INIT_DEFAULT_LANG=${DEFAULT_LANG:-es}
     depends_on:
       database:
         condition: service_healthy

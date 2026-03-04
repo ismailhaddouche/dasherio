@@ -63,7 +63,7 @@ router.get('/restaurant', async (req, res) => {
 // Only whitelisted fields can be updated to prevent arbitrary field injection
 const ALLOWED_RESTAURANT_UPDATE_FIELDS = [
     'name', 'address', 'phone', 'email', 'description',
-    'theme', 'billing', 'socials', 'stations'
+    'theme', 'billing', 'socials', 'stations', 'defaultLanguage'
 ];
 router.patch('/restaurant', verifyToken, requireAdmin, async (req, res) => {
     try {
