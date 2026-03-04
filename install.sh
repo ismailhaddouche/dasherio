@@ -66,10 +66,21 @@ fi
 
 # 2. Domain
 echo -e "\n${CYAN}${MSG_DOM}${NC}"
-read -p "${MSG_DOM_PROMPT}" CADDY_DOMAIN
-if [ -z "$CADDY_DOMAIN" ]; then
-    CADDY_DOMAIN="localhost"
-fi
+while true; do
+    read -p "${MSG_DOM_PROMPT}" CADDY_DOMAIN
+    
+    # Validar formato dominio simple (ej. dominio.com, app.dominio.io)
+    # ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ (letras/numeros/guiones, un punto y una extension de al menos 2 letras - prohibe IPs puros)
+    if [[ "$CADDY_DOMAIN" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+        break
+    else
+        if [ "$LANG_OPT" = "2" ]; then
+            echo -e "${RED}Invalid domain. IPs or empty values are not allowed.${NC}"
+        else
+            echo -e "${RED}Dominio inválido. No se permiten IPs ni dejarse en blanco.${NC}"
+        fi
+    fi
+done
 
 # 3. Security
 echo -e "\n${CYAN}${MSG_SEC}${NC}"
