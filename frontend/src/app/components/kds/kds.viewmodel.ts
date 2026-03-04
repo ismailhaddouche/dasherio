@@ -2,6 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { CommunicationService } from '../../services/communication.service';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
+import { TranslateService } from '@ngx-translate/core';
 
 export interface KDSOrder {
     _id: string;
@@ -17,6 +18,7 @@ export interface KDSOrder {
 export class KDSViewModel {
     private comms = inject(CommunicationService);
     private auth = inject(AuthService);
+    private translate = inject(TranslateService);
 
     // State
     public orders = signal<KDSOrder[]>([]);
@@ -81,7 +83,7 @@ export class KDSViewModel {
             if (totems) this.totems.set(totems);
         } catch (e: any) {
             console.error('KDS Init Error', e);
-            this.error.set(e.message || 'Error al conectar con la cocina');
+            this.error.set(this.translate.instant('KDS.CONN_ERROR'));
         } finally {
             this.loading.set(false);
         }
@@ -125,14 +127,14 @@ export class KDSViewModel {
             this.auth.logActivity('ITEM_STATUS_CHANGED', { orderId, itemId, nextStatus });
         } catch (e) {
             console.error('Error updating status', e);
-            alert('No se pudo actualizar el plato. Verifica la conexión.');
+            alert(this.translate.instant('KDS.UPDATE_ERROR'));
         }
     }
 
     public printItemTicket(order: any, item: any) {
         const p = this.localConfig()?.printer;
         const totem = this.totems().find(t => t.id === (order.totemId || parseInt(order.tableNumber)));
-        const tableName = totem?.name || `Mesa ${order.tableNumber}`;
+        const tableName = totem?.name || `${this.translate.instant('ROLES.Table')} ${order.tableNumber}`;
 
         let details = '';
         if (item.selectedVariant) details += `\\n - ${item.selectedVariant.name}`;
@@ -140,19 +142,19 @@ export class KDSViewModel {
             item.selectedAddons.forEach((a: any) => details += `\\n + ${a.name}`);
         }
 
-        const msg = `🖨️ (COVICA) EXPENDIENDO VALE DE SERVICIO\\n----------------------\\nPLATO: ${item.name}${details}\\nCANT: ${item.quantity}\\nORIGEN: ${tableName}\\n----------------------`;
+        const msg = `🖨️ (${this.translate.instant('KDS.TICKET_TITLE')})\\n----------------------\\n${this.translate.instant('KDS.ITEM_LABEL')}: ${item.name}${details}\\n${this.translate.instant('KDS.QTY_LABEL')}: ${item.quantity}\\n${this.translate.instant('KDS.ORIGIN_LABEL')}: ${tableName}\\n----------------------`;
 
         if (p?.type === 'thermal') {
-            alert(`🖨️ (Térmica ${p.ip})\\n${msg}`);
+            alert(`🖨️ (${this.translate.instant('KDS.PRINTER_THERMAL')} ${p.ip})\\n${msg}`);
         } else {
-            alert(`🖨️ (Sistema)\\n${msg}`);
+            alert(`🖨️ (${this.translate.instant('KDS.PRINTER_SYSTEM')})\\n${msg}`);
             // window.print() is logic for whole page, for item ticket we'd need a hidden iframe usually
             // but for this MVP, alert simulation is enough as agreed.
         }
     }
 
     public async cancelItem(orderId: string, itemId: string) {
-        if (!confirm('¿Seguro que quieres CANCELAR este plato?')) return;
+        if (!confirm(this.translate.instant('KDS.CANCEL_CONFIRM'))) return;
 
         try {
             await fetch(`${environment.apiUrl}/api/orders/${orderId}/items/${itemId}`, {
@@ -164,7 +166,7 @@ export class KDSViewModel {
             this.auth.logActivity('ITEM_CANCELLED', { orderId, itemId });
         } catch (e) {
             console.error('Error cancelling item', e);
-            alert('No se pudo cancelar el plato.');
+            alert(this.translate.instant('KDS.CANCEL_ERROR'));
         }
     }
 

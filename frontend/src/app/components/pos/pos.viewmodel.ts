@@ -2,10 +2,11 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { CommunicationService } from '../../services/communication.service';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
+import { TranslateService } from '@ngx-translate/core';
 
 export interface POSTable {
     number: string;
-    name?: string; 
+    name?: string;
     status: 'empty' | 'occupied' | 'billing';
     order?: any;
     id: number;
@@ -15,20 +16,21 @@ export interface POSTable {
 export class POSViewModel {
     private comms = inject(CommunicationService);
     private auth = inject(AuthService);
+    private translate = inject(TranslateService);
 
     // State
     public orders = signal<any[]>([]);
-    public tables = signal<any[]>([]); 
-    public tickets = signal<any[]>([]); 
+    public tables = signal<any[]>([]);
+    public tickets = signal<any[]>([]);
     public selectedTable = signal<POSTable | null>(null);
     public loading = signal<boolean>(true);
     public viewMode = signal<'tables' | 'history'>('tables');
-    public billingConfig = signal<any>(null); 
-    public menuItems = signal<any[]>([]); 
-    public editMode = signal<boolean>(false); 
+    public billingConfig = signal<any>(null);
+    public menuItems = signal<any[]>([]);
+    public editMode = signal<boolean>(false);
     public showAddItemModal = signal<boolean>(false);
     public showCustomLineModal = signal<boolean>(false);
-    public localConfig = signal<any>(null); 
+    public localConfig = signal<any>(null);
     public globalPrinters = signal<any[]>([]);
 
     public tableStates = computed(() => {
@@ -97,7 +99,7 @@ export class POSViewModel {
                 const index = prev.findIndex(o => o._id === updatedOrder._id);
 
                 if (updatedOrder.status === 'completed') {
-                    this.loadHistory(); 
+                    this.loadHistory();
                     if (index !== -1) {
                         return prev.filter(o => o._id !== updatedOrder._id);
                     }
@@ -133,11 +135,11 @@ export class POSViewModel {
             const user = item.orderedBy;
             const userId = user.id || 'orphan';
             if (!usersMap.has(userId)) {
-                usersMap.set(userId, { 
-                    id: userId, 
-                    name: user.name || 'Huérfano', 
-                    total: 0, 
-                    items: [] 
+                usersMap.set(userId, {
+                    id: userId,
+                    name: user.name || this.translate.instant('POS.ORPHAN'),
+                    total: 0,
+                    items: []
                 });
             }
             const userData = usersMap.get(userId);
@@ -150,7 +152,7 @@ export class POSViewModel {
     public calculateBilling(totalWithVAT: number) {
         const config = this.billingConfig();
         if (!config || config.vatPercentage === null) {
-            return null; 
+            return null;
         }
 
         const vatMultiplier = 1 + (config.vatPercentage / 100);
@@ -183,19 +185,19 @@ export class POSViewModel {
         const targetOrderId = orderId || this.selectedTable()?.order?._id;
 
         if (!targetOrderId) {
-            alert('No hay orden seleccionada para cobrar.');
+            alert(this.translate.instant('POS.PAY_ERROR_NO_SELECTION'));
             return;
         }
 
         const config = this.billingConfig();
         if (!config || config.vatPercentage === null || config.vatPercentage === undefined) {
-            alert('⚠️ No se puede generar ticket sin configurar el IVA.\\n\\nPor favor, ve a Configuración y establece un porcentaje de IVA.');
+            alert(this.translate.instant('POS.PAY_ERROR_VAT_CONFIG'));
             return;
         }
 
-        let confirmMsg = '¿Confirmar cobro total?';
-        if (splitType === 'equal') confirmMsg = `¿Confirmar cobro dividido en ${parts} partes?`;
-        if (splitType === 'by-user') confirmMsg = `¿Confirmar cobro para este comensal?`;
+        let confirmMsg = this.translate.instant('POS.CONFIRM_TOTAL');
+        if (splitType === 'equal') confirmMsg = this.translate.instant('POS.CONFIRM_SPLIT', { parts });
+        if (splitType === 'by-user') confirmMsg = this.translate.instant('POS.CONFIRM_USER');
 
         if (!confirm(confirmMsg)) return;
 
@@ -203,21 +205,21 @@ export class POSViewModel {
             const res = await fetch(`${environment.apiUrl}/api/orders/${targetOrderId}/checkout`, {
                 method: 'POST',
                 headers: this.auth.getHeaders(),
-                body: JSON.stringify({ 
-                    splitType, 
-                    parts, 
+                body: JSON.stringify({
+                    splitType,
+                    parts,
                     userId,
-                    method: 'cash', 
-                    billingConfig: config 
+                    method: 'cash',
+                    billingConfig: config
                 })
             });
 
             if (!res.ok) {
                 const err = await res.json();
                 if (err.code === 'ORPHANS_EXIST') {
-                    alert('⚠️ Hay platos sin asignar (Huérfanos). Asígnale estos platos a alguien antes de cobrar por comensal.');
+                    alert(this.translate.instant('POS.ORPHANS_WARNING'));
                 } else {
-                    alert('Error: ' + (err.error || 'No se pudo procesar el pago'));
+                    alert(this.translate.instant('POS.PAY_ERROR') + ': ' + (err.error || ''));
                 }
                 return;
             }
@@ -227,32 +229,32 @@ export class POSViewModel {
 
             if (result.orderStatus === 'completed' || splitType === 'single') {
                 this.selectedTable.set(null);
-                this.viewMode.set('history'); 
+                this.viewMode.set('history');
             }
-            
+
             this.loadHistory();
             const updatedOrders = await this.comms.syncOrders();
-            if(updatedOrders) this.orders.set(updatedOrders as any[]);
+            if (updatedOrders) this.orders.set(updatedOrders as any[]);
 
             if (this.localConfig()?.printer?.autoPrint && result.tickets?.[0]) {
                 result.tickets.forEach((t: any) => this.printTicket(t));
             }
 
         } catch (e) {
-            alert('Error al procesar el cobro');
+            alert(this.translate.instant('POS.PAY_ERROR'));
         }
     }
 
     public async payByUser(userId: string) {
         if (userId === 'orphan') {
-            alert('No se puede cobrar a "Huérfano". Asigna primero los platos a un comensal.');
+            alert(this.translate.instant('POS.PAY_ERROR_ORPHAN'));
             return;
         }
         await this.processPayment(undefined, 'by-user', 1, userId);
     }
 
     public async deleteTicket(ticketId: string) {
-        if (!confirm('¿Estás seguro de que quieres eliminar este ticket? Esta acción no se puede deshacer.')) return;
+        if (!confirm(this.translate.instant('POS.DELETE_TICKET_CONFIRM'))) return;
 
         try {
             const res = await fetch(`${environment.apiUrl}/api/tickets/${ticketId}`, {
@@ -263,11 +265,11 @@ export class POSViewModel {
             if (!res.ok) throw new Error('Error deleting ticket');
 
             this.auth.logActivity('TICKET_DELETED', { ticketId });
-            this.loadHistory(); 
+            this.loadHistory();
 
         } catch (e) {
             console.error('Error deleting ticket', e);
-            alert('No se pudo eliminar el ticket.');
+            alert(this.translate.instant('POS.DELETE_TICKET_ERROR'));
         }
     }
 
@@ -288,11 +290,11 @@ export class POSViewModel {
         if (p?.type === 'thermal' || p?.type === 'network') {
             const ip = p.address || p.ip;
             console.log(`Printing to thermal/network ${ip}:${p.port || p.connection}...`);
-            alert(`🖨️ (Térmica/Red ${ip}) Imprimiendo Ticket ${ticket.customId}\\nTotal: ${ticket.amount}€\\n\\n${currentUser?.printTemplate?.header || ''}`);
+            alert(`🖨️ (${this.translate.instant('POS.PRINT_THERMAL')} ${ip}) ${this.translate.instant('POS.PRINT_MSG')} ${ticket.customId}\\nTotal: ${ticket.amount}€\\n\\n${currentUser?.printTemplate?.header || ''}`);
         } else {
             console.log('Printing to system printer...');
-            alert(`🖨️ (Sistema local) Imprimiendo Ticket ${ticket.customId}\\nTotal: ${ticket.amount}€`);
-            window.print(); 
+            alert(`🖨️ (${this.translate.instant('POS.PRINT_SYSTEM')}) ${this.translate.instant('POS.PRINT_MSG')} ${ticket.customId}\\nTotal: ${ticket.amount}€`);
+            window.print();
         }
     }
 
@@ -320,7 +322,7 @@ export class POSViewModel {
 
         } catch (e) {
             console.error('Error removing item', e);
-            alert('No se pudo eliminar el producto');
+            alert(this.translate.instant('POS.REMOVE_ITEM_ERROR'));
         }
     }
 
@@ -336,10 +338,10 @@ export class POSViewModel {
 
             const updatedOrder = await res.json();
             this.orders.update(prev => prev.map(o => o._id === orderId ? updatedOrder : o));
-            
+
         } catch (e) {
             console.error('Error associating item', e);
-            alert('No se pudo asociar el plato.');
+            alert(this.translate.instant('POS.ASSOCIATE_ERROR'));
         }
     }
 
@@ -353,7 +355,7 @@ export class POSViewModel {
                 price: menuItem.price,
                 quantity: 1,
                 status: 'pending',
-                orderedBy: { id: 'pos', name: 'Caja' },
+                orderedBy: { id: 'pos', name: this.translate.instant('POS.CASHIER_LABEL') },
                 emoji: menuItem.emoji || '🍽️'
             };
 
@@ -373,13 +375,13 @@ export class POSViewModel {
 
         } catch (e) {
             console.error('Error adding item', e);
-            alert('No se pudo añadir el producto');
+            alert(this.translate.instant('POS.ADD_ITEM_ERROR'));
         }
     }
 
     public async addCustomLineToOrder(orderId: string, customName: string, customPrice: number) {
         if (!customName || customPrice <= 0) {
-            alert('Por favor, introduce un nombre y un precio válido');
+            alert(this.translate.instant('POS.CUSTOM_VALIDATION_ERROR'));
             return;
         }
 
@@ -392,7 +394,7 @@ export class POSViewModel {
                 price: customPrice,
                 quantity: 1,
                 status: 'pending',
-                orderedBy: { id: 'pos', name: 'Caja' },
+                orderedBy: { id: 'pos', name: this.translate.instant('POS.CASHIER_LABEL') },
                 emoji: '📝',
                 isCustom: true
             };
@@ -413,7 +415,7 @@ export class POSViewModel {
 
         } catch (e) {
             console.error('Error adding custom line', e);
-            alert('No se pudo añadir la línea personalizada');
+            alert(this.translate.instant('POS.ADD_CUSTOM_LINE_ERROR'));
         }
     }
 
@@ -435,18 +437,18 @@ export class POSViewModel {
 
         } catch (e) {
             console.error('Error opening table', e);
-            alert('No se pudo abrir la mesa');
+            alert(this.translate.instant('POS.OPEN_TABLE_ERROR'));
         }
     }
 
     public openSplitModal() {
-        const type = prompt('¿Cómo deseas dividir?\\n1. Partes iguales\\n2. Por comensal', '1');
+        const type = prompt(this.translate.instant('POS.SPLIT_PROMPT_TYPE'), '1');
         if (type === '1') {
-            const p = prompt('¿En cuántas partes?', '2');
+            const p = prompt(this.translate.instant('POS.SPLIT_PROMPT_PARTS'), '2');
             const parts = parseInt(p || '0');
             if (parts > 1) this.processPayment(undefined, 'equal', parts);
         } else if (type === '2') {
-            alert('Haz clic en el nombre de un comensal para cobrar su parte individual.');
+            alert(this.translate.instant('POS.SPLIT_BY_USER_HINT'));
         }
     }
 }
