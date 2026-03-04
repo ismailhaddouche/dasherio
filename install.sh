@@ -42,7 +42,8 @@ if [ "$LANG_OPT" = "2" ]; then
     MSG_USRWT="Waiter User: "
     MSG_PWDWT="Waiter Password: "
     MSG_ACCESS="Access: "
-    MSG_ERR_DOCK="Docker Compose is required but not installed. Please install it first."
+    MSG_WARN_DOCK="Docker not found. Installing automatically..."
+    MSG_ERR_DOCK="Docker Compose could not be installed. Please install it manually."
 else
     MSG_DOM="[1/6] Configuración de Dominio"
     MSG_DOM_PROMPT="Introduce tu dominio (ej: app.disher.io): "
@@ -59,7 +60,8 @@ else
     MSG_USRWT="Usuario Camarero: "
     MSG_PWDWT="Contraseña Camarero: "
     MSG_ACCESS="Acceso: "
-    MSG_ERR_DOCK="Se requiere Docker Compose. Por favor, instálalo primero."
+    MSG_WARN_DOCK="Docker no encontrado. Instalando automáticamente..."
+    MSG_ERR_DOCK="No se pudo auto-instalar Docker Compose. Por favor, instálalo manualmente."
 fi
 
 # 2. Domain
@@ -104,8 +106,26 @@ if command -v docker-compose &> /dev/null; then
 elif docker compose version &> /dev/null; then
     DOCKER_CMD="docker compose"
 else
-    echo -e "${RED}${MSG_ERR_DOCK}${NC}"
-    exit 1
+    echo -e "${YELLOW}${MSG_WARN_DOCK}${NC}"
+    # Intentar instalar Docker usando el script oficial
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sh get-docker.sh
+    rm get-docker.sh
+    
+    # Intentar instalar el plugin de docker-compose por si acaso (Ubuntu/Debian)
+    if command -v apt-get &> /dev/null; then
+        apt-get update -y && apt-get install -y docker-compose-plugin
+    fi
+    
+    # Re-evaluar si se pudo instalar
+    if docker compose version &> /dev/null; then
+        DOCKER_CMD="docker compose"
+    elif command -v docker-compose &> /dev/null; then
+        DOCKER_CMD="docker-compose"
+    else
+        echo -e "${RED}${MSG_ERR_DOCK}${NC}"
+        exit 1
+    fi
 fi
 echo -e "${GREEN}Using: ${DOCKER_CMD}${NC}"
 
