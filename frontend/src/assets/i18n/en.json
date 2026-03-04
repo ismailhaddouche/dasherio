@@ -240,7 +240,8 @@
         "NET_WIFI": "Network (IP/WiFi)",
         "USB": "Local USB",
         "CLOUD": "Cloud",
-        "NO_PRINTERS": "No printers configured yet."
+        "NO_PRINTERS": "No printers configured yet.",
+        "LANGUAGE": "Interface Language"
     },
     "WAITER": {
         "PANEL": "Waiter Panel",

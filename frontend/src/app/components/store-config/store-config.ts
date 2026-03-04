@@ -5,7 +5,7 @@ import { StoreConfigViewModel } from './store-config.viewmodel';
 import { AuthService } from '../../services/auth.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { environment } from '../../../environments/environment';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
     selector: 'app-store-config',
@@ -111,6 +111,14 @@ import { TranslateModule } from '@ngx-translate/core';
           <section class="card-section glass-card">
             <h2 class="card-title">{{ 'STORE_CONFIG.APP_APPEARANCE' | translate }}</h2>
             <p class="card-subtitle">{{ 'STORE_CONFIG.APPEARANCE_SUB' | translate }}</p>
+
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label>{{ 'STORE_CONFIG.LANGUAGE' | translate }}</label>
+                <select class="glass-input" style="max-width: 300px;" [ngModel]="translate.currentLang" (ngModelChange)="changeLanguage($event)">
+                    <option value="es">Español</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
 
             <div class="themes-grid">
                 @for (theme of vm.predefinedThemes; track theme.id) {
@@ -355,4 +363,10 @@ import { TranslateModule } from '@ngx-translate/core';
 export class StoreConfigComponent {
     public vm = inject(StoreConfigViewModel);
     public environment = environment;
+    public translate = inject(TranslateService);
+
+    changeLanguage(lang: string) {
+        this.translate.use(lang);
+        localStorage.setItem('appLang', lang);
+    }
 }

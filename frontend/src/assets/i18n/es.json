@@ -240,7 +240,8 @@
         "NET_WIFI": "Red (IP/WiFi)",
         "USB": "USB Local",
         "CLOUD": "Nube",
-        "NO_PRINTERS": "No hay impresoras configuradas."
+        "NO_PRINTERS": "No hay impresoras configuradas.",
+        "LANGUAGE": "Idioma de la Interfaz"
     },
     "WAITER": {
         "PANEL": "Panel de Camarero",
