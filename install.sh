@@ -194,7 +194,6 @@ MONGO_PASS=$(openssl rand -base64 16)
 MONGODB_URI="mongodb://admin:${MONGO_PASS}@database:27017/disher?authSource=admin"
 
 ADMIN_PASS=$(openssl rand -base64 16 | tr -dc 'a-zA-Z0-9' | head -c 12)
-WAITER_PASS=$(openssl rand -base64 12 | tr -dc 'a-zA-Z0-9' | head -c 8)
 
 # 4. Environment
 echo -e "\n${CYAN}${MSG_ENV}${NC}"
@@ -272,9 +271,7 @@ done
 
 if [ $WAITED -lt $MAX_WAIT ]; then
     echo -e "${GREEN}Backend ready! Initializing store...${NC}"
-    $DOCKER_CMD exec -e MONGO_URI="$MONGODB_URI" \
-                   -e INIT_ADMIN_PASS="$ADMIN_PASS" \
-                   -e INIT_WAITER_PASS="$WAITER_PASS" \
+    $DOCKER_CMD exec -e INIT_ADMIN_PASS="$ADMIN_PASS" \
                    backend sh -c "node init-store.js"
 fi
 
@@ -296,7 +293,5 @@ echo -e "\n${YELLOW}${MSG_CRED}${NC}"
 echo -e "  ${MSG_USRADM}${CYAN}admin${NC}"
 echo -e "  ${MSG_PWDADM}${CYAN}$ADMIN_PASS${NC}"
 echo -e "\n  Acceso: ${CYAN}${ACCESS_URL}${NC}"
-echo -e "\n  ${MSG_USRWT}${CYAN}waiter${NC}"
-echo -e "  ${MSG_PWDWT}${CYAN}$WAITER_PASS${NC}"
 
 echo -e "\n${GREEN}Listo! / Done!${NC}\n"
