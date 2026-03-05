@@ -88,9 +88,13 @@ interface TotemWithStatus {
 
               <!-- Main body -->
               <div class="table-body">
-                <div class="table-icon" [class.has-order]="!!totem.order">
-                  {{ totem.isVirtual ? '📋' : '🪑' }}
-                </div>
+                <div class="table-icon" [class.has-order]="!!totem.order" [class.virtual]="totem.isVirtual">
+                  @if (totem.isVirtual) {
+                    <lucide-icon name="clipboard-list" [size]="28"></lucide-icon>
+                  } @else {
+                    <lucide-icon name="armchair" [size]="28"></lucide-icon>
+                  }
+              </div>
                 <div class="table-info-box">
                   <div class="table-id">#{{ totem.id }}</div>
                   <div class="table-name">{{ totem.name }}</div>
@@ -254,13 +258,33 @@ interface TotemWithStatus {
     }
 
     .table-icon {
-      font-size: 2.2rem;
-      line-height: 1;
-      filter: grayscale(0.5);
-      transition: filter 0.3s;
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
+      color: var(--text-muted);
+      transition: all 0.3s;
     }
-    .table-icon.has-order { filter: none; }
+    .table-icon.has-order {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.3);
+      color: var(--highlight);
+    }
+    .table-icon.virtual {
+      background: rgba(192, 132, 252, 0.1);
+      border-color: rgba(192, 132, 252, 0.2);
+      color: var(--accent-secondary);
+    }
+    .table-icon.virtual.has-order {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.3);
+      color: var(--highlight);
+    }
 
     .table-info-box {
       display: flex;
