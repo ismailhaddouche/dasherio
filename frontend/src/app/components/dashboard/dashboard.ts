@@ -265,12 +265,6 @@ import { TranslateModule } from '@ngx-translate/core';
         margin-top: 12px;
     }
 
-    .btn-secondary {
-      background: rgba(255,255,255,0.05);
-      color: var(--text-base);
-      border: 1px solid var(--glass-border);
-      cursor: pointer;
-    }
 
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -381,6 +375,32 @@ import { TranslateModule } from '@ngx-translate/core';
     @media (max-width: 1024px) {
       .dashboard-content { grid-template-columns: 1fr; }
       .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .totem-add-controls {
+        flex-direction: column;
+        width: 100%;
+      }
+      .totem-add-controls .glass-input {
+        width: 100%;
+      }
+      .totem-add-controls .btn-primary {
+        width: 100%;
+        justify-content: center;
+      }
+      .stats-grid { grid-template-columns: 1fr; }
+      .stat-value { font-size: 1.8rem; }
+      .orders-section, .activity-section, .qr-section { padding: 16px; }
+      .view-title { font-size: 1.2rem; }
+      .error-banner { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .btn-retry { margin-left: 0; width: 100%; }
+      .totem-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+    }
+
+    @media (max-width: 480px) {
+      .totem-grid { grid-template-columns: repeat(2, 1fr); }
+      .stat-value { font-size: 1.5rem; }
     }
 
     .orders-section { padding: 32px; }

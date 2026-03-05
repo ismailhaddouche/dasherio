@@ -192,10 +192,42 @@ import { TranslateModule } from '@ngx-translate/core';
     }
 
     @media (max-width: 768px) {
-      .kds-grid { grid-template-columns: 1fr; }
+      .kds-container {
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+      }
+      .kds-layout {
+        flex-direction: column;
+        overflow: visible;
+      }
+      .kds-grid {
+        grid-template-columns: 1fr;
+        overflow: visible;
+        padding-bottom: 24px;
+      }
       .kds-header { flex-direction: column; gap: 12px; align-items: flex-start; }
-      .stock-sidebar { width: 100%; }
-      .kds-layout { flex-direction: column; }
+      .kds-controls {
+        flex-wrap: wrap;
+        gap: 12px;
+        width: 100%;
+      }
+      .btn-stock { width: 100%; justify-content: center; text-align: center; }
+      .stock-sidebar {
+        width: 100%;
+        max-height: 50vh;
+        overflow-y: auto;
+      }
+      .item-info { min-width: 0; }
+      .kds-item { flex-direction: column; align-items: flex-start; }
+      .action-buttons { width: 100%; justify-content: flex-start; }
+      .view-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+
+    @media (max-width: 480px) {
+      .btn-action { min-width: unset; padding: 12px 14px; font-size: 0.8rem; }
+      .ready-actions { flex-direction: column; width: 100%; }
+      .ready-actions .btn-action { max-width: 100%; }
     }
 
     .order-card {

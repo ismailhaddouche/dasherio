@@ -245,8 +245,44 @@ export class FilterOccupiedPipe implements PipeTransform {
     }
 
     @media (max-width: 768px) {
-      .pos-container { grid-template-columns: 1fr; height: auto; }
-      .pos-sidebar { max-height: 40vh; }
+      .pos-container {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
+        padding-bottom: 24px;
+      }
+      .pos-sidebar {
+        max-height: 45vh;
+        overflow-y: auto;
+      }
+      .pos-main {
+        overflow: visible;
+      }
+      .ticket-view {
+        padding: 20px;
+        gap: 20px;
+      }
+      .ticket-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      .checkout-actions {
+        width: 100%;
+        flex-direction: column;
+      }
+      .checkout-actions button {
+        width: 100%;
+        justify-content: center;
+      }
+      .table-title h1 {
+        font-size: 1.4rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .pos-sidebar { max-height: 35vh; }
+      .tables-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
     }
 
     .pos-sidebar {

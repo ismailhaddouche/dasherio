@@ -49,6 +49,7 @@
     },
     "ROLES": {
         "admin": "Administrador",
+        "Admin": "Administrador",
         "kitchen": "Cocina",
         "pos": "Caja",
         "customer": "Cliente",

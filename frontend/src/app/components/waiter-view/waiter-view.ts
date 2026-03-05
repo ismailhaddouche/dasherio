@@ -86,6 +86,20 @@ import { TranslateModule } from '@ngx-translate/core';
       padding-bottom: 40px;
     }
 
+    @media (max-width: 768px) {
+      .tables-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .tables-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+    }
+
     .table-card {
       padding: 32px 20px;
       display: flex;
@@ -96,6 +110,18 @@ import { TranslateModule } from '@ngx-translate/core';
       cursor: pointer;
       border: 1px solid var(--glass-border);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative; /* necesario para .card-header absolute */
+    }
+
+    @media (max-width: 768px) {
+      .table-card { padding: 24px 16px; }
+    }
+
+    @media (max-width: 480px) {
+      .table-card { padding: 20px 12px; }
+      .table-id { font-size: 1.2rem; }
+      .table-icon { font-size: 1.5rem; margin-bottom: 8px; }
+      .table-name { font-size: 0.8rem; margin-bottom: 10px; }
     }
 
     .table-card:hover {
@@ -148,6 +174,20 @@ import { TranslateModule } from '@ngx-translate/core';
         justify-content: space-between;
         align-items: center;
         margin-bottom: 8px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .view-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .view-header .btn-primary {
+        width: 100%;
+        justify-content: center;
+        display: flex;
+      }
     }
 
     /*
@@ -214,11 +254,8 @@ import { TranslateModule } from '@ngx-translate/core';
     .mr-2 { margin-right: 8px; }
 
 
-    @media (max-width: 480px) {
-      .tables-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-      }
+    @media (max-width: 768px) {
+      .modal-content { padding: 20px; }
     }
   `]
 })

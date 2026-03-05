@@ -158,8 +158,30 @@ import { TranslateModule } from '@ngx-translate/core';
     }
 
     @media (max-width: 768px) {
-      .user-add-controls { flex-direction: column; width: 100%; }
+      .user-add-controls {
+        flex-direction: column;
+        width: 100%;
+      }
+      .user-add-controls .glass-input,
+      .user-add-controls .btn-primary {
+        width: 100%;
+      }
       .users-grid { grid-template-columns: 1fr; }
+      .view-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      .view-header > button {
+        width: 100%;
+        justify-content: center;
+      }
+      .view-title { font-size: 1.2rem; word-break: break-word; }
+    }
+
+    @media (max-width: 480px) {
+      .user-card { padding: 16px; }
+      .u-name { font-size: 1rem; }
     }
 
     .user-card {

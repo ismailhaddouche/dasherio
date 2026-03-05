@@ -49,6 +49,7 @@
     },
     "ROLES": {
         "admin": "Administrator",
+        "Admin": "Administrator",
         "kitchen": "Kitchen",
         "pos": "Cashier",
         "customer": "Customer",
@@ -280,7 +281,11 @@
         "DESC": "Select a table to take orders.",
         "LOADING": "Loading tables...",
         "TOUCH_ORDER": "TAP TO ORDER",
-        "NO_TABLES": "No tables configured yet."
+        "NO_TABLES": "No tables configured yet.",
+        "ADD_VIRTUAL": "Open Temporary Table",
+        "DELETE_CONFIRM": "Delete this temporary table?",
+        "VIRTUAL_TAG": "TEMP",
+        "NEW_VIRTUAL_NAME": "Name (e.g.: Bar 2, Terrace Group)"
     },
     "USER_MGMT": {
         "SYSTEM_ROLE": "System role:",

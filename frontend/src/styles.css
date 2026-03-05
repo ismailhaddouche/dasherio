@@ -30,6 +30,9 @@
 *::before,
 *::after {
     box-sizing: border-box;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
 }
 
 body {
@@ -44,7 +47,11 @@ body {
     letter-spacing: -0.01em;
 }
 
-h1, h2, h3, h4, .brand-font {
+h1,
+h2,
+h3,
+h4,
+.brand-font {
     font-family: 'Space Grotesk', sans-serif;
 }
 
@@ -75,14 +82,23 @@ h1, h2, h3, h4, .brand-font {
 }
 
 /* Custom Scrollbars */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 ::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
     transition: background 0.3s;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
+}
 
 /* Glassmorphism Refined */
 .glass-card {
@@ -161,7 +177,7 @@ select.glass-input option {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(rgba(255,255,255,0.2), transparent);
+    background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
     opacity: 0;
     transition: opacity 0.3s;
 }
@@ -171,7 +187,69 @@ select.glass-input option {
     box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.6);
 }
 
-.btn-primary:hover::before { opacity: 1; }
+.btn-primary:hover::before {
+    opacity: 1;
+}
+
+/* ── Botón Secundario Global ─────────────────────────────────── */
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-base);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 14px 24px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.40);
+    transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+    transform: translateY(0);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* ── Botón Pequeño (modificador) ───────────────────────────────── */
+.btn-sm {
+    padding: 8px 16px !important;
+    font-size: 0.8rem !important;
+    border-radius: var(--radius-sm) !important;
+}
+
+/* ── Botón Peligro Global ──────────────────────────────────────── */
+.btn-danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger:hover {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px -2px rgba(239, 68, 68, 0.5);
+}
+
 
 .gradient-text {
     background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-tertiary) 100%);
@@ -225,8 +303,15 @@ select.glass-input option {
 
 /* Animations */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .animate-fade-in {
@@ -254,6 +339,12 @@ select.glass-input option {
     }
 }
 
+@media (max-width: 480px) {
+    .main-content {
+        padding: 12px;
+    }
+}
+
 /* Normalized View Components */
 .view-header {
     display: flex;
@@ -275,12 +366,33 @@ select.glass-input option {
     }
 }
 
+@media (max-width: 480px) {
+    .view-header {
+        padding: 14px 16px;
+    }
+}
+
 .view-title {
     font-size: 1.6rem;
     margin: 0;
     display: flex;
     align-items: center;
     gap: 12px;
+    flex-wrap: wrap;
+    word-break: break-word;
+}
+
+@media (max-width: 768px) {
+    .view-title {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .view-title {
+        font-size: 1.1rem;
+        gap: 8px;
+    }
 }
 
 .view-desc {

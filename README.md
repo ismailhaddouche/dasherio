@@ -85,25 +85,204 @@ Se puede ejecutar en cualquier dispositivo, desde una Raspberry Pi hasta un serv
 
 ---
 
-## Inicio Rápido (Instalador Automatizado)
+## Instalación
 
-El instalador automatizado es la forma recomendada y más segura de desplegar Disher.io. Se encarga de la configuración, la generación de secretos y el despliegue de los servicios.
+### Requisitos Previos
+
+| Requisito | Mínimo | Recomendado |
+|-----------|--------|-------------|
+| SO | Linux (Ubuntu 20.04+, Debian 11+) | Ubuntu 22.04 LTS |
+| RAM | 1 GB | 2 GB |
+| Disco | 5 GB libres | 10 GB libres |
+| Docker | 24+ | última versión estable |
+| Acceso | root / sudo | — |
+
+> **Nota:** En Raspberry Pi funciona el modo local/LAN. Para producción en la nube se recomienda al menos 2 GB de RAM.
+
+> **Proveedores Cloud (Google Cloud, AWS, Azure):** Además de tener el puerto libre en el sistema, es necesario **abrirlo en el firewall del proveedor**. Consulta la sección correspondiente en la [Guía de Inicio Rápido](./docs/QUICK_START.md#proveedores-cloud--firewall).
+
+---
+
+### Instalación Rápida (Recomendada)
+
+El instalador automatizado es la forma más segura de desplegar Disher.io. Se encarga de la configuración, generación de secretos y despliegue de todos los servicios.
 
 ```bash
-# 1. Clona el repositorio
+# 1. Clonar el repositorio
 git clone https://github.com/ismailhaddouche/disherio.git
 cd disherio
 
-# 2. Ejecuta el instalador como root
+# 2. Dar permisos y ejecutar el instalador como root
 chmod +x install.sh
 sudo ./install.sh
 ```
 
-El instalador te guiará en la selección del modo de acceso. Una vez finalizado, podrás gestionar tu restaurante ejecutando `sudo ./configure.sh`.
+#### Pasos del instalador
 
-> **Credenciales Iniciales:**
-> Durante la instalación se generan contraseñas aleatorias y seguras para los usuarios `admin` y `waiter`.
-> **Estas credenciales se muestran al final de la instalación. Guárdalas en un lugar seguro.**
+El instalador te guiará de forma interactiva por **6 pasos**:
+
+| Paso | Descripción |
+|------|-------------|
+| **[1/6]** Configuración de acceso | Elegir entre acceso por **Dominio** (recomendado) o **Dirección IP** |
+| **[1.5/6]** Configuración de puerto | Puerto HTTP (por defecto `80`; si está ocupado, usar `8080`) |
+| **[2/6]** Seguridad | Generación automática de `JWT_SECRET`, contraseña de MongoDB y credenciales de usuarios |
+| **[3/6]** Configuración | Escritura del archivo `.env` con todos los parámetros |
+| **[4/6]** Docker | Comprobación e instalación automática de Docker si no está presente |
+| **[5/6]** Servicios | Levantamiento de todos los contenedores (`docker compose up -d --build`) |
+| **[6/6]** Tienda inicial | Inicialización de la base de datos con los datos de la tienda |
+
+#### Opciones de acceso
+
+- **Dominio local** (`disherio.local`): Para uso en red LAN sin internet. Ideal para Raspberry Pi o uso interno.
+- **Dominio personalizado** (ej: `app.mirestaurante.com`): Activa HTTPS automático con Let's Encrypt vía Caddy.
+- **IP local**: Para acceso directo en red local por IP.
+- **IP pública**: Para VPS sin dominio. El instalador detecta la IP automáticamente.
+
+#### Credenciales iniciales
+
+> ⚠️ **Importante:** Al finalizar la instalación se muestran las credenciales generadas automáticamente. **Guárdalas en un lugar seguro**, no se vuelven a mostrar.
+
+```
+--- Credenciales Iniciales ---
+Usuario Admin:    admin
+Contraseña Admin: [generada aleatoriamente]
+Acceso:           http://<tu-ip-o-dominio>
+```
+
+---
+
+### Reconfigurar después de instalar
+
+Si necesitas cambiar el dominio, puerto u otras opciones después de la primera instalación:
+
+```bash
+cd disherio
+sudo ./configure.sh
+```
+
+---
+
+## Desinstalación
+
+### Desinstalación estándar (conservando datos)
+
+Detiene y elimina los contenedores **sin borrar** la base de datos ni los volúmenes:
+
+```bash
+cd disherio
+docker compose down
+```
+
+Los datos de MongoDB se conservan en los volúmenes de Docker. Puedes volver a levantar la plataforma en cualquier momento con `docker compose up -d`.
+
+---
+
+### Desinstalación completa (borra todos los datos)
+
+> ⚠️ **Advertencia:** Este proceso elimina **todos los datos** incluyendo la base de datos, el menú, los pedidos y los usuarios. Es irreversible.
+
+```bash
+cd disherio
+
+# 1. Detener y eliminar contenedores + volúmenes (base de datos incluida)
+docker compose down -v
+
+# 2. Eliminar la carpeta del proyecto
+cd ..
+rm -rf disherio
+```
+
+---
+
+## Reinstalación / Recuperación de Instalación Corrupta
+
+Si la instalación está rota (contenedores que no arrancan, errores de Docker, `.env` corrupto, fallo a mitad de instalación, etc.), sigue estos pasos para hacer una instalación limpia desde cero.
+
+### Paso 1 — Diagnóstico rápido
+
+```bash
+# Ver el estado de los contenedores
+docker ps -a
+
+# Ver los logs del servicio con error (ej: backend)
+docker compose logs backend
+docker compose logs caddy
+docker compose logs database
+```
+
+### Paso 2 — Parar todo y limpiar
+
+```bash
+cd disherio
+
+# Detener y eliminar contenedores, redes y volúmenes
+docker compose down -v --remove-orphans
+```
+
+### Paso 3 — Limpieza profunda de Docker (opcional pero recomendada)
+
+```bash
+# Eliminar imágenes sin usar
+docker image prune -a -f
+
+# Eliminar volúmenes huérfanos
+docker volume prune -f
+
+# Eliminar redes sin usar
+docker network prune -f
+
+# O limpieza total de Docker (¡borra TODO lo de Docker en el sistema!)
+# docker system prune -a -f --volumes
+```
+
+> ⚠️ `docker system prune -a -f --volumes` elimina **todas** las imágenes, volúmenes y contenedores del sistema, no solo los de Disher. Úsalo solo si quieres un reset total de Docker.
+
+### Paso 4 — Eliminar la instalación antigua
+
+```bash
+cd ~   # o el directorio padre donde esté la carpeta
+
+# Eliminar la carpeta del proyecto
+rm -rf disherio
+```
+
+### Paso 5 — Clonar e instalar de nuevo
+
+```bash
+# Clonar el repositorio limpio
+git clone https://github.com/ismailhaddouche/disherio.git
+cd disherio
+
+# Dar permisos al instalador
+chmod +x install.sh
+
+# Ejecutar el instalador
+sudo ./install.sh
+```
+
+---
+
+### Referencia rápida: Comandos de recuperación
+
+```bash
+# Ver estado de todos los contenedores
+docker ps -a
+
+# Ver logs de un servicio específico
+docker compose logs <servicio>   # backend | caddy | database
+
+# Reiniciar un servicio sin reinstalar
+docker compose restart <servicio>
+
+# Levantar de nuevo si los contenedores están parados
+docker compose up -d
+
+# Forzar reconstrucción de imágenes
+docker compose up -d --build
+
+# Limpiar y reinstalar manteniendo datos
+docker compose down --remove-orphans && docker compose up -d --build
+```
 
 ---
 
@@ -152,7 +331,7 @@ Equivalente al modo local pero ajustado y optimizado según los límites de los 
 ## Tecnologías Utilizadas
 
 | Capa | Tecnología | Versión |
-|-------|-----------|---------|
+|-------|-----------|---------| 
 | Backend | Node.js + Express | 20 / 5.x |
 | Frontend | Angular + Signals API | 21 |
 | Base de Datos | MongoDB | 7 |

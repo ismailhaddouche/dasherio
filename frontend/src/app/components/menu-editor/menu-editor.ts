@@ -220,9 +220,34 @@ import { TranslateModule } from '@ngx-translate/core';
       .editor-container { grid-template-columns: 320px 1fr; gap: 16px; }
     }
     @media (max-width: 768px) {
-      .editor-container { grid-template-columns: 1fr; height: auto; }
-      .menu-structure { max-height: 40vh; }
-      .form-grid { grid-template-columns: 1fr; }
+      .editor-container {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
+      }
+      .menu-structure { max-height: 45vh; }
+      .editor-detail { overflow: visible; padding-right: 0; }
+      .form-grid { grid-template-columns: 1fr; gap: 20px; }
+      .form-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      .form-actions { width: 100%; }
+      .form-actions button { flex: 1; }
+      .edit-form { padding: 20px; gap: 20px; }
+      .menu-sections-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .menu-structure { max-height: 35vh; }
+      .list-item {
+        flex-wrap: wrap;
+      }
+      .list-item .flex-2,
+      .list-item .flex-1 { flex: 1 1 100%; }
+      .list-item .btn-del { flex: 0 0 auto; align-self: center; }
+      .toggle-container { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .edit-form { padding: 14px; }
     }
 
     .menu-structure {

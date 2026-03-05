@@ -271,6 +271,26 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
     @media (max-width: 768px) {
       .btn-save { width: 100%; }
+      .view-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      .config-grid {
+        padding-bottom: 24px;
+      }
+      .themes-grid {
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .themes-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .card-section { padding: 16px; }
+      .printer-card { padding: 12px !important; }
     }
 
     .inline-icon { display: inline-block; vertical-align: text-bottom; }

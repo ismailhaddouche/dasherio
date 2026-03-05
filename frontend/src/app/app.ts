@@ -2,7 +2,7 @@ import { Component, signal, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../environments/environment';
-import { RouterOutlet, RouterLink, RouterLinkActive, ChildrenOutletContexts } from '@angular/router';
+import { RouterOutlet, ChildrenOutletContexts } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { CommunicationService } from './services/communication.service';
 import { AuthService } from './services/auth.service';
@@ -15,7 +15,7 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, SidebarComponent, LucideAngularModule, TranslateModule],
+  imports: [RouterOutlet, CommonModule, SidebarComponent, LucideAngularModule, TranslateModule],
   templateUrl: './app.html',
   styleUrl: './app.css',
   animations: [

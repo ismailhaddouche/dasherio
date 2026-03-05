@@ -7,9 +7,10 @@ Esta guía te permitirá tener una plataforma de restaurante funcional en menos 
 ## Prerrequisitos
 
 - Un servidor o dispositivo con al menos 1GB de RAM.
-- **Docker (v24+)** y **Docker Compose (v2.x)**.
+- **Docker (v24+)** y **Docker Compose (v2.x)**. El instalador los instala automáticamente si no están presentes.
 - Git para clonar el repositorio.
-- Puertos **80** y **443** disponibles.
+- Puertos **80** y **443** disponibles en el sistema.
+- Si usas un proveedor cloud (Google Cloud, AWS, Azure...), los puertos deben estar **abiertos también en el firewall del proveedor** (ver sección [Proveedores Cloud](#proveedores-cloud-firewall)).
 
 ---
 
@@ -73,6 +74,60 @@ sudo ./configure.sh
 ```
 
 El menú interactivo te guiará a través de las opciones disponibles. Para más detalles, consulta la [Guía de Mantenimiento](./MAINTENANCE.md).
+
+---
+
+## Proveedores Cloud — Firewall
+
+Cuando se instala en un VPS o instancia cloud, el proveedor dispone de un **firewall de red propio**, independiente del sistema operativo. Aunque la aplicación esté corriendo correctamente, el acceso externo quedará bloqueado hasta que se abra el puerto 80 explícitamente.
+
+### Google Cloud (Compute Engine)
+
+La forma más fiable es hacerlo desde la **consola web**, ya que desde la propia VM los permisos suelen estar limitados.
+
+**Opción A — Consola web:**
+
+1. Ve a [console.cloud.google.com](https://console.cloud.google.com)
+2. Navega a **VPC Network → Firewall**
+3. Haz clic en **"+ CREATE FIREWALL RULE"** y usa estos valores:
+
+| Campo | Valor |
+|-------|-------|
+| Name | `allow-http-80` |
+| Network | `default` |
+| Direction of traffic | `Ingress` |
+| Action on match | `Allow` |
+| Targets | `All instances in the network` |
+| Source filter | `IPv4 ranges` |
+| Source IPv4 ranges | `0.0.0.0/0` |
+| Protocols and ports | `TCP: 80` |
+
+4. Haz clic en **"Create"**. La regla se activa en menos de 30 segundos.
+
+**Opción B — gcloud CLI** (requiere permisos de administrador de red en el proyecto):
+
+```bash
+gcloud compute firewall-rules create allow-http-80 \
+  --allow tcp:80 \
+  --source-ranges 0.0.0.0/0 \
+  --description "Disher.io HTTP"
+```
+
+> **Nota:** Si ves el error `Request had insufficient authentication scopes`, la VM no tiene permisos para gestionar el firewall. Usa la Opción A desde la consola web.
+
+### AWS (EC2)
+
+1. Ve a **EC2 → Instancias → selecciona tu instancia**
+2. En la pestaña **Security**, haz clic en el **Security Group**
+3. En **Inbound rules**, añade:
+   - Type: `HTTP`, Port: `80`, Source: `0.0.0.0/0`
+4. Guarda los cambios.
+
+### Azure (Virtual Machine)
+
+1. Ve a tu VM en el portal de Azure
+2. En **Networking**, añade una **Inbound port rule**:
+   - Port: `80`, Protocol: `TCP`, Action: `Allow`
 
 ---
 
