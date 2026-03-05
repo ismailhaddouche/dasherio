@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, param, validationResult } = require('express-validator');
 const Order = require('../models/Order');
 const Ticket = require('../models/Ticket');
+const Restaurant = require('../models/Restaurant');
 const { verifyToken } = require('../middleware/auth.middleware');
 
 const validate = (req, res, next) => {
@@ -317,7 +318,6 @@ router.post('/:orderId/checkout',
             if (totalPaidFlag) {
                 order.status = 'completed';
                 // Trigger auto-deletion of virtual totem if applicable
-                const Restaurant = require('../models/Restaurant');
                 const restaurant = await Restaurant.findOne();
                 if (restaurant) {
                     const totem = restaurant.totems.find(t => t.id === order.totemId);

@@ -9,6 +9,7 @@ const fs = require('fs');
 const Restaurant = require('../models/Restaurant');
 const Ticket = require('../models/Ticket');
 const ActivityLog = require('../models/ActivityLog');
+const Order = require('../models/Order');
 const { verifyToken } = require('../middleware/auth.middleware');
 
 const validate = (req, res, next) => {
@@ -142,7 +143,6 @@ router.get('/totems/:id/session', async (req, res) => {
 
         // If there's an active session in the totem, we check if there's actually an active order for it
         let sessionId = totem.currentSessionId;
-        const Order = require('../models/Order');
 
         if (sessionId) {
             const activeOrder = await Order.findOne({ sessionId, status: 'active' });

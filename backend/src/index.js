@@ -29,7 +29,7 @@ const startDB = async () => {
     const mongoPort = process.env.MONGO_PORT || 27017;
     const dbName = 'disher';
 
-    const mongoURI = `mongodb://${mongoUser}:${mongoPass}@${mongoHost}:${mongoPort}/${dbName}?authSource=admin`;
+    const mongoURI = `mongodb://${encodeURIComponent(mongoUser)}:${encodeURIComponent(mongoPass)}@${mongoHost}:${mongoPort}/${dbName}?authSource=admin`;
 
     let connected = false;
     let retries = 5;

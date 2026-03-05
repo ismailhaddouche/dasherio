@@ -190,7 +190,7 @@ done
 
 echo -e "\n${CYAN}${MSG_SEC}${NC}"
 JWT_SECRET=$(openssl rand -base64 32)
-MONGO_PASS=$(openssl rand -base64 16)
+MONGO_PASS=$(openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 20)
 MONGODB_URI="mongodb://admin:${MONGO_PASS}@database:27017/disher?authSource=admin"
 
 ADMIN_PASS=$(openssl rand -base64 16 | tr -dc 'a-zA-Z0-9' | head -c 12)
