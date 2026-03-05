@@ -44,12 +44,14 @@ const OrderSchema = new mongoose.Schema({
         type: String,
         enum: ['active', 'completed', 'cancelled'],
         default: 'active'
-    }
+    },
+    sessionId: { type: String, unique: true, sparse: true }
 }, { timestamps: true });
 
 // Indexes for performance optimization
 OrderSchema.index({ status: 1, createdAt: -1 });
 OrderSchema.index({ totemId: 1, status: 1 });
 OrderSchema.index({ tableNumber: 1, status: 1 });
+OrderSchema.index({ sessionId: 1 });
 
 module.exports = mongoose.model('Order', OrderSchema);

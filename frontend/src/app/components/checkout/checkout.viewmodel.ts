@@ -45,12 +45,20 @@ export class CheckoutViewModel {
 
     private async loadOrder() {
         const table = this.route.snapshot.paramMap.get('tableNumber');
+        const session = this.route.snapshot.paramMap.get('sessionCode');
+        const { environment } = await import('../../../environments/environment');
 
-        if (table) {
-            // In a real app, fetch active order for this table
-            const orders: any = await this.comms.syncOrders();
-            const activeOrder = orders.find((o: any) => o.tableNumber === table && o.status === 'active');
-            this.order.set(activeOrder);
+        try {
+            if (session) {
+                const res = await fetch(`${environment.apiUrl}/api/orders/session/${session}`);
+                this.order.set(await res.json());
+            } else if (table) {
+                const orders: any = await this.comms.syncOrders();
+                const activeOrder = orders?.find((o: any) => o.tableNumber === table && o.status === 'active');
+                this.order.set(activeOrder);
+            }
+        } catch (e) {
+            console.error('Error loading checkout order', e);
         }
         this.loading.set(false);
     }

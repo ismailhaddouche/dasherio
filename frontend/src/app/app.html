@@ -10,12 +10,18 @@
     (collapsedChange)="sidebarCollapsed.set($event)">
   </app-sidebar>
 
+  <!-- Mobile Overlay -->
+  <div class="sidebar-overlay" *ngIf="auth.isAuthenticated() && sidebarCollapsed()" (click)="sidebarCollapsed.set(false)"></div>
+
   <!-- Main Content Area -->
   <main class="main-content">
     
     <!-- Top Bar (Contextual Info) -->
     <header class="top-bar glass-card" *ngIf="auth.isAuthenticated()">
       <div class="breadcrumb">
+        <button class="mobile-menu-toggle" (click)="sidebarCollapsed.set(!sidebarCollapsed())">
+          <lucide-icon name="menu" [size]="20"></lucide-icon>
+        </button>
         <span class="restaurant-name gradient-text">{{ 'APP.RESTAURANT_NAME' | translate }}</span>
       </div>
 
@@ -126,8 +132,30 @@
     overflow-y: auto;
   }
 
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    z-index: 90;
+    display: none;
+  }
+
+  .mobile-menu-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--text-base);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+  }
+
   /* Responsive Adjustments */
   @media (max-width: 768px) {
+    .sidebar-overlay { display: block; }
+    .mobile-menu-toggle { display: flex; align-items: center; justify-content: center; }
+
     .top-bar {
       margin: 12px;
       padding: 0 16px;

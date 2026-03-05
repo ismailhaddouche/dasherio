@@ -40,6 +40,23 @@ router.get('/table/:tableNumber',
     }
 );
 
+// GET /session/:sessionId - Get order by session code (Public)
+router.get('/session/:sessionId',
+    param('sessionId').trim().notEmpty().withMessage('Session ID is required'),
+    validate,
+    async (req, res) => {
+        try {
+            const order = await Order.findOne({
+                sessionId: req.params.sessionId,
+                status: 'active'
+            });
+            res.json(order || null);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+);
+
 // POST /table/:tableNumber/add-items - Waiter adding items (Restricted)
 router.post('/table/:tableNumber/add-items',
     verifyToken,
@@ -125,6 +142,7 @@ router.patch('/:orderId/items/:itemId/associate',
 router.post('/',
     [
         body('totemId').notEmpty().withMessage('totemId is required'),
+        body('sessionId').notEmpty().withMessage('sessionId is required'),
         body('items').isArray({ min: 1 }).withMessage('items must be an array'),
         body('items.*.name').trim().notEmpty().withMessage('Item name is required'),
         body('items.*.price').isFloat({ min: 0 }).withMessage('Item price must be non-negative'),
@@ -133,13 +151,13 @@ router.post('/',
     validate,
     async (req, res) => {
         try {
-            const { tableNumber, totemId, items } = req.body;
+            const { tableNumber, totemId, sessionId, items } = req.body;
             const tId = totemId;
             const tNumber = tableNumber || String(tId);
 
-            let order = await Order.findOne({ totemId: tId, status: 'active' });
+            let order = await Order.findOne({ sessionId: sessionId, status: 'active' });
             if (!order) {
-                order = new Order({ tableNumber: tNumber, totemId: tId, items: [], totalAmount: 0 });
+                order = new Order({ tableNumber: tNumber, totemId: tId, sessionId: sessionId, items: [], totalAmount: 0 });
             }
 
             let addedAmount = 0;
@@ -303,18 +321,28 @@ router.post('/:orderId/checkout',
                 const restaurant = await Restaurant.findOne();
                 if (restaurant) {
                     const totem = restaurant.totems.find(t => t.id === order.totemId);
-                    if (totem && totem.isVirtual) {
-                        // Delete ONLY the totem from the restaurant list
-                        // WE KEEP Tickets and Order for history as per user request
-                        restaurant.totems = restaurant.totems.filter(t => t.id !== order.totemId);
+                    if (totem) {
+                        if (totem.isVirtual) {
+                            // Delete ONLY the totem from the restaurant list
+                            // WE KEEP Tickets and Order for history as per user request
+                            restaurant.totems = restaurant.totems.filter(t => t.id !== order.totemId);
+                        } else {
+                            // For regular totems, just clear the currentSessionId
+                            totem.currentSessionId = null;
+                        }
                         await restaurant.save();
-                        console.log(`[CLEANUP] Virtual totem ${order.totemId} deleted. History (Order/Tickets) preserved.`);
+                        console.log(`[CLEANUP] Session ${order.sessionId} for totem ${order.totemId} closed.`);
                     }
                 }
             }
             await order.save();
             const io = req.app.get('io');
-            if (io) io.emit('order-updated', order);
+            if (io) {
+                io.emit('order-updated', order);
+                if (order.status === 'completed') {
+                    io.emit('session-ended', { totemId: order.totemId, tableNumber: order.tableNumber, sessionId: order.sessionId });
+                }
+            }
             res.json({ tickets: generatedTickets, orderStatus: order.status });
         } catch (error) {
             res.status(500).json({ error: error.message });

@@ -230,6 +230,30 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
                 }
             </div>
           </section>
+
+          <!-- Local Device Configuration -->
+          <section class="card-section glass-card device-section">
+            <h2 class="card-title"><lucide-icon name="monitor" class="inline-icon mr-2"></lucide-icon>{{ 'STORE_CONFIG.THIS_DEVICE' | translate }}</h2>
+            <p class="card-subtitle">{{ 'STORE_CONFIG.DEVICE_SUB' | translate }}</p>
+            
+            <div class="form-group">
+                <label>{{ 'STORE_CONFIG.ASSIGNED_PRINTER' | translate }}</label>
+                <select [ngModel]="vm.getLocalPrinterId()" (ngModelChange)="vm.setLocalPrinter($event)" class="glass-input">
+                    <option [ngValue]="null">{{ 'STORE_CONFIG.NO_PRINTER' | translate }}</option>
+                    @for (printer of vm.config().printers; track printer.id) {
+                        <option [value]="printer.id">{{ printer.name }} ({{ printer.type }})</option>
+                    }
+                </select>
+                <small>{{ 'STORE_CONFIG.DEVICE_HINT' | translate }}</small>
+            </div>
+            
+            <div class="form-group" style="margin-top: 12px;">
+                <label class="checkbox-label">
+                    <input type="checkbox" [ngModel]="vm.getLocalAutoPrint()" (ngModelChange)="vm.setLocalAutoPrint($event)">
+                    <span>{{ 'STORE_CONFIG.AUTO_PRINT' | translate }}</span>
+                </label>
+            </div>
+          </section>
         </main>
       }
     </div>
@@ -361,6 +385,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     /* Billing Section */
     .billing-section { background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(16, 185, 129, 0.05)); }
     .printer-section { background: linear-gradient(135deg, rgba(168, 85, 247, 0.05), rgba(236, 72, 153, 0.05)); }
+    .device-section { border: 1px solid var(--accent-primary); background: rgba(99, 102, 241, 0.05); }
     .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
     .checkbox-label input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
     .form-group.indent { margin-left: 24px; padding-left: 16px; border-left: 2px solid rgba(59, 130, 246, 0.3); }

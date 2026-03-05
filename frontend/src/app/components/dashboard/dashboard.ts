@@ -235,7 +235,17 @@ import { TranslateModule } from '@ngx-translate/core';
         margin-bottom: 16px;
     }
 
+    .totem-actions {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        margin-top: 12px;
+        justify-content: center;
+        align-items: stretch;
+    }
+
     .btn-qr-action {
+        flex: 1;
         background: rgba(255,255,255,0.05);
         border: 1px solid var(--glass-border);
         color: white;
@@ -246,6 +256,7 @@ import { TranslateModule } from '@ngx-translate/core';
         display: flex;
         align-items: center;
         justify-content: center;
+        min-width: 0;
     }
 
     .btn-qr-action:hover {
@@ -258,24 +269,53 @@ import { TranslateModule } from '@ngx-translate/core';
         color: white;
     }
 
-    .totem-actions {
-        display: flex;
-        gap: 8px;
-        width: 100%;
-        margin-top: 12px;
-    }
-
 
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center;
-      z-index: 1000; backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.8); 
+      display: flex; 
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 1000; backdrop-filter: blur(8px);
     }
     .modal-content {
-      max-width: 400px; width: 90%;
-      padding: 32px; display: flex; flex-direction: column; gap: 16px;
+      width: 100%;
+      max-width: 500px;
+      padding: 32px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 20px;
+      border-radius: 24px 24px 0 0;
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
+
+    @media (min-width: 768px) {
+      .modal-overlay { align-items: center; }
+      .modal-content { border-radius: 24px; margin: 20px; }
+    }
+
+    .modal-actions { 
+        display: flex; 
+        flex-direction: column;
+        gap: 12px; 
+    }
+
+    @media (min-width: 480px) {
+        .modal-actions {
+            flex-direction: row;
+            justify-content: flex-end;
+        }
+    }
+
+    .modal-actions button { width: 100%; }
+    @media (min-width: 480px) {
+        .modal-actions button { width: auto; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
 
     .error-banner {
       display: flex;

@@ -73,6 +73,12 @@ export class FilterOccupiedPipe implements PipeTransform {
                 }
             </div>
         }
+
+        <div class="sidebar-footer" style="margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.05);">
+            <button class="btn-closure" (click)="vm.closeShift()">
+                <lucide-icon name="lock" [size]="16" class="inline-icon"></lucide-icon> {{ 'POS.CLOSE_SHIFT' | translate }}
+            </button>
+        </div>
       </aside>
 
       <!-- Main Content: Ticket & Billing Detail -->
@@ -179,7 +185,14 @@ export class FilterOccupiedPipe implements PipeTransform {
               <div class="icon"><lucide-icon name="layout-dashboard" [size]="64" color="var(--text-muted)"></lucide-icon></div>
               <h2>{{ 'POS.EMPTY_TITLE' | translate }}</h2>
               <p>{{ table.name }} {{ 'POS.EMPTY_DESC' | translate }}</p>
-              <button class="btn-primary" (click)="vm.openTable(table)">{{ 'POS.OPEN_TABLE' | translate }}</button>
+              <div class="empty-actions" style="display: flex; gap: 12px; margin-top: 12px;">
+                <button class="btn-primary" (click)="vm.openTable(table)">{{ 'POS.OPEN_TABLE' | translate }}</button>
+                @if (table.isVirtual) {
+                  <button class="btn-delete-item" style="padding: 12px 16px; border-radius: 12px;" (click)="vm.deleteVirtualTable(table.id)">
+                    <lucide-icon name="trash-2" [size]="14" class="inline-icon"></lucide-icon> {{ 'COMMON.DELETE' | translate }}
+                  </button>
+                }
+              </div>
             </div>
           }
         } @else {
@@ -333,6 +346,26 @@ export class FilterOccupiedPipe implements PipeTransform {
     .btn-icon:hover { opacity: 1; background: rgba(255,255,255,0.1); }
     .btn-icon.print { border-color: var(--highlight); color: var(--highlight); }
     .btn-icon.delete { border-color: #ef4444; color: #ef4444; }
+
+    .btn-closure {
+        width: 100%;
+        background: rgba(239, 68, 68, 0.1);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        padding: 12px;
+        border-radius: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+    .btn-closure:hover {
+        background: #ef4444;
+        color: white;
+    }
 
     .table-card {
       aspect-ratio: 1;
@@ -536,22 +569,34 @@ export class FilterOccupiedPipe implements PipeTransform {
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.8);
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
       z-index: 1000;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(8px);
     }
     .modal-content {
-      max-width: 500px;
-      width: 90%;
-      max-height: 80vh;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
       overflow-y: auto;
       padding: 32px;
       display: flex;
       flex-direction: column;
       gap: 24px;
+      border-radius: 24px 24px 0 0;
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @media (min-width: 768px) {
+      .modal-overlay { align-items: center; }
+      .modal-content { border-radius: 24px; margin: 20px; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
     .menu-items-list {
       display: flex;
@@ -586,8 +631,20 @@ export class FilterOccupiedPipe implements PipeTransform {
     }
     .modal-actions {
       display: flex;
+      flex-direction: column;
       gap: 12px;
-      justify-content: flex-end;
+    }
+    
+    @media (min-width: 480px) {
+        .modal-actions {
+            flex-direction: row;
+            justify-content: flex-end;
+        }
+    }
+    
+    .modal-actions button { width: 100%; }
+    @media (min-width: 480px) {
+        .modal-actions button { width: auto; }
     }
   `]
 })

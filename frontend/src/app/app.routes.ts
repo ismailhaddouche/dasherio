@@ -59,7 +59,9 @@ export const routes: Routes = [
     },
 
     // Public Customer Routes
+    { path: 's/:sessionCode', component: CustomerViewComponent },
     { path: ':tableNumber', component: CustomerViewComponent },
+    { path: 's/:sessionCode/checkout', component: CheckoutComponent },
     { path: ':tableNumber/checkout', component: CheckoutComponent },
 
     { path: '', redirectTo: 'admin/dashboard', pathMatch: 'full' },

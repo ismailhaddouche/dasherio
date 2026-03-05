@@ -221,10 +221,19 @@ import { TranslateModule } from '@ngx-translate/core';
         .sidebar {
             position: fixed;
             left: -280px;
+            box-shadow: 20px 0 50px rgba(0,0,0,0.5);
         }
         .sidebar.collapsed {
             left: 0;
-            width: var(--sidebar-width);
+            width: var(--sidebar-width) !important;
+        }
+        .sidebar.collapsed .logo-text,
+        .sidebar.collapsed .label,
+        .sidebar.collapsed label {
+            display: block !important;
+        }
+        .toggle-btn {
+            display: none;
         }
     }
   `]

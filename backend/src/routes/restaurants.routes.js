@@ -116,6 +116,57 @@ router.post('/upload-logo', verifyToken, requireAdmin, upload.single('logo'), as
     }
 });
 
+// Helper to generate a long alphanumeric session ID with year indicators
+const generateSessionId = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid ambiguous chars
+    let result = 'DSH-';
+    for (let i = 0; i < 12; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const currentYear = new Date().getFullYear();
+    return `${result}-${currentYear}-${currentYear + 1}`;
+};
+
+// GET /totems/:id/session - Get or generate a dynamic session ID for a totem
+router.get('/totems/:id/session', async (req, res) => {
+    try {
+        const totemId = parseInt(req.params.id);
+        const restaurant = await Restaurant.findOne();
+        if (!restaurant) return res.status(404).json({ error: 'Restaurant not found' });
+
+        const totem = restaurant.totems.find(t => t.id === totemId);
+        if (!totem) return res.status(404).json({ error: 'Totem not found' });
+
+        // If totem is not active, return error
+        if (!totem.active) return res.status(403).json({ error: 'Mesa desactivada' });
+
+        // If there's an active session in the totem, we check if there's actually an active order for it
+        let sessionId = totem.currentSessionId;
+        const Order = require('../models/Order');
+
+        if (sessionId) {
+            const activeOrder = await Order.findOne({ sessionId, status: 'active' });
+            if (!activeOrder) {
+                sessionId = null; // Stale session ID, clear it
+            }
+        }
+
+        if (!sessionId) {
+            sessionId = generateSessionId();
+            totem.currentSessionId = sessionId;
+            await restaurant.save();
+        }
+
+        res.json({
+            sessionId,
+            totemId: totem.id,
+            tableNumber: totem.name || totem.id.toString()
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // GET /totems - List totems
 router.get('/totems', async (req, res) => {
     try {
@@ -288,6 +339,33 @@ router.get('/qr/:totemId',
         }
     }
 );
+
+// POST /close-shift - Cierre de caja: Clear all active sessions and force reconnects
+router.post('/close-shift', verifyToken, requireAdmin, async (req, res) => {
+    try {
+        const restaurant = await Restaurant.findOne();
+        if (!restaurant) return res.status(404).json({ error: 'Restaurant not found' });
+
+        // 1. Clear all active sessions in totems
+        restaurant.totems.forEach(totem => {
+            totem.currentSessionId = null;
+        });
+
+        await restaurant.save();
+
+        // 2. Close any lingering 'active' orders if necessary? 
+        // For now, only clearing sessions as requested to force "put name again"
+
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('all-sessions-ended', { reason: 'SHIFT_CLOSED' });
+        }
+
+        res.json({ message: 'Cierre de caja realizado. Todas las sesiones de clientes han sido liquidadas.' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // POST /logs - Create activity log (Restricted to authenticated users)
 router.post('/logs',

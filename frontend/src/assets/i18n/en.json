@@ -139,10 +139,10 @@
         "ASSOCIATE_ERROR": "Could not associate item.",
         "ADD_ITEM_ERROR": "Could not add product",
         "CUSTOM_VALIDATION_ERROR": "Please enter a valid name and price",
-        "OPEN_TABLE_ERROR": "Could not open table",
-        "SPLIT_PROMPT_TYPE": "How do you want to split?\n1. Equal parts\n2. By diner",
         "SPLIT_PROMPT_PARTS": "Into how many parts?",
-        "SPLIT_BY_USER_HINT": "Click on a diner's name to charge their individual share."
+        "SPLIT_BY_USER_HINT": "Click on a diner's name to charge their individual share.",
+        "DELETE_VIRTUAL_CONFIRM": "Delete this empty temporary table?",
+        "DELETE_VIRTUAL_ERROR": "Could not delete the temporary table."
     },
     "CHECKOUT": {
         "BACK": "← Back",
@@ -285,7 +285,11 @@
         "ADD_VIRTUAL": "Open Temporary Table",
         "DELETE_CONFIRM": "Delete this temporary table?",
         "VIRTUAL_TAG": "TEMP",
-        "NEW_VIRTUAL_NAME": "Name (e.g.: Bar 2, Terrace Group)"
+        "NEW_VIRTUAL_NAME": "Name (e.g.: Bar 2, Terrace Group)",
+        "NEW_ORDER_FOR": "New order for...",
+        "SELECT_NAME_OR_SKIP": "Select an existing diner or add a new one.",
+        "NEW_NAME_OPTIONAL": "Name (Optional)",
+        "START_ORDERING": "Take order"
     },
     "USER_MGMT": {
         "SYSTEM_ROLE": "System role:",

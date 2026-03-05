@@ -23,6 +23,8 @@ export class StoreConfigViewModel {
         printers: []
     });
 
+    public localConfig = signal<any>(this.loadLocal());
+
     public loading = signal<boolean>(true);
     public saving = signal<boolean>(false);
     public message = signal<string>('');
@@ -33,6 +35,11 @@ export class StoreConfigViewModel {
         { id: 'emerald', name: 'Verde', colors: { primaryColor: '#10b981', secondaryColor: '#14b8a6', backgroundColor: '#022c22', textColor: '#f0fdf4' } },
         { id: 'ocean', name: 'Azul', colors: { primaryColor: '#0ea5e9', secondaryColor: '#3b82f6', backgroundColor: '#082f49', textColor: '#f0f9ff' } },
     ];
+
+    private loadLocal(): any {
+        const saved = localStorage.getItem('disher_local_config');
+        return saved ? JSON.parse(saved) : null;
+    }
 
 
     public selectPredefinedTheme(themeId: string) {
@@ -90,8 +97,10 @@ export class StoreConfigViewModel {
 
             if (!res.ok) throw new Error('Error saving');
 
-            this.message.set('✅ Configuración guardada correctamente');
-            setTimeout(() => this.message.set(''), 3000);
+            this.message.set('✅ Configuración guardada correctamente. Recargando...');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
 
         } catch (e) {
             this.message.set('❌ Error al guardar');
@@ -176,5 +185,30 @@ export class StoreConfigViewModel {
             ...current,
             printers: updatedPrinters
         });
+    }
+
+    // Local Device Configuration Helpers
+    public getLocalPrinterId(): string | null {
+        return this.localConfig()?.printer?.id || null;
+    }
+
+    public setLocalPrinter(printerId: string) {
+        const printer = this.config().printers?.find((p: any) => p.id === printerId);
+        const newLocal = { ...this.localConfig(), printer };
+        this.localConfig.set(newLocal);
+        localStorage.setItem('disher_local_config', JSON.stringify(newLocal));
+    }
+
+    public getLocalAutoPrint(): boolean {
+        return this.localConfig()?.printer?.autoPrint || false;
+    }
+
+    public setLocalAutoPrint(enabled: boolean) {
+        const current = this.localConfig() || {};
+        if (current.printer) {
+            current.printer.autoPrint = enabled;
+            this.localConfig.set({ ...current });
+            localStorage.setItem('disher_local_config', JSON.stringify(current));
+        }
     }
 }

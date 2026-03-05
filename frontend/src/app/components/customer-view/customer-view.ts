@@ -19,12 +19,30 @@ import { TranslateModule } from '@ngx-translate/core';
         </div>
       } @else if (!vm.comms.userName() || vm.comms.userName() === 'Comensal') {
         <div class="name-selection glass-card">
-          <h2 class="gradient-text">{{ 'CUSTOMER.HELLO' | translate }}</h2>
-          <p>{{ 'CUSTOMER.HOW_TO_CALL' | translate }}</p>
-          <input type="text" #nameInput [placeholder]="'CUSTOMER.YOUR_NAME' | translate" class="glass-input">
-          <button class="btn-primary" (click)="vm.comms.setUserName(nameInput.value)">
-            {{ 'CUSTOMER.START_ORDERING' | translate }}
-          </button>
+          @if (vm.isStaff()) {
+            <h2 class="gradient-text">{{ 'WAITER.NEW_ORDER_FOR' | translate }}</h2>
+            <p>{{ 'WAITER.SELECT_NAME_OR_SKIP' | translate }}</p>
+
+            @if (vm.existingNames().length > 0) {
+              <div class="existing-names">
+                @for (name of vm.existingNames(); track name) {
+                  <button class="btn-name" (click)="vm.comms.setUserName(name)">{{ name }}</button>
+                }
+              </div>
+            }
+            
+            <input type="text" #nameInput [placeholder]="'WAITER.NEW_NAME_OPTIONAL' | translate" class="glass-input">
+            <button class="btn-primary" (click)="vm.comms.setUserName(nameInput.value || 'Camarero')">
+              {{ 'WAITER.START_ORDERING' | translate }}
+            </button>
+          } @else {
+            <h2 class="gradient-text">{{ 'CUSTOMER.HELLO' | translate }}</h2>
+            <p>{{ 'CUSTOMER.HOW_TO_CALL' | translate }}</p>
+            <input type="text" #nameInput [placeholder]="'CUSTOMER.YOUR_NAME' | translate" class="glass-input">
+            <button class="btn-primary" (click)="vm.comms.setUserName(nameInput.value)">
+              {{ 'CUSTOMER.START_ORDERING' | translate }}
+            </button>
+          }
         </div>
       } @else {
         <header class="glass-card table-header">
@@ -407,6 +425,30 @@ import { TranslateModule } from '@ngx-translate/core';
       text-align: center;
       font-size: 1rem;
       padding: 16px;
+    }
+
+    .existing-names {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .btn-name {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--accent-secondary);
+      color: white;
+      padding: 10px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    .btn-name:hover {
+      background: var(--accent-secondary);
+      color: var(--bg-dark);
     }
 
     .cart-preview {

@@ -78,6 +78,14 @@ export class CommunicationService {
         this.socket.on('config-updated', callback);
     }
 
+    public subscribeToSessionEnd(callback: (data: any) => void) {
+        this.socket.on('session-ended', callback);
+    }
+
+    public subscribeToSystemReset(callback: (data: any) => void) {
+        this.socket.on('all-sessions-ended', callback);
+    }
+
     // --- API CALLS ---
 
     public async syncOrders() {

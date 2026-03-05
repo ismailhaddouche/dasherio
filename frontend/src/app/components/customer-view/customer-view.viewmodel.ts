@@ -1,12 +1,15 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, inject, computed } from '@angular/core';
 import { CommunicationService } from '../../services/communication.service';
 import { ActivatedRoute } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ThemeService } from '../../services/theme.service';
+import { AuthService } from '../../services/auth.service';
+import { Router } from '@angular/router';
 
 export interface TableSession {
     tableNumber: string;
     totemId?: number;
+    sessionId?: string;
     activeOrder: any | null;
 }
 
@@ -14,7 +17,9 @@ export interface TableSession {
 export class CustomerViewModel {
     public comms = inject(CommunicationService);
     private route = inject(ActivatedRoute);
+    private router = inject(Router);
     private theme = inject(ThemeService);
+    public auth = inject(AuthService);
 
     // State
     public session = signal<TableSession | null>(null);
@@ -30,43 +35,89 @@ export class CustomerViewModel {
     public selectedAddons = signal<any[]>([]);
     public selectedMenuChoices = signal<{ [key: string]: string }>({});
 
+    public isStaff = computed(() => {
+        return this.auth.hasRole('waiter') || this.auth.hasRole('admin') || this.auth.hasRole('pos');
+    });
+
+    public existingNames = computed(() => {
+        const order = this.session()?.activeOrder;
+        if (!order || !order.items) return [];
+        const names = order.items.map((i: any) => i.orderedBy?.name).filter((n: string) => n && n !== 'Comensal');
+        return [...new Set(names)] as string[];
+    });
+
     constructor() {
         this.initSession();
         this.setupTableListeners();
     }
 
     private async initSession() {
-        const totem = this.route.snapshot.paramMap.get('tableNumber');
+        const totemParam = this.route.snapshot.paramMap.get('tableNumber');
+        const sessionParam = this.route.snapshot.paramMap.get('sessionCode');
 
-        if (totem) {
-            this.session.set({
-                tableNumber: totem,
-                totemId: parseInt(totem),
-                activeOrder: null
-            });
-
-            // Fetch restaurant name
+        // REDIRECT LOGIC: If on physical totem ID route, get/init a secure session
+        if (totemParam) {
             try {
-                const restRes = await fetch(`${environment.apiUrl}/api/restaurant`);
-                if (restRes.ok) {
-                    const restData = await restRes.json();
-                    this.restaurantName.set(restData.name || 'Mi Restaurante');
-                }
-            } catch (e) {
-                this.restaurantName.set('Mi Restaurante');
-            }
-
-            try {
-                const res = await fetch(`${environment.apiUrl}/api/menu`);
+                const res = await fetch(`${environment.apiUrl}/api/totems/${totemParam}/session`);
+                if (!res.ok) throw new Error('Failed to get session');
                 const data = await res.json();
-                this.menu.set(data);
+
+                // Save meta-data locally so the /s/:id route can initialize faster
+                localStorage.setItem('disher_current_session', JSON.stringify({
+                    sessionId: data.sessionId,
+                    totemId: data.totemId,
+                    tableNumber: data.tableNumber,
+                    activeOrder: null
+                }));
+
+                this.router.navigate(['/s', data.sessionId], { replaceUrl: true });
+                return;
             } catch (e) {
-                console.error('Error fetching menu', e);
-                this.error.set('No se pudo cargar la carta.');
+                console.error('Session init error', e);
+                this.error.set('No se pudo establecer conexión con la mesa.');
+                this.loading.set(false);
+                return;
+            }
+        }
+
+        if (sessionParam) {
+            // We are already in a secure session URL
+            const savedSession = localStorage.getItem('disher_current_session');
+            let initialData: TableSession = {
+                tableNumber: '...',
+                sessionId: sessionParam,
+                activeOrder: null
+            };
+
+            // TRY to recover basic info from saved session if it matches
+            if (savedSession) {
+                const parsed = JSON.parse(savedSession);
+                if (parsed.sessionId === sessionParam) {
+                    initialData = parsed;
+                }
             }
 
-            await this.loadTableState();
+            this.session.set(initialData);
+
+            // Fetch data
+            try {
+                // Get Menu
+                const menuRes = await fetch(`${environment.apiUrl}/api/menu`);
+                this.menu.set(await menuRes.json());
+
+                // Get Real Session State (this will also populate restaurantName and tableNumber)
+                await this.loadTableState();
+
+                // Store for recovery
+                localStorage.setItem('disher_current_session', JSON.stringify(this.session()));
+            } catch (e) {
+                console.error('Error loading session data', e);
+                this.error.set('Error al cargar la información de la sesión.');
+            }
+        } else {
+            this.error.set('Enlace no válido. Por favor, escanea el código QR de nuevo.');
         }
+
         this.loading.set(false);
     }
 
@@ -82,21 +133,74 @@ export class CustomerViewModel {
                 prev.map(item => item._id === updatedItem._id ? updatedItem : item)
             );
         });
+
+        this.comms.subscribeToConfig((config: any) => {
+            if (config.name) this.restaurantName.set(config.name);
+        });
+
+        this.comms.subscribeToSessionEnd((data: any) => {
+            const current = this.session();
+            if (current && (data.sessionId === current.sessionId || data.totemId === current.totemId || data.tableNumber === current.tableNumber)) {
+                console.log('[SECURITY] Table session ended. Clearing local data.');
+
+                // Clear cart
+                this.cart.set([]);
+                if (current.sessionId) localStorage.removeItem(`disher_cart_${current.sessionId}`);
+                localStorage.removeItem('disher_current_session');
+
+                // Clear user name
+                this.auth.logout(); // This clears the session cookie too
+                this.comms.userName.set('Comensal');
+                localStorage.removeItem('disher_user_name');
+
+                // Clear local active order
+                this.session.update(s => s ? { ...s, activeOrder: null, sessionId: undefined } : s);
+            }
+        });
+
+        this.comms.subscribeToSystemReset(() => {
+            console.log('[SECURITY] Global system reset (Cierre de Caja). Clearing all sessions.');
+            this.auth.logout();
+            this.comms.userName.set('Comensal');
+            localStorage.removeItem('disher_user_name');
+            localStorage.removeItem('disher_current_session');
+            this.session.set(null);
+            this.router.navigate(['/'], { replaceUrl: true });
+        });
     }
 
     private async loadTableState() {
         const s = this.session();
-        if (!s) return;
+        if (!s || !s.sessionId) return;
 
         try {
-            const savedCart = localStorage.getItem(`disher_cart_${s.tableNumber}`);
+            // Fetch restaurant config for basics
+            const restRes = await fetch(`${environment.apiUrl}/api/restaurant`);
+            const restData = await restRes.json();
+            this.restaurantName.set(restData.name);
+
+            const savedCart = localStorage.getItem(`disher_cart_${s.sessionId}`);
             if (savedCart) this.cart.set(JSON.parse(savedCart));
 
-            const res = await fetch(`${environment.apiUrl}/api/orders/table/${s.tableNumber}`);
+            const res = await fetch(`${environment.apiUrl}/api/orders/session/${s.sessionId}`);
             const activeOrder = await res.json();
 
             if (activeOrder) {
-                this.session.update(prev => prev ? { ...prev, activeOrder } : prev);
+                if (activeOrder.status === 'completed' || activeOrder.paymentStatus === 'paid') {
+                    // Safety check: if order is already paid, invalidating session locally
+                    this.session.update(prev => prev ? { ...prev, activeOrder: null } : prev);
+                    // If it's already paid, the user should scan QR AGAIN to get a new session
+                    return;
+                }
+
+                this.session.update(prev => prev ? {
+                    ...prev,
+                    activeOrder,
+                    tableNumber: activeOrder.tableNumber,
+                    totemId: activeOrder.totemId
+                } : prev);
+            } else {
+                this.session.update(prev => prev ? { ...prev, activeOrder: null } : prev);
             }
         } catch (e) {
             console.error('Error loading table state', e);
@@ -186,8 +290,8 @@ export class CustomerViewModel {
         this.cart.update(current => {
             const newCart = [...current, cartItem];
             const s = this.session();
-            if (s) {
-                localStorage.setItem(`disher_cart_${s.tableNumber}`, JSON.stringify(newCart));
+            if (s && s.sessionId) {
+                localStorage.setItem(`disher_cart_${s.sessionId}`, JSON.stringify(newCart));
             }
             return newCart;
         });
@@ -209,8 +313,8 @@ export class CustomerViewModel {
         this.cart.update(current => {
             const newCart = [...current, cartItem];
             const s = this.session();
-            if (s) {
-                localStorage.setItem(`disher_cart_${s.tableNumber}`, JSON.stringify(newCart));
+            if (s && s.sessionId) {
+                localStorage.setItem(`disher_cart_${s.sessionId}`, JSON.stringify(newCart));
             }
             return newCart;
         });
@@ -223,6 +327,7 @@ export class CustomerViewModel {
         const orderData = {
             tableNumber: s?.tableNumber,
             totemId: s?.totemId,
+            sessionId: s?.sessionId,
             items: this.cart(),
             totalAmount: this.cart().reduce((acc, item) => acc + (item.price * item.quantity), 0)
         };
@@ -230,7 +335,7 @@ export class CustomerViewModel {
         try {
             await this.comms.sendOrder(orderData);
             this.cart.set([]);
-            if (s) localStorage.removeItem(`disher_cart_${s.tableNumber}`);
+            if (s && s.sessionId) localStorage.removeItem(`disher_cart_${s.sessionId}`);
             await this.loadTableState();
         } catch (error) {
             console.error('Failed to place order', error);

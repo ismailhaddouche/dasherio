@@ -10,6 +10,7 @@ export interface POSTable {
     status: 'empty' | 'occupied' | 'billing';
     order?: any;
     id: number;
+    isVirtual?: boolean;
 }
 
 @Injectable()
@@ -48,7 +49,8 @@ export class POSViewModel {
                 name: totem.name,
                 id: totem.id,
                 status: order ? 'occupied' : 'empty',
-                order: order
+                order: order,
+                isVirtual: totem.isVirtual
             } as POSTable;
         });
     });
@@ -287,6 +289,10 @@ export class POSViewModel {
             p = this.localConfig()?.printer;
         }
 
+        if (!p) {
+            alert(this.translate.instant('POS.NO_PRINTER_CONFIGURED'));
+        }
+
         if (p?.type === 'thermal' || p?.type === 'network') {
             const ip = p.address || p.ip;
             console.log(`Printing to thermal/network ${ip}:${p.port || p.connection}...`);
@@ -449,6 +455,53 @@ export class POSViewModel {
             if (parts > 1) this.processPayment(undefined, 'equal', parts);
         } else if (type === '2') {
             alert(this.translate.instant('POS.SPLIT_BY_USER_HINT'));
+        }
+    }
+
+    public async deleteVirtualTable(tableId: number) {
+        if (!confirm(this.translate.instant('POS.DELETE_VIRTUAL_CONFIRM'))) return;
+
+        try {
+            const res = await fetch(`${environment.apiUrl}/api/totems/${tableId}`, {
+                method: 'DELETE',
+                headers: this.auth.getHeaders(),
+                credentials: 'include'
+            });
+
+            if (!res.ok) throw new Error('Error deleting virtual table');
+
+            // Refresh totems
+            const totems = await fetch(`${environment.apiUrl}/api/totems`).then(r => r.json());
+            this.tables.set(totems);
+            if (this.selectedTable()?.id === tableId) {
+                this.selectedTable.set(null);
+            }
+        } catch (e) {
+            console.error('Error deleting virtual table', e);
+            alert(this.translate.instant('POS.DELETE_VIRTUAL_ERROR'));
+        }
+    }
+
+    public async closeShift() {
+        if (!confirm(this.translate.instant('POS.CONFIRM_CLOSE_SHIFT'))) return;
+
+        try {
+            const res = await fetch(`${environment.apiUrl}/api/close-shift`, {
+                method: 'POST',
+                headers: this.auth.getHeaders()
+            });
+
+            if (!res.ok) throw new Error('Error closing shift');
+
+            const result = await res.json();
+            alert(result.message);
+
+            // Reload EVERYTHING
+            this.initPOS();
+            this.selectedTable.set(null);
+        } catch (e) {
+            console.error('Error closing shift', e);
+            alert(this.translate.instant('POS.CLOSE_SHIFT_ERROR'));
         }
     }
 }

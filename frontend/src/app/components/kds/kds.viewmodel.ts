@@ -144,12 +144,14 @@ export class KDSViewModel {
 
         const msg = `🖨️ (${this.translate.instant('KDS.TICKET_TITLE')})\\n----------------------\\n${this.translate.instant('KDS.ITEM_LABEL')}: ${item.name}${details}\\n${this.translate.instant('KDS.QTY_LABEL')}: ${item.quantity}\\n${this.translate.instant('KDS.ORIGIN_LABEL')}: ${tableName}\\n----------------------`;
 
+        if (!p) {
+            alert(this.translate.instant('KDS.NO_PRINTER_CONFIGURED'));
+        }
+
         if (p?.type === 'thermal') {
             alert(`🖨️ (${this.translate.instant('KDS.PRINTER_THERMAL')} ${p.ip})\\n${msg}`);
         } else {
             alert(`🖨️ (${this.translate.instant('KDS.PRINTER_SYSTEM')})\\n${msg}`);
-            // window.print() is logic for whole page, for item ticket we'd need a hidden iframe usually
-            // but for this MVP, alert simulation is enough as agreed.
         }
     }
 

@@ -206,36 +206,28 @@ import { TranslateModule } from '@ngx-translate/core';
   `,
   styles: [`
     .editor-container {
-      display: grid;
-      grid-template-columns: 400px 1fr;
-      grid-template-rows: auto 1fr;
+      display: flex;
+      flex-direction: column;
       gap: 24px;
-      height: 100vh;
-      padding: 0;
+      min-height: 100vh;
       background: transparent;
-      overflow: hidden;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding-bottom: 40px;
     }
 
-    @media (max-width: 1024px) {
-      .editor-container { grid-template-columns: 320px 1fr; gap: 16px; }
-    }
+
     @media (max-width: 768px) {
-      .editor-container {
-        grid-template-columns: 1fr;
-        height: auto;
-        overflow: visible;
-      }
-      .menu-structure { max-height: 45vh; }
-      .editor-detail { overflow: visible; padding-right: 0; }
-      .form-grid { grid-template-columns: 1fr; gap: 20px; }
+      .items-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; gap: 24px; }
       .form-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
       }
-      .form-actions { width: 100%; }
-      .form-actions button { flex: 1; }
-      .edit-form { padding: 20px; gap: 20px; }
+      .form-actions { width: 100%; display: flex; gap: 12px; }
+      .form-actions button { flex: 1; justify-content: center; }
+      .edit-form { padding: 24px; }
       .menu-sections-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 480px) {
@@ -254,8 +246,6 @@ import { TranslateModule } from '@ngx-translate/core';
       display: flex;
       flex-direction: column;
       gap: 24px;
-      padding: 24px;
-      overflow-y: auto;
     }
 
     .categories-list {
@@ -276,8 +266,8 @@ import { TranslateModule } from '@ngx-translate/core';
 
     .items-grid {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
     }
 
     .menu-item-card {
@@ -310,7 +300,7 @@ import { TranslateModule } from '@ngx-translate/core';
     .inline-icon { display: inline-block; vertical-align: text-bottom; margin-right: 4px; }
     .mr-2 { margin-right: 8px; }
 
-    .editor-detail { overflow-y: auto; padding-right: 8px; }
+    .editor-detail { width: 100%; }
 
     .edit-form { padding: 40px; display: flex; flex-direction: column; gap: 32px; }
 

@@ -139,10 +139,10 @@
         "ASSOCIATE_ERROR": "No se pudo asociar el plato.",
         "ADD_ITEM_ERROR": "No se pudo añadir el producto",
         "CUSTOM_VALIDATION_ERROR": "Por favor, introduce un nombre y un precio válido",
-        "OPEN_TABLE_ERROR": "No se pudo abrir la mesa",
-        "SPLIT_PROMPT_TYPE": "¿Cómo deseas dividir?\n1. Partes iguales\n2. Por comensal",
         "SPLIT_PROMPT_PARTS": "¿En cuántas partes?",
-        "SPLIT_BY_USER_HINT": "Haz clic en el nombre de un comensal para cobrar su parte individual."
+        "SPLIT_BY_USER_HINT": "Haz clic en el nombre de un comensal para cobrar su parte individual.",
+        "DELETE_VIRTUAL_CONFIRM": "¿Eliminar esta mesa temporal vacía?",
+        "DELETE_VIRTUAL_ERROR": "No se pudo eliminar la mesa temporal."
     },
     "CHECKOUT": {
         "BACK": "← Botón Volver",
@@ -285,7 +285,11 @@
         "ADD_VIRTUAL": "Abrir Mesa Temporal",
         "DELETE_CONFIRM": "¿Eliminar esta mesa temporal?",
         "VIRTUAL_TAG": "TEMP",
-        "NEW_VIRTUAL_NAME": "Nombre (ej: Barra 2, Grupo Terraza)"
+        "NEW_VIRTUAL_NAME": "Nombre (ej: Barra 2, Grupo Terraza)",
+        "NEW_ORDER_FOR": "Nueva comanda para...",
+        "SELECT_NAME_OR_SKIP": "Selecciona un comensal existente o añádelo.",
+        "NEW_NAME_OPTIONAL": "Nombre (Opcional)",
+        "START_ORDERING": "Tomar nota"
     },
     "USER_MGMT": {
         "SYSTEM_ROLE": "Rol del sistema:",

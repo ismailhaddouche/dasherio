@@ -61,16 +61,19 @@ export class ThemeService {
             root.style.setProperty('--text-muted', `${theme.textColor}99`); // 60% opacity
 
             // Determine if it's a light theme by checking if text is dark
-            const isLightTheme = theme.textColor === '#0f172a' || theme.textColor === '#000000' || theme.textColor.startsWith('#1');
-            
+            const textHex = theme.textColor.toLowerCase();
+            const isLightTheme = textHex === '#0f172a' || textHex === '#000000' || textHex.startsWith('#1') || textHex.startsWith('#2');
+
             if (isLightTheme) {
                 // Light mode glass cards (White transparent)
                 root.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.7)');
                 root.style.setProperty('--glass-border', 'rgba(0, 0, 0, 0.1)');
+                root.style.setProperty('--bg-dark', theme.backgroundColor || '#f8fafc');
             } else {
                 // Dark mode glass cards (Dark transparent)
                 root.style.setProperty('--glass-bg', 'rgba(24, 24, 27, 0.65)');
                 root.style.setProperty('--glass-border', 'rgba(255, 255, 255, 0.1)');
+                root.style.setProperty('--bg-dark', theme.backgroundColor || '#09090b');
             }
         }
     }

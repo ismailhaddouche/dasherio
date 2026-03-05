@@ -130,13 +130,15 @@ import { TranslateModule } from '@ngx-translate/core';
   `,
   styles: [`
     .kds-container {
-      height: 100vh;
+      min-height: 100vh;
       background: var(--bg-dark);
       display: flex;
       flex-direction: column;
       padding: 16px;
-      gap: 16px;
-      overflow: hidden;
+      gap: 24px;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
     }
 
     .err-msg {
@@ -176,52 +178,36 @@ import { TranslateModule } from '@ngx-translate/core';
     .stat .lab { font-size: 0.7rem; opacity: 0.6; }
 
     .kds-layout {
-      flex: 1;
       display: flex;
-      gap: 16px;
-      overflow: hidden;
+      flex-direction: column;
+      gap: 24px;
+      width: 100%;
     }
 
     .kds-grid {
-      flex: 1;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-      gap: 16px;
-      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
       padding-bottom: 40px;
     }
 
     @media (max-width: 768px) {
-      .kds-container {
-        height: auto;
-        min-height: 100vh;
-        overflow: visible;
-      }
-      .kds-layout {
-        flex-direction: column;
-        overflow: visible;
-      }
-      .kds-grid {
-        grid-template-columns: 1fr;
-        overflow: visible;
-        padding-bottom: 24px;
-      }
-      .kds-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+      .kds-container { padding: 12px; gap: 16px; }
       .kds-controls {
-        flex-wrap: wrap;
-        gap: 12px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
         width: 100%;
       }
-      .btn-stock { width: 100%; justify-content: center; text-align: center; }
-      .stock-sidebar {
-        width: 100%;
-        max-height: 50vh;
-        overflow-y: auto;
-      }
-      .item-info { min-width: 0; }
-      .kds-item { flex-direction: column; align-items: flex-start; }
-      .action-buttons { width: 100%; justify-content: flex-start; }
-      .view-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .btn-stock { width: 100%; justify-content: center; }
+      .stat { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; }
+      .stat .val { font-size: 1.2rem; }
+      .stock-sidebar { position: static; width: 100%; max-height: none; }
+      .kds-item { flex-direction: column; align-items: stretch; gap: 12px; }
+      .action-buttons { justify-content: flex-start; }
+      .ready-actions { width: 100%; }
+      .ready-actions .btn-action { flex: 1; }
     }
 
     @media (max-width: 480px) {
@@ -331,12 +317,12 @@ import { TranslateModule } from '@ngx-translate/core';
     .cancelled-tag { color: #ef4444; font-weight: bold; font-size: 0.8rem; }
 
     .stock-sidebar {
-      width: 350px;
+      width: 100%;
       display: flex;
       flex-direction: column;
       gap: 20px;
       padding: 24px;
-      animation: slideInRight 0.3s ease-out;
+      margin-top: 16px;
     }
 
     .stock-sidebar header h3 { font-size: 1.1rem; margin-bottom: 4px; }

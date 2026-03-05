@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -35,15 +35,24 @@ import { TranslateModule } from '@ngx-translate/core';
               <div class="card-header">
                 @if (totem.isVirtual) {
                   <span class="type-tag">{{ 'WAITER.VIRTUAL_TAG' | translate }}</span>
-                  <button class="btn-delete" (click)="deleteTotem($event, totem.id)">
-                    <lucide-icon name="x" [size]="14"></lucide-icon>
-                  </button>
                 }
+                <div style="display: flex; gap: 8px; margin-left: auto;">
+                  <button class="btn-qr-action-mini" (click)="openQR($event, totem.id)" [title]="'DASHBOARD.VIEW_QR' | translate">
+                    <lucide-icon name="printer" [size]="12"></lucide-icon>
+                  </button>
+                  @if (totem.isVirtual) {
+                    <button class="btn-delete" (click)="deleteTotem($event, totem.id)">
+                      <lucide-icon name="x" [size]="14"></lucide-icon>
+                    </button>
+                  }
+                </div>
               </div>
               <div class="table-icon">🪑</div>
-              <div class="table-id">#{{ totem.id }}</div>
-              <div class="table-name">{{ totem.name }}</div>
-              <div class="tap-hint">{{ 'WAITER.TOUCH_ORDER' | translate }}</div>
+              <div class="table-info-box">
+                <div class="table-id">#{{ totem.id }}</div>
+                <div class="table-name">{{ totem.name }}</div>
+                <div class="tap-hint">{{ 'WAITER.TOUCH_ORDER' | translate }}</div>
+              </div>
             </div>
           } @empty {
             <div class="empty-state">
@@ -77,51 +86,48 @@ import { TranslateModule } from '@ngx-translate/core';
       display: flex;
       flex-direction: column;
       gap: 24px;
+      padding-bottom: 40px;
+      max-width: 800px;
+      margin: 0 auto;
     }
 
     .tables-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 20px;
-      padding-bottom: 40px;
     }
 
     @media (max-width: 768px) {
       .tables-grid {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 14px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .tables-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
+        grid-template-columns: 1fr;
+        gap: 16px;
       }
     }
 
     .table-card {
-      padding: 32px 20px;
+      padding: 24px;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      justify-content: center;
-      text-align: center;
+      gap: 20px;
       cursor: pointer;
       border: 1px solid var(--glass-border);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative; /* necesario para .card-header absolute */
+      position: relative;
+      text-align: left;
     }
 
-    @media (max-width: 768px) {
-      .table-card { padding: 24px 16px; }
+    .table-info-box {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
     }
 
     @media (max-width: 480px) {
-      .table-card { padding: 20px 12px; }
+      .table-card { padding: 16px; gap: 12px; }
       .table-id { font-size: 1.2rem; }
-      .table-icon { font-size: 1.5rem; margin-bottom: 8px; }
-      .table-name { font-size: 0.8rem; margin-bottom: 10px; }
+      .table-icon { font-size: 1.5rem; }
+      .table-name { font-size: 0.85rem; }
     }
 
     .table-card:hover {
@@ -132,34 +138,37 @@ import { TranslateModule } from '@ngx-translate/core';
     }
 
     .table-icon {
-      font-size: 2rem;
-      margin-bottom: 12px;
+      font-size: 2.5rem;
       opacity: 0.8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
     }
 
     .table-id {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       font-weight: 800;
       color: var(--accent-primary);
-      margin-bottom: 4px;
     }
 
     .table-name {
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 1rem;
       opacity: 0.8;
-      margin-bottom: 16px;
     }
 
     .tap-hint {
       font-size: 0.65rem;
       font-weight: 800;
       letter-spacing: 0.05em;
-      padding: 4px 8px;
+      padding: 4px 12px;
       background: rgba(99, 102, 241, 0.1);
       color: var(--accent-primary);
       border-radius: 4px;
+      margin-top: 8px;
+      align-self: flex-start;
     }
 
     .loader, .empty-state {
@@ -238,18 +247,86 @@ import { TranslateModule } from '@ngx-translate/core';
         color: white;
     }
 
+    .btn-qr-action-mini {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--glass-border);
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-qr-action-mini:hover {
+        background: var(--accent-primary);
+        color: var(--bg-dark);
+        border-color: var(--accent-primary);
+    }
+
     .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center;
-      z-index: 1000; backdrop-filter: blur(4px);
+      position: fixed; 
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.8); 
+      display: flex; 
+      align-items: flex-end; /* Mobile-first: slide from bottom */
+      justify-content: center;
+      z-index: 1000; 
+      backdrop-filter: blur(8px);
     }
     
     .modal-content {
-      max-width: 400px; width: 90%;
-      padding: 32px; display: flex; flex-direction: column; gap: 16px;
+      width: 100%;
+      max-width: 500px;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      border-radius: 24px 24px 0 0; /* Rounded top for mobile drawer look */
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+    @media (min-width: 768px) {
+      .modal-overlay {
+        align-items: center; /* Center on tablets/desktop */
+      }
+      .modal-content {
+        border-radius: 24px;
+        margin: 20px;
+      }
+    }
+
+    .modal-actions { 
+      display: flex; 
+      flex-direction: column; /* Stack actions on mobile */
+      gap: 12px; 
+      margin-top: 10px; 
+    }
+
+    @media (min-width: 480px) {
+      .modal-actions {
+        flex-direction: row;
+        justify-content: flex-end;
+      }
+    }
+
+    .modal-actions button {
+      width: 100%;
+    }
+
+    @media (min-width: 480px) {
+      .modal-actions button {
+        width: auto;
+      }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
     
     .mr-2 { margin-right: 8px; }
 
@@ -259,13 +336,13 @@ import { TranslateModule } from '@ngx-translate/core';
     }
   `]
 })
-export class WaiterViewComponent {
+export class WaiterViewComponent implements OnInit {
   private router = inject(Router);
   public totems = signal<any[]>([]);
   public loading = signal(true);
   public showAddModal = signal(false);
 
-  constructor() {
+  ngOnInit() {
     this.loadTotems();
   }
 
@@ -319,5 +396,11 @@ export class WaiterViewComponent {
 
   goToTable(id: number) {
     this.router.navigate(['/', id]);
+  }
+
+  openQR(event: Event, totemId: number) {
+    event.stopPropagation();
+    const base = window.location.origin;
+    window.open(`${base}/api/qr/${totemId}`, '_blank');
   }
 }
