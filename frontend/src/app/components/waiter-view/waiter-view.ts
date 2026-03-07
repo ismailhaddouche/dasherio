@@ -2,11 +2,12 @@ import { Component, inject, signal, OnInit, OnDestroy, computed } from '@angular
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
 import { CommunicationService } from '../../services/communication.service';
 import { TranslateModule } from '@ngx-translate/core';
-import { filter, Subscription } from 'rxjs';
+import { filter, Subscription, firstValueFrom } from 'rxjs';
 
 interface TotemWithStatus {
   id: number;
@@ -312,11 +313,11 @@ interface TotemWithStatus {
     .opacity-40 { opacity: 0.4; }
     .opacity-10 { opacity: 0.1; }
   `]
-
 })
 export class WaiterViewComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private comms = inject(CommunicationService);
+  private http = inject(HttpClient);
 
   public totems = signal<any[]>([]);
   public orders = signal<any[]>([]);
@@ -388,8 +389,8 @@ export class WaiterViewComponent implements OnInit, OnDestroy {
     try {
       // Load both in parallel
       const [totemsRes, ordersRes] = await Promise.all([
-        fetch(`${environment.apiUrl}/api/totems`).then(r => r.json()),
-        fetch(`${environment.apiUrl}/api/orders`).then(r => r.json())
+        firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/totems`)),
+        firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/orders`))
       ]);
 
       this.totems.set(totemsRes || []);
@@ -418,16 +419,13 @@ export class WaiterViewComponent implements OnInit, OnDestroy {
   async addVirtualTotem(name: string) {
     if (!name?.trim()) return;
     try {
-      const res = await fetch(`${environment.apiUrl}/api/totems`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ name: name.trim(), isVirtual: true })
-      });
-      if (res.ok) {
-        this.showAddModal.set(false);
-        await this.loadData();
-      }
+      await firstValueFrom(this.http.post(`${environment.apiUrl}/api/totems`, {
+        name: name.trim(),
+        isVirtual: true
+      }, { withCredentials: true }));
+
+      this.showAddModal.set(false);
+      await this.loadData();
     } catch (e) {
       console.error('Error adding virtual totem', e);
     }
@@ -437,11 +435,10 @@ export class WaiterViewComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     if (!confirm('¿Eliminar esta mesa temporal?')) return;
     try {
-      const res = await fetch(`${environment.apiUrl}/api/totems/${id}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      if (res.ok) this.loadData();
+      await firstValueFrom(this.http.delete(`${environment.apiUrl}/api/totems/${id}`, {
+        withCredentials: true
+      }));
+      await this.loadData();
     } catch (e) {
       console.error('Error deleting totem', e);
     }

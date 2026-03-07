@@ -267,7 +267,12 @@
         "USB": "Local USB",
         "CLOUD": "Cloud",
         "NO_PRINTERS": "No printers configured yet.",
-        "LANGUAGE": "Interface Language"
+        "LANGUAGE": "Interface Language",
+        "THIS_DEVICE": "This Device",
+        "DEVICE_SUB": "Specific configuration for this terminal.",
+        "ASSIGNED_PRINTER": "Assigned Printer",
+        "NO_PRINTER": "No Printer",
+        "AUTO_PRINT": "Auto Print"
     },
     "WAITER": {
         "PANEL": "Waiter Panel",

@@ -1,10 +1,12 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
 import { CommunicationService } from '../../services/communication.service';
+import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 export interface TableSession {
     tableNumber: string;
@@ -16,6 +18,7 @@ export interface TableSession {
 @Injectable()
 export class CustomerViewModel {
     public comms = inject(CommunicationService);
+    private http = inject(HttpClient);
     private route = inject(ActivatedRoute);
     private router = inject(Router);
     private theme = inject(ThemeService);
@@ -58,9 +61,7 @@ export class CustomerViewModel {
         // REDIRECT LOGIC: If on physical totem ID route, check if session is active
         if (totemParam) {
             try {
-                const res = await fetch(`${environment.apiUrl}/api/totems/${totemParam}/session`);
-                if (!res.ok) throw new Error('Failed to get session');
-                const data = await res.json();
+                const data: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/totems/${totemParam}/session`));
 
                 if (data.sessionId) {
                     // Session already exists! Redirect to it
@@ -82,9 +83,8 @@ export class CustomerViewModel {
                     });
 
                     // Fetch restaurant config for basics (name)
-                    const restRes = await fetch(`${environment.apiUrl}/api/restaurant`);
-                    if (restRes.ok) {
-                        const restData = await restRes.json();
+                    const restData: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/restaurant`));
+                    if (restData) {
                         this.restaurantName.set(restData.name);
                     }
 
@@ -121,8 +121,8 @@ export class CustomerViewModel {
             // Fetch data
             try {
                 // Get Menu
-                const menuRes = await fetch(`${environment.apiUrl}/api/menu`);
-                this.menu.set(await menuRes.json());
+                const menuRes = await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/menu`));
+                this.menu.set(menuRes || []);
 
                 // Get Real Session State (this will also populate restaurantName and tableNumber)
                 await this.loadTableState();
@@ -150,12 +150,9 @@ export class CustomerViewModel {
         if (currentSession && !currentSession.sessionId && currentSession.totemId) {
             this.loading.set(true);
             try {
-                const res = await fetch(`${environment.apiUrl}/api/totems/${currentSession.totemId}/session`, {
-                    method: 'POST',
-                    headers: this.auth.getHeaders() // or 'Content-Type': 'application/json' if anon
-                });
-                if (!res.ok) throw new Error('Failed to start session');
-                const data = await res.json();
+                const data: any = await firstValueFrom(this.http.post(`${environment.apiUrl}/api/totems/${currentSession.totemId}/session`, {}, {
+                    headers: this.auth.getHeaders()
+                }));
 
                 // Immediately navigate to the secure session URL.
                 this.router.navigate(['/s', data.sessionId], { replaceUrl: true });
@@ -221,15 +218,13 @@ export class CustomerViewModel {
 
         try {
             // Fetch restaurant config for basics
-            const restRes = await fetch(`${environment.apiUrl}/api/restaurant`);
-            const restData = await restRes.json();
+            const restData: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/restaurant`));
             this.restaurantName.set(restData.name);
 
             const savedCart = localStorage.getItem(`disher_cart_${s.sessionId}`);
             if (savedCart) this.cart.set(JSON.parse(savedCart));
 
-            const res = await fetch(`${environment.apiUrl}/api/orders/session/${s.sessionId}`);
-            const activeOrder = await res.json();
+            const activeOrder: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/orders/session/${s.sessionId}`));
 
             if (activeOrder) {
                 if (activeOrder.status === 'completed' || activeOrder.paymentStatus === 'paid') {

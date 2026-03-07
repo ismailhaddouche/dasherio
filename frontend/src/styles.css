@@ -7,31 +7,31 @@
     --md-sys-color-on-primary: #381e72;
     --md-sys-color-primary-container: #4f378b;
     --md-sys-color-on-primary-container: #eaddff;
-    
+
     --md-sys-color-secondary: #ccc2dc;
     --md-sys-color-on-secondary: #332d41;
     --md-sys-color-secondary-container: #4a4458;
     --md-sys-color-on-secondary-container: #e8def8;
-    
+
     --md-sys-color-tertiary: #efb8c8;
     --md-sys-color-on-tertiary: #492532;
     --md-sys-color-tertiary-container: #633b48;
     --md-sys-color-on-tertiary-container: #ffd8e4;
-    
+
     --md-sys-color-error: #f2b8b5;
     --md-sys-color-on-error: #601410;
     --md-sys-color-error-container: #8c1d18;
     --md-sys-color-on-error-container: #f9dedc;
-    
+
     --md-sys-color-background: #1c1b1f;
     --md-sys-color-on-background: #e6e1e5;
-    
+
     --md-sys-color-surface: #1c1b1f;
     --md-sys-color-on-surface: #e6e1e5;
     --md-sys-color-surface-variant: #49454f;
     --md-sys-color-on-surface-variant: #cac4d0;
     --md-sys-color-outline: #938f99;
-    
+
     /* Elevations (Surface Tint Colors) */
     --md-sys-color-surface-1: color-mix(in srgb, var(--md-sys-color-primary) 5%, var(--md-sys-color-surface));
     --md-sys-color-surface-2: color-mix(in srgb, var(--md-sys-color-primary) 8%, var(--md-sys-color-surface));
@@ -66,7 +66,9 @@
     --sidebar-collapsed-width: 88px;
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -80,7 +82,12 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     font-family: 'Outfit', sans-serif;
     font-weight: 500;
     letter-spacing: -0.01em;
@@ -91,7 +98,8 @@ h1, h2, h3, h4, h5, h6 {
    ───────────────────────────────────────────────────────────────────────────── */
 
 /* Material Card (Surface) */
-.glass-card, .md-card {
+.glass-card,
+.md-card {
     background: var(--md-sys-color-surface-1);
     border-radius: var(--radius-xl);
     padding: var(--space-lg);
@@ -102,7 +110,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .md-card-elevated {
     background: var(--md-sys-color-surface-2);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .clickable-card {
@@ -115,7 +123,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Material Button Base */
-button, .btn-primary, .btn-secondary, .btn-danger {
+button,
+.btn-primary,
+.btn-secondary,
+.btn-danger {
     font-family: 'Outfit', sans-serif;
     font-weight: 500;
     font-size: 0.875rem;
@@ -141,7 +152,7 @@ button, .btn-primary, .btn-secondary, .btn-danger {
 
 .btn-primary:hover {
     background: color-mix(in srgb, var(--md-sys-color-primary) 92%, white);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .btn-primary:active {
@@ -150,13 +161,39 @@ button, .btn-primary, .btn-secondary, .btn-danger {
 }
 
 /* Secondary Button (Tonal) */
-.btn-secondary {
+.btn-secondary,
+.btn-tonal {
     background: var(--md-sys-color-secondary-container);
     color: var(--md-sys-color-on-secondary-container);
 }
 
-.btn-secondary:hover {
-    background: color-mix(in srgb, var(--md-sys-color-secondary-container) 90%, white);
+.btn-secondary:hover,
+.btn-tonal:hover {
+    background: color-mix(in srgb, var(--md-sys-color-secondary-container) 92%, white);
+}
+
+/* Small Buttons */
+.btn-sm,
+.btn-tonal-sm {
+    padding: 6px 16px;
+    font-size: 0.75rem;
+    height: 32px;
+}
+
+.btn-tonal-sm {
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+}
+
+/* Text Buttons */
+.btn-text {
+    background: transparent;
+    color: var(--md-sys-color-primary);
+    padding: 10px 16px;
+}
+
+.btn-text:hover {
+    background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
 }
 
 /* Outlined Button */
@@ -171,13 +208,23 @@ button, .btn-primary, .btn-secondary, .btn-danger {
 }
 
 /* Danger Button (Error) */
-.btn-danger {
+.btn-danger,
+.btn-error {
     background: var(--md-sys-color-error-container);
     color: var(--md-sys-color-on-error-container);
 }
 
-.btn-danger:hover {
+.btn-danger:hover,
+.btn-error:hover {
     background: color-mix(in srgb, var(--md-sys-color-error-container) 90%, white);
+}
+
+.btn-error-tonal-sm {
+    background: var(--md-sys-color-error-container);
+    color: var(--md-sys-color-on-error-container);
+    padding: 4px 12px;
+    font-size: 0.7rem;
+    height: 28px;
 }
 
 /* Floating Action Button (FAB) */
@@ -190,7 +237,7 @@ button, .btn-primary, .btn-secondary, .btn-danger {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
     position: fixed;
     bottom: 24px;
     right: 24px;
@@ -199,11 +246,14 @@ button, .btn-primary, .btn-secondary, .btn-danger {
 
 .fab:hover {
     background: color-mix(in srgb, var(--md-sys-color-primary-container) 90%, white);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
 }
 
 /* Material Inputs */
-.glass-input, input, select, textarea {
+.glass-input,
+input,
+select,
+textarea {
     background: var(--md-sys-color-surface-variant);
     border: none;
     border-radius: var(--radius-sm) var(--radius-sm) 0 0;
@@ -215,7 +265,8 @@ button, .btn-primary, .btn-secondary, .btn-danger {
     width: 100%;
 }
 
-.glass-input:focus, input:focus {
+.glass-input:focus,
+input:focus {
     outline: none;
     border-bottom: 2px solid var(--md-sys-color-primary);
     background: color-mix(in srgb, var(--md-sys-color-surface-variant) 95%, white);
@@ -323,13 +374,16 @@ button, .btn-primary, .btn-secondary, .btn-danger {
     inset: 0;
     z-index: -1;
     background: radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent), transparent 40%),
-                radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--md-sys-color-tertiary) 8%, transparent), transparent 40%);
+        radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--md-sys-color-tertiary) 8%, transparent), transparent 40%);
     background-color: var(--md-sys-color-background);
 }
 
 /* Animations */
 @keyframes md-ripple {
-    to { transform: scale(4); opacity: 0; }
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
 }
 
 .ripple-effect {
@@ -338,19 +392,66 @@ button, .btn-primary, .btn-secondary, .btn-danger {
 }
 
 /* Typography styles */
-.text-headline-large { font-size: 2rem; font-weight: 400; line-height: 2.5rem; }
-.text-headline-medium { font-size: 1.75rem; font-weight: 400; line-height: 2.25rem; }
-.text-title-large { font-size: 1.375rem; font-weight: 400; line-height: 1.75rem; }
-.text-title-medium { font-size: 1rem; font-weight: 500; line-height: 1.5rem; letter-spacing: 0.15px; }
-.text-body-large { font-size: 1rem; font-weight: 400; line-height: 1.5rem; letter-spacing: 0.5px; }
-.text-body-medium { font-size: 0.875rem; font-weight: 400; line-height: 1.25rem; letter-spacing: 0.25px; }
-.text-label-large { font-size: 0.875rem; font-weight: 500; line-height: 1.25rem; letter-spacing: 0.1px; }
+.text-headline-large {
+    font-size: 2rem;
+    font-weight: 400;
+    line-height: 2.5rem;
+}
+
+.text-headline-medium {
+    font-size: 1.75rem;
+    font-weight: 400;
+    line-height: 2.25rem;
+}
+
+.text-title-large {
+    font-size: 1.375rem;
+    font-weight: 400;
+    line-height: 1.75rem;
+}
+
+.text-title-medium {
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5rem;
+    letter-spacing: 0.15px;
+}
+
+.text-body-large {
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5rem;
+    letter-spacing: 0.5px;
+}
+
+.text-body-medium {
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.25rem;
+    letter-spacing: 0.25px;
+}
+
+.text-label-large {
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+    letter-spacing: 0.1px;
+}
 
 /* Custom Scrollbar MD3 */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 ::-webkit-scrollbar-thumb {
     background: var(--md-sys-color-surface-variant);
     border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--md-sys-color-outline); }
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--md-sys-color-outline);
+}

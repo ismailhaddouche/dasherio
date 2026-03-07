@@ -267,7 +267,12 @@
         "USB": "USB Local",
         "CLOUD": "Nube",
         "NO_PRINTERS": "No hay impresoras configuradas.",
-        "LANGUAGE": "Idioma de la Interfaz"
+        "LANGUAGE": "Idioma de la Interfaz",
+        "THIS_DEVICE": "Este Dispositivo",
+        "DEVICE_SUB": "Configuración específica para este terminal.",
+        "ASSIGNED_PRINTER": "Impresora Asignada",
+        "NO_PRINTER": "Sin Impresora",
+        "AUTO_PRINT": "Impresión Automática"
     },
     "WAITER": {
         "PANEL": "Panel de Camarero",

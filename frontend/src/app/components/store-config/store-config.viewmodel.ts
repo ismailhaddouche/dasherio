@@ -1,10 +1,13 @@
 import { Injectable, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class StoreConfigViewModel {
     private auth = inject(AuthService);
+    private http = inject(HttpClient);
 
     public config = signal<any>({
         name: '',
@@ -65,8 +68,7 @@ export class StoreConfigViewModel {
     private async loadConfig() {
         this.loading.set(true);
         try {
-            const res = await fetch(`${environment.apiUrl}/api/restaurant`);
-            const data = await res.json();
+            const data: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/restaurant`));
 
             // Merge with defaults to avoid null checks in template
             this.config.set({
@@ -89,13 +91,9 @@ export class StoreConfigViewModel {
         this.message.set('');
 
         try {
-            const res = await fetch(`${environment.apiUrl}/api/restaurant`, {
-                method: 'PATCH',
-                headers: this.auth.getHeaders(),
-                body: JSON.stringify(this.config())
-            });
-
-            if (!res.ok) throw new Error('Error saving');
+            await firstValueFrom(this.http.patch(`${environment.apiUrl}/api/restaurant`, this.config(), {
+                headers: this.auth.getHeaders()
+            }));
 
             this.message.set('✅ Configuración guardada correctamente. Recargando...');
             setTimeout(() => {
@@ -116,22 +114,14 @@ export class StoreConfigViewModel {
         formData.append('logo', file);
 
         try {
-            const res = await fetch(`${environment.apiUrl}/api/upload-logo`, {
-                method: 'POST',
-                credentials: 'include', // Ensure httpOnly cookie is sent
-                body: formData
-            });
+            const res: any = await firstValueFrom(this.http.post(`${environment.apiUrl}/api/upload-logo`, formData, {
+                withCredentials: true // Ensure httpOnly cookie is sent
+            }));
 
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || 'Error al subir el logo');
-            }
-
-            const { url } = await res.json();
-            this.config.set({ ...this.config(), logo: url });
+            this.config.set({ ...this.config(), logo: res.url });
 
         } catch (e: any) {
-            alert(e.message);
+            alert(e.message || 'Error al subir el logo');
         } finally {
             this.saving.set(false);
         }
