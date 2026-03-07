@@ -257,7 +257,7 @@ import { TranslateModule } from '@ngx-translate/core';
                             <span class="qty text-primary-color">1x</span>
                             <span class="text-title-medium">{{ item.name }}</span>
                         </div>
-                        <button class="btn-sm" style="padding: 4px; border-radius: 50%; width: 32px; height: 32px; background: var(--md-sys-color-surface-variant);" (click)="vm.cart.set(vm.cart().filter(i => i !== item))">
+                        <button class="btn-sm" style="padding: 4px; border-radius: 50%; width: 32px; height: 32px; background: var(--md-sys-color-surface-variant);" (click)="vm.removeFromCart(item)">
                             <lucide-icon name="x" [size]="14"></lucide-icon>
                         </button>
                     </div>

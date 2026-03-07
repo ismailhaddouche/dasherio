@@ -366,6 +366,17 @@ export class CustomerViewModel {
         });
     }
 
+    public removeFromCart(item: any) {
+        this.cart.update(current => {
+            const newCart = current.filter(i => i.addedAt !== item.addedAt);
+            const s = this.session();
+            if (s && s.sessionId) {
+                localStorage.setItem(`disher_cart_${s.sessionId}`, JSON.stringify(newCart));
+            }
+            return newCart;
+        });
+    }
+
     public async placeOrder() {
         if (this.cart().length === 0) return;
 
