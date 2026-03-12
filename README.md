@@ -260,6 +260,7 @@ El proyecto engloba módulos específicos de información suplementaria para man
 | `docs/ARCHITECTURE.md`| Desglose sistemático del pipeline técnico y diagramas de estados. |
 | `docs/API.md` | Listado exahustivo formal de la convención de endpoints REST JSON y modelos. |
 | `docs/MAINTENANCE.md` | Protocolos de retención de bases de datos, copias de seguridad CRON y rollback. |
+| `docs/TESTING_AND_CI.md` | Documentación profunda de integración continua (GitHub Actions), despliegues y pruebas unitarias/E2E (Jest). |
 | `CONTRIBUTING.md` | Manual de convenciones de código para desarrolladores externos interesados en el fork. |
 | `SECURITY.md` | Flujos de información autorizada referentes al reporte de vulnerabilidades zero-day. |
 | `CHANGELOG.md` | Control oficial estricto de revisiones incrementales y cambios consolidados. |
