@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
-const Restaurant = require('./src/models/Restaurant');
-const User = require('./src/models/User');
+import mongoose from 'mongoose';
+import Restaurant from './src/models/Restaurant.js';
+import User from './src/models/User.js';
 
 // Use MONGODB_URI (set by docker-compose) or MONGO_URI fallback
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
