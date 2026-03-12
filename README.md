@@ -139,8 +139,10 @@ La ejecución guiada del script cubre las siguientes seis etapas críticas:
 El instalador ajustará el proxy inverso según la decisión de red tomada inicialmente:
 
 - **Dominio Público (FQDN):** Por ejemplo, `app.restaurante.com`. Caddy Server gestionará la obtención y rotación automática de certificados TLS a través de Let's Encrypt / ZeroSSL, forzando todas las comunicaciones hacia HTTPS (puerto 443).
-- **Dominio Local (mDNS / LAN):** Orientado a soluciones on-premise puras sin salida al exterior.
-- **Direccionamiento IP:** Acceso crudo mediante dirección IPv4. El proxy enrutará sobre el puerto configurado (puerto 80) sin generar certificados SSL.
+- **Dominio Local (mDNS / LAN):** Orientado a soluciones on-premise puras sin conexión a internet.
+- **Direccionamiento IP:** Acceso directo sin dominio (el proxy enrutará sobre el puerto HTTP configurado de forma plana, sin generar certificados SSL). Se divide en dos supuestos:
+  - **IP Local (LAN):** Para instalaciones en equipos físicos dentro del restaurante (ej. ordenador en caja o Raspberry Pi). Los dispositivos se conectan a través de la red del router Wi-Fi local. **No requiere conexión a Internet**.
+  - **IP Pública (VPS / Nube):** Para alojamiento en servidores externos. Se accede universalmente a la plataforma desde cualquier lugar a través de la IP estática (pública) asignada por el proveedor.
 
 ### 5.3 Resumen de Credenciales
 
