@@ -1,4 +1,4 @@
-import { jest, describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { jest, describe, it, expect } from '@jest/globals';
 import jwt from 'jsonwebtoken';
 
 const TEST_SECRET = process.env.JWT_SECRET || 'disher_secret_key_2026';

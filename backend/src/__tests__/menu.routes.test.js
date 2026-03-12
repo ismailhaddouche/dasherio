@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
 import request from 'supertest';
-import { setupDB, teardownDB, clearDB } from './setup.js';
+import { setupDB, teardownDB } from './setup.js';
 import app from '../app.js';
 import MenuItem from '../models/MenuItem.js';
 import User from '../models/User.js';
@@ -10,7 +10,6 @@ import { generateToken } from '../middleware/auth.middleware.js';
 process.env.JWT_SECRET = 'test_secret_key_for_testing';
 
 let adminToken;
-let kitchenToken;
 
 beforeAll(async () => {
     await setupDB();
@@ -21,7 +20,6 @@ beforeAll(async () => {
     await kitchen.save();
 
     adminToken = generateToken({ userId: admin._id.toString(), username: 'testadmin', role: 'admin' });
-    kitchenToken = generateToken({ userId: kitchen._id.toString(), username: 'testkitchen', role: 'kitchen' });
 });
 
 afterAll(async () => {

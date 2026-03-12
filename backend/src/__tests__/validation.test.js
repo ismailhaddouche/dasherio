@@ -1,5 +1,4 @@
 import { describe, it, expect } from '@jest/globals';
-import Joi from 'joi';
 import { menuItemSchema, orderItemSchema, orderPlacementSchema } from '../middleware/validation.middleware.js';
 
 describe('Validation Middleware — Joi Schemas', () => {
