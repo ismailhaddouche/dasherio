@@ -133,6 +133,7 @@ jobs:
           MONGODB_URI: mongodb://localhost:27017/test-disher
           JWT_SECRET: test-secret-key-do-not-use-in-production
           NODE_ENV: test
+          NODE_OPTIONS: --experimental-vm-modules
         run: npm test
 
   security-scan:
