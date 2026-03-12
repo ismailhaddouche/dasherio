@@ -106,7 +106,7 @@ Todos los servicios están configurados con un **driver de logging `json-file`**
 | **Transporte** | Caddy | Refuerza HTTPS con HSTS y gestiona automáticamente los certificados TLS. |
 | **Autenticación (BD)** | MongoDB | El acceso a la base de datos requiere un nombre de usuario y contraseña. |
 | **Autenticación (API)** | JWT en Cookies `HttpOnly` | El token de sesión no es accesible mediante JavaScript en el navegador. |
-| **Autorización** | RBAC | Middleware que verifica los roles de usuario (`admin`, `kitchen`, `pos`) en cada ruta protegida. |
+| **Autorización** | RBAC | Middleware que verifica los roles de usuario (`admin`, `waiter`, `kitchen`, `pos`) en cada ruta protegida. |
 | **Validación de Entrada** | `express-validator` | Valida y sanea toda la entrada de la API para prevenir ataques de inyección. |
 | **Contenedores** | Docker | Todos los servicios se ejecutan con **usuarios no-root** para minimizar el impacto de una posible vulnerabilidad. |
 | **Dependencias** | `npm audit` | Se realizan auditorías de seguridad de las dependencias en el pipeline de CI/CD. |
