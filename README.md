@@ -218,6 +218,7 @@ El sistema impone aislamiento rígido de sus módulos. A continuación se define
 
 | Definición Lógica del Módulo | Endpoint Base de Acceso | Privilegio de Acceso Asignado |
 |------------------------------|-------------------------|-------------------------------|
+| Autenticación de Personal | `/login` | Unauthenticated |
 | Panel Estadístico de Administración | `/admin/dashboard` | Administrator |
 | Interfaz Operativa de Sala (Camareros) | `/admin/waiter` | Waiter Staff / Administrator |
 | Display de Coordinación Cocina (KDS)| `/admin/kds` | Kitchen Staff / Administrator |
@@ -225,7 +226,9 @@ El sistema impone aislamiento rígido de sus módulos. A continuación se define
 | Suite de Edición de Catálogo | `/admin/menu` | Administrator |
 | Gestión Externa del Personal | `/admin/users` | Administrator |
 | Configurador Global Corporativo | `/admin/config` | Administrator |
-| Consulta Pública de Mesa (Client)| `/:tableNumber` | Unauthenticated (User) |
+| Menú Digital (Acceso por Mesa) | `/:tableNumber` | Unauthenticated (User) |
+| Menú Digital (Acceso por Sesión Activa) | `/s/:sessionCode` | Unauthenticated (User) |
+| Solicitud Física de Cuenta (Petición de Cobro) | `/:tableNumber/checkout`<br>`/s/:sessionCode/checkout`| Unauthenticated (User) |
 
 ---
 
