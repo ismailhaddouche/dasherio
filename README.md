@@ -1,6 +1,6 @@
 # Disher.io v1.0 — Plataforma Open-Source para Gestión de Restaurantes
 
-Disher.io es una plataforma de gestión de restaurantes autoalojada y lista para producción, diseñada para pequeños y medianos establecimientos. Ofrece sincronización de pedidos en tiempo real entre clientes, personal de cocina y cajeros, todo desde un único despliegue.
+Disher.io es una plataforma de gestión de restaurantes autoalojada y lista para producción, diseñada arquitectónicamente para pequeños y medianos establecimientos. Proporciona sincronización de pedidos en tiempo real entre clientes, personal de cocina y cajeros, operando desde un único despliegue unificado y altamente eficiente.
 
 [![CI/CD](https://github.com/ismailhaddouche/disherio/actions/workflows/docker-build.yml/badge.svg)](https://github.com/ismailhaddouche/disherio/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -10,354 +10,283 @@ Disher.io es una plataforma de gestión de restaurantes autoalojada y lista para
 
 ---
 
-## ¿Qué es Disher.io?
+## 1. Introducción al Sistema
 
-Disher.io sustituye los tickets de papel, los walkie-talkies y los sistemas POS desconectados por una plataforma unificada que se ejecuta en tu propio hardware. Los clientes escanean un código QR en su mesa, hacen su pedido y la cocina lo ve al instante. El cajero cierra la cuenta con un clic, permitiendo también dividir en varios pagos.
+Disher.io moderniza el sector de la hostelería eliminando la dependencia de tickets de papel, sistemas de comunicación por radio y puntos de venta (POS) desconectados. Todo el ecosistema opera a través de una red centralizada que se ejecuta sobre tu propia infraestructura de hardware.
 
-Se puede ejecutar en cualquier dispositivo, desde una Raspberry Pi hasta un servidor en la nube, sin cuotas de suscripción.
+Los clientes pueden acceder a la carta y realizar pedidos enviando solicitudes inmediatas a la pantalla de la cocina mediante el escaneo de un código QR. Simultáneamente, el personal de caja tiene una visión general interactiva que permite procesar cobros y dividir cuentas de forma transparente y ágil. 
+
+El sistema ha sido programado con una optimización extrema que permite su ejecución en equipos de recursos limitados (como una Raspberry Pi) hasta entornos en la nube robustos, garantizando total independencia de suscripciones a terceros.
 
 ---
 
-## Arquitectura del Sistema
+## 2. Arquitectura del Sistema
 
-```
-                        ┌────────────────────────────────────────────────────────────────────────┐
+La arquitectura sigue el patrón cliente-servidor, haciendo uso intensivo de WebSockets para comunicación bidireccional en tiempo real, encapsulado totalmente bajo contenedores Docker para un despliegue sin fricción.
+
+```text
+                        ┌────────────────────────────────────────────────────────┐
                         │                  Caddy (Proxy Inverso)                 │
                         │           TLS/SSL · Compresión · Enrutamiento          │
-                        └──────────────────────────────┬─────────────────────────┬───────────────┘
-                                       │                  │
-                          /api/*  ─────┘                  └─── /* (frontend)
+                        └──────────────┬─────────────────────────┬───────────────┘
+                                       │                         │
+                          /api/*  ─────┘                         └─── /* (Static Frontend)
                                        │
               ┌────────────────────────▼────────────────────────────────────────┐
-              │              Backend (Node.js 20 + Express)      │
-              │                                                  │
-              │   REST API · JWT Auth · RBAC · Socket.io         │
-              │   Rate Limiting · Helmet · Logs de Actividad     │
+              │              Backend (Node.js 20 + Express)                     │
+              │                                                                 │
+              │   REST API · JWT Auth · RBAC · Socket.io                        │
+              │   Rate Limiting · Helmet · Logs de Actividad                    │
               └──────────────┬───────────────────────────────────┬──────────────┘
-                           │                    │
-               ┌───────────▼──────────┐   ┌─────▼──────────────────┐
-               │  MongoDB 7       │   │  Socket.io (WS)      │
-               │  Pedidos · Menú  │   │  Eventos en tiempo   │
-               │  Usuarios · TPV  │   │  real a clientes     │
-               └──────────────────┘   └──────────────────────────┘
+                             │                                   │
+               ┌─────────────▼────────┐            ┌─────────────▼──────────┐
+               │  MongoDB 7           │            │  Socket.io (WS)        │
+               │  Pedidos · Menú      │            │  Eventos en tiempo     │
+               │  Usuarios · TPV      │            │  real a clientes       │
+               └──────────────────────┘            └────────────────────────┘
 
-              ┌────────────────────────────────────────────────────────────────────────┐
-              │              Frontend (Angular 21)               │
-              │                                                  │
-              │  ┌────────────┐  ┌──────────┐  ┌──────────────┐  │
-              │  │  Admin     │  │  KDS     │  │  Cliente     │  │
-              │  │  Dashboard │  │  Cocina  │  │  Menú + QR   │  │
-              │  └────────────┘  └──────────┘  └──────────────┘  │
-              │  ┌────────────┐  ┌──────────┐  ┌──────────────┐  │
-              │  │  TPV /     │  │  Editor  │  │  Pago /      │  │
-              │  │  Cajero    │  │  de Menú │  │  Checkout    │  │
-              │  └────────────┘  └──────────┘  └──────────────┘  │
-              └────────────────────────────────────────────────────────────────────────┘
+              ┌─────────────────────────────────────────────────────────────────┐
+              │              Frontend (Angular 21)                              │
+              │                                                                 │
+              │  ┌────────────┐  ┌────────────┐  ┌──────────────┐               │
+              │  │  Admin     │  │  KDS       │  │  Cliente     │               │
+              │  │  Dashboard │  │  Cocina    │  │  Menú + QR   │               │
+              │  └────────────┘  └────────────┘  └──────────────┘               │
+              │  ┌────────────┐  ┌────────────┐  ┌──────────────┐               │
+              │  │  TPV /     │  │  Editor    │  │  Pago /      │               │
+              │  │  Cajero    │  │  de Menú   │  │  Checkout    │               │
+              │  └────────────┘  └────────────┘  └──────────────┘               │
+              └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Características
+## 3. Despliegue de Funcionalidades
 
-### Para Clientes
-- Escaneo de código QR en la mesa (sin descargar aplicaciones).
-- Menú interactivo con categorías, variantes y alérgenos.
-- Realización de pedidos directamente desde el teléfono.
-- Autopago (Checkout) con propina opcional.
+### 3.1. Experiencia del Cliente
+- Interacción inicial mediante código QR localizado por mesa, evitando la necesidad de instalar software en el dispositivo del cliente.
+- Menú digital dinámico con estructuración por categorías, gestión de precios por variantes y declaración exhaustiva de alérgenos.
+- Sistema automatizado de pedidos directos.
+- Proceso de "Checkout" integrado que permite cierres de mesa, incluyendo propinas configurables.
 
-### Para Personal de Cocina (KDS)
-- Pantalla de pedidos en tiempo real en cualquier tablet.
-- Marcar platos individualmente como "en preparación" o "listos".
-- Alertas visuales para pedidos nuevos y pendientes.
+### 3.2. Operativa de Cocina (KDS - Kitchen Display System)
+- Interfaz reactiva adaptada a dispositivos tipo tablet.
+- Flujo de estados del pedido: seguimiento granular por plato ("Pendiente", "En preparación", "Listo para servir").
+- Alertas visuales y temporizadores para control estricto de los tiempos de espera del cliente.
 
-### Para Cajeros (TPV / POS)
-- Vista general interactiva de todas las mesas y el estado de los pedidos.
-- Cierre de cuenta y cálculo de IVA en un solo clic.
-- División de pagos entre varias personas a partes iguales o personalizadas.
-- Opciones de pago en efectivo y tarjeta.
+### 3.3. Punto de Venta (TPV / POS)
+- Tablero de gestión interactivo presentando el plano de mesas en tiempo real.
+- Finalización de transacciones con cálculos integrados de impuestos (IVA ajustado al momento).
+- Sistema avanzado de división de pagos (equitativo o selección manual por comensal).
+- Registro categorizado según método de pago (Efectivo/Tarjeta).
 
-### Para Administradores
-- Gestión completa del menú (categorías, variantes, extras, alérgenos).
-- Gestión de personal de cocina y cajeros con acceso basado en roles.
-- Personalización de marca del restaurante (logo, colores, nombre).
-- Generador de PDF de tótems QR gestionando las mesas dinámicamente.
-- Logs de actividad y auditoría.
-
----
-
-## Instalación
-
-### Requisitos Previos
-
-| Requisito | Mínimo | Recomendado |
-|-----------|--------|-------------|
-| SO | Linux (Ubuntu 20.04+, Debian 11+) | Ubuntu 22.04 LTS |
-| RAM | 1 GB | 2 GB |
-| Disco | 5 GB libres | 10 GB libres |
-| Docker | 24+ | última versión estable |
-| Acceso | root / sudo | — |
-
-> **Nota:** En Raspberry Pi funciona el modo local/LAN. Para producción en la nube se recomienda al menos 2 GB de RAM.
-
-> **Proveedores Cloud (Google Cloud, AWS, Azure):** Además de tener el puerto libre en el sistema, es necesario **abrirlo en el firewall del proveedor**. Consulta la sección correspondiente en la [Guía de Inicio Rápido](./docs/QUICK_START.md#proveedores-cloud--firewall).
+### 3.4. Panel de Administración
+- Editor gráfico de la base de datos de productos (menús, modificadores y extras).
+- Control de acceso basado en roles (RBAC) para el staff del restaurante (Admin, Kitchen, POS).
+- Estructura de marca blanca que permite configurar identidad corporativa (nombre, colores, logotipos).
+- Modulo generador de PDF para la creación dinámica e impresión de tótems con QR asociados a las mesas operativas.
+- Registro completo para auditoría y revisión de la actividad.
 
 ---
 
-### Instalación Rápida (Recomendada)
+## 4. Requisitos de Instalación
 
-El instalador automatizado es la forma más segura de desplegar Disher.io. Se encarga de la configuración, generación de secretos y despliegue de todos los servicios.
+Para asegurar el rendimiento óptimo del sistema, el servidor host debe cumplir con las siguientes especificaciones técnicas:
+
+| Especificación | Entorno Mínimo | Entorno Recomendado (Producción) |
+|----------------|----------------|----------------------------------|
+| Sistema Operativo | Linux (Ubuntu 20.04+, Debian 11+) | Ubuntu 22.04 LTS o superior |
+| Memoria RAM | 1 GB | 2 GB |
+| Almacenamiento | 5 GB disponibles | 10 GB disponibles |
+| Contenedores | Docker 24.x | Docker (Última versión estable) |
+| Privilegios | Acceso root o sudo | Acceso root o sudo |
+
+*Aviso Técnico: La ejecución en dispositivos SBC (como Raspberry Pi) está validada exclusivamente para despliegues intra-red (LAN). Para alojamientos en proveedores en la nube pública (AWS, Google Cloud, Azure) es mandatorio configurar las reglas de entrada en el Firewall del proveedor de red correspondientes a los puertos HTTP/HTTPS.*
+
+---
+
+## 5. Proceso de Despliegue Automatizado
+
+Disher.io proporciona un script de instalación automatizada (`install.sh`) que gestiona integralmente la configuración del entorno, aprovisionamiento de infraestructuras base, inyección de variables de entorno y levantamiento de contenedores. Este es el método de instalación estándar para cualquier servidor.
 
 ```bash
-# 1. Clonar el repositorio
+# Paso 1: Clonar el código fuente más reciente
 git clone https://github.com/ismailhaddouche/disherio.git
 cd disherio
 
-# 2. Dar permisos y ejecutar el instalador como root
+# Paso 2: Otorgar permisos de ejecución e iniciar como administrador
 chmod +x install.sh
 sudo ./install.sh
 ```
 
-#### Pasos del instalador
+### 5.1 Fases del Instalador
 
-El instalador te guiará de forma interactiva por **6 pasos**:
+La ejecución guiada del script cubre las siguientes seis etapas críticas:
 
-| Paso | Descripción |
-|------|-------------|
-| **[1/6]** Configuración de acceso | Elegir entre acceso por **Dominio** (recomendado) o **Dirección IP** |
-| **[1.5/6]** Configuración de puerto | Puerto HTTP (por defecto `80`; si está ocupado, usar `8080`) |
-| **[2/6]** Seguridad | Generación automática de `JWT_SECRET`, contraseña de MongoDB y credenciales de usuarios |
-| **[3/6]** Configuración | Escritura del archivo `.env` con todos los parámetros |
-| **[4/6]** Docker | Comprobación e instalación automática de Docker si no está presente |
-| **[5/6]** Servicios | Levantamiento de todos los contenedores (`docker compose up -d --build`) |
-| **[6/6]** Tienda inicial | Inicialización de la base de datos con los datos de la tienda |
+1. **Configuración de Red:** Selección de tipo de acceso (FQDN para dominio público o acceso por IP local).
+2. **Definición de Puertos:** Reasignación de puerto HTTP (default: `80`, alternativo: `8080`) para evitar conflictos de multiplexación.
+3. **Criptografía y Seguridad:** Autogeneración de claves aleatorias para el encriptado JWT (`JWT_SECRET`) y credenciales base de MongoDB.
+4. **Validación de Dependencias:** Detección e instalación no interactiva de Docker Compose (si no está cubierto por el sistema base).
+5. **Orquestación:** Construcción local de imágenes frontend/backend y ejecución asíncrona (`docker compose up -d --build`).
+6. **Inicialización de Datos:** Inyección del *store seed* inicial con los parámetros por defecto del restaurante.
 
-#### Opciones de acceso
+### 5.2 Tipología de Acceso
 
-- **Dominio local** (`disherio.local`): Para uso en red LAN sin internet. Ideal para Raspberry Pi o uso interno.
-- **Dominio personalizado** (ej: `app.mirestaurante.com`): Activa HTTPS automático con Let's Encrypt vía Caddy.
-- **IP local**: Para acceso directo en red local por IP.
-- **IP pública**: Para VPS sin dominio. El instalador detecta la IP automáticamente.
+El instalador ajustará el proxy inverso según la decisión de red tomada inicialmente:
 
-#### Credenciales iniciales
+- **Dominio Público (FQDN):** Por ejemplo, `app.restaurante.com`. Caddy Server gestionará la obtención y rotación automática de certificados TLS a través de Let's Encrypt / ZeroSSL, forzando todas las comunicaciones hacia HTTPS (puerto 443).
+- **Dominio Local (mDNS / LAN):** Orientado a soluciones on-premise puras sin salida al exterior.
+- **Direccionamiento IP:** Acceso crudo mediante dirección IPv4. El proxy enrutará sobre el puerto configurado (puerto 80) sin generar certificados SSL.
 
-> ⚠️ **Importante:** Al finalizar la instalación se muestran las credenciales generadas automáticamente. **Guárdalas en un lugar seguro**, no se vuelven a mostrar.
+### 5.3 Resumen de Credenciales
 
+Al concluir la inicialización, el instalador imprimirá por salida estándar (STDOUT) las credenciales criptográficas del súper-administrador. **Debe almacenarse esta información inmediatamente en un gestor de contraseñas seguro.**
+
+```text
+--- Inicialización Completa ---
+Usuario Root:     admin
+Password Root:    [Cadena Autogenerada]
+URL de Acceso:    http(s)://[host-identificado]
 ```
---- Credenciales Iniciales ---
-Usuario Admin:    admin
-Contraseña Admin: [generada aleatoriamente]
-Acceso:           http://<tu-ip-o-dominio>
-```
+
+Si posteriormente requiere alterar la configuración del entorno, puede lanzar la herramienta de reconfiguración provista en el código base:
+`sudo ./configure.sh`
 
 ---
 
-### Reconfigurar después de instalar
+## 6. Procedimientos de Baja y Mantenimiento del Servicio
 
-Si necesitas cambiar el dominio, puerto u otras opciones después de la primera instalación:
+### 6.1 Detención y Borrado Estándar (Retención de Datos)
 
-```bash
-cd disherio
-sudo ./configure.sh
-```
-
----
-
-## Desinstalación
-
-### Desinstalación estándar (conservando datos)
-
-Detiene y elimina los contenedores **sin borrar** la base de datos ni los volúmenes:
+Permite bajar toda la infraestructura, conservando intactos los volúmenes en disco (base de datos, ficheros almacenados e historial).
 
 ```bash
 cd disherio
 docker compose down
 ```
+*Para revivir el sistema bastará con ejecutar nuevamente `docker compose up -d`.*
 
-Los datos de MongoDB se conservan en los volúmenes de Docker. Puedes volver a levantar la plataforma en cualquier momento con `docker compose up -d`.
+### 6.2 Eliminación Total de Infraestructura (Pérdida de Datos)
 
----
-
-### Desinstalación completa (borra todos los datos)
-
-> ⚠️ **Advertencia:** Este proceso elimina **todos los datos** incluyendo la base de datos, el menú, los pedidos y los usuarios. Es irreversible.
+Acción destructiva. Obliga la eliminación de contenedores, redes y específicamente borra de forma segura todos los volúmenes adjuntos a la instancia, purgado el historial de transacciones y base de datos completa.
 
 ```bash
 cd disherio
 
-# 1. Detener y eliminar contenedores + volúmenes (base de datos incluida)
+# 1. Bajar servicios destruyendo volúmenes compartidos
 docker compose down -v
 
-# 2. Eliminar la carpeta del proyecto
+# 2. Eliminación de binarios locales
 cd ..
 rm -rf disherio
 ```
 
----
+### 6.3 Resolución de Incidencias e Instalación Corrupta
 
-## Reinstalación / Recuperación de Instalación Corrupta
-
-Si la instalación está rota (contenedores que no arrancan, errores de Docker, `.env` corrupto, fallo a mitad de instalación, etc.), sigue estos pasos para hacer una instalación limpia desde cero.
-
-### Paso 1 — Diagnóstico rápido
+En el supuesto diagnóstico de corrupción del estado (ej., fallo originado por apagón crítico, modificación externa manual en los volúmenes, corrupción en el servicio de Docker), ejecutar la siguiente secuencia de reseteo forzado integral:
 
 ```bash
-# Ver el estado de los contenedores
+# Diagnóstico de anomalías en los contenedores
 docker ps -a
-
-# Ver los logs del servicio con error (ej: backend)
 docker compose logs backend
-docker compose logs caddy
-docker compose logs database
-```
 
-### Paso 2 — Parar todo y limpiar
-
-```bash
+# Destrucción exhaustiva de la pila y todos sus rastros asilados
 cd disherio
-
-# Detener y eliminar contenedores, redes y volúmenes
 docker compose down -v --remove-orphans
-```
 
-### Paso 3 — Limpieza profunda de Docker (opcional pero recomendada)
-
-```bash
-# Eliminar imágenes sin usar
-docker image prune -a -f
-
-# Eliminar volúmenes huérfanos
-docker volume prune -f
-
-# Eliminar redes sin usar
-docker network prune -f
-
-# O limpieza total de Docker (¡borra TODO lo de Docker en el sistema!)
+# (Opcional) Purga general del daemon de Docker si procede:
 # docker system prune -a -f --volumes
-```
 
-> ⚠️ `docker system prune -a -f --volumes` elimina **todas** las imágenes, volúmenes y contenedores del sistema, no solo los de Disher. Úsalo solo si quieres un reset total de Docker.
-
-### Paso 4 — Eliminar la instalación antigua
-
-```bash
-cd ~   # o el directorio padre donde esté la carpeta
-
-# Eliminar la carpeta del proyecto
+# Eliminación del root path y recombinación pura
+cd ..
 rm -rf disherio
-```
-
-### Paso 5 — Clonar e instalar de nuevo
-
-```bash
-# Clonar el repositorio limpio
 git clone https://github.com/ismailhaddouche/disherio.git
 cd disherio
-
-# Dar permisos al instalador
 chmod +x install.sh
-
-# Ejecutar el instalador
 sudo ./install.sh
 ```
 
 ---
 
-### Referencia rápida: Comandos de recuperación
+## 7. Mapeo de Accesos Operativos
 
-```bash
-# Ver estado de todos los contenedores
-docker ps -a
+El sistema impone aislamiento rígido de sus módulos. A continuación se define la matriz de accesos y controladores de ruta requeridos para operar:
 
-# Ver logs de un servicio específico
-docker compose logs <servicio>   # backend | caddy | database
-
-# Reiniciar un servicio sin reinstalar
-docker compose restart <servicio>
-
-# Levantar de nuevo si los contenedores están parados
-docker compose up -d
-
-# Forzar reconstrucción de imágenes
-docker compose up -d --build
-
-# Limpiar y reinstalar manteniendo datos
-docker compose down --remove-orphans && docker compose up -d --build
-```
+| Definición Lógica del Módulo | Endpoint Base de Acceso | Privilegio de Acceso Asignado |
+|------------------------------|-------------------------|-------------------------------|
+| Panel Estadístico de Administración | `/admin/dashboard` | Administrator |
+| Display de Coordinación Cocina (KDS)| `/admin/kds` | Kitchen Staff / Administrator |
+| Terminal Integrado de Cobros (TPV) | `/admin/pos` | POS Staff / Administrator |
+| Suite de Edición de Catálogo | `/admin/menu` | Administrator |
+| Gestión Externa del Personal | `/admin/users` | Administrator |
+| Configurador Global Corporativo | `/admin/config` | Administrator |
+| Consulta Pública de Mesa (Client)| `/:tableNumber` | Unauthenticated (User) |
+| Autorización Formal de Pago (Client)| `/:tableNumber/checkout`| Unauthenticated (User) |
 
 ---
 
-## Accesos a la Plataforma
+## 8. Modalidades Operativas de Contexto
 
-| Módulo | URL de Acceso | Rol Requerido |
-|--------|-----|------|
-| Panel de Administración | `/admin/dashboard` | Admin |
-| Pantalla de Cocina (KDS) | `/admin/kds` | Cocina, Admin |
-| Terminal de Venta (TPV) | `/admin/pos` | Cajero (POS), Admin |
-| Editor de Menú | `/admin/menu` | Admin |
-| Gestión de Usuarios | `/admin/users` | Admin |
-| Configuración de Restaurante | `/admin/config` | Admin |
-| Menú Digital Público (Cliente) | `/:numeroDeMesa` | Público |
-| Checkout Pago (Cliente) | `/:numeroDeMesa/checkout` | Público |
+### 8.1 Topología Intranet On-Premise (Local/LAN)
+Arquitectura blindada frente al exterior. El sistema Caddy no intentará adquirir certificados y permitirá las transmisiones HTTP planas dentro del segmento de red privada, requiriéndose únicamente dispositivos de acceso locales (smartphones conectados al Wi-Fi del restaurante).
+
+### 8.2 Topología Pública Externalizada (Producción)
+Se enlaza la instancia Docker mediante proxy inverso directamente a una IP expuesta a internet con un FQDN configurado. Caddy server implementa interceptación de tráfico SSL estricta con redirección forzada del puerto 80 al 443. La latencia operativa dependerá del centro de datos del host Cloud aprovisionado.
+
+### 8.3 Contexto Arquitectura SBC (IoT/Raspberry Pi)
+Soporte absoluto para arquitecturas ARM64 nativas. Las rutinas de `docker-build.yml` y los scripts base contemplan las necesidades optimizadas requeridas por la limitada computación de memoria disponible en arquitecturas de silicio reducido.
 
 ---
 
-## Modos de Despliegue
+## 9. Directorio Documental Secundario
 
-### Modo Local (LAN)
-Diseñado para instalarse en una red local sin conexión a internet o para uso interno. Ideal para una única tablet como TPV o configurar la aplicación detrás de la barra en una Raspberry Pi en intranet.
+El proyecto engloba módulos específicos de información suplementaria para mantenimiento avanzado e integración. Consultar cada archivo para operaciones específicas:
 
-### Modo Producción
-Conecta con un dominio público e instala certificados TLS autogestionados mediante Let's Encrypt usando Caddy. Ideal para restaurantes que desean alojarlo en un servidor cloud o acceder desde internet.
-
-### Modo Raspberry Pi
-Equivalente al modo local pero ajustado y optimizado según los límites de los recursos (ARM, límite en uso de RAM y procesador). Validado para entornos de Raspberry Pi.
-
----
-
-## Documentación del Proyecto
-
-| Documento | Descripción |
-|----------|-------------|
-| [Quick Start](./docs/QUICK_START.md) | Instalación, primeros pasos y configuración inicial. |
-| [Architecture](./docs/ARCHITECTURE.md) | Diseño del sistema y diagramas base. |
-| [API Reference](./docs/API.md) | Documentación técnica de todos los endpoints. |
-| [Maintenance](./docs/MAINTENANCE.md) | Guía de mantenimiento, restauraciones, backups y actualización. |
-| [Contributing](./CONTRIBUTING.md) | Reglas y guía para contribuir al ecosistema Disher. |
-| [Security](./SECURITY.md) | Notas de seguridad y reporte de vulnerabilidades. |
-| [Changelog](./CHANGELOG.md) | Historial de versiones y cambios del repositorio. |
+| Archivo Técnico | Resumen del Alcance Documental |
+|-----------------|--------------------------------|
+| `docs/QUICK_START.md` | Detalle extenso del flujo de instalación y configuración de cortafuegos cloud. |
+| `docs/ARCHITECTURE.md`| Desglose sistemático del pipeline técnico y diagramas de estados. |
+| `docs/API.md` | Listado exahustivo formal de la convención de endpoints REST JSON y modelos. |
+| `docs/MAINTENANCE.md` | Protocolos de retención de bases de datos, copias de seguridad CRON y rollback. |
+| `CONTRIBUTING.md` | Manual de convenciones de código para desarrolladores externos interesados en el fork. |
+| `SECURITY.md` | Flujos de información autorizada referentes al reporte de vulnerabilidades zero-day. |
+| `CHANGELOG.md` | Control oficial estricto de revisiones incrementales y cambios consolidados. |
 
 ---
 
-## Tecnologías Utilizadas
+## 10. Pila Tecnológica Subyacente
 
-| Capa | Tecnología | Versión |
-|-------|-----------|---------| 
-| Backend | Node.js + Express | 20 / 5.x |
-| Frontend | Angular + Signals API | 21 |
-| Base de Datos | MongoDB | 7 |
-| Servidor Web proxy | Caddy | 2 |
-| Websockets (Tiempo real)| Socket.io | 4.x |
-| Seguridad & Autologin | JWT | 9.x |
+Toda la infraestructura descansa sobre un robusto stack JavaScript/TypeScript optimizado bajo las últimas versiones estables LTS (Long Term Support).
 
----
-
-## Contribuciones y Seguridad
-
-Cualquier contribución es bienvenida. Asegúrate de leer y entender nuestro [CONTRIBUTING.md](./CONTRIBUTING.md) antes de publicar un PR.
-
-Si descubres una vulnerabilidad, no publiques la incidencia explícita. Por favor, revisa la sección de divulgación responsable ubicada en nuestro archivo [SECURITY.md](./SECURITY.md).
-
-## Desarrollo Asistido por IA
-
-Este proyecto ha sido desarrollado con el apoyo de herramientas de inteligencia artificial de Google:
-
-- **[Gemini CLI](https://github.com/google-gemini/gemini-cli)** — Interfaz de línea de comandos para interacción con modelos Gemini, utilizada como asistente de desarrollo durante la codificación, depuración y generación de documentación.
-- **[Gemini 3.0](https://deepmind.google/technologies/gemini/)** — Modelo de lenguaje de última generación de Google DeepMind, empleado para asistencia en la escritura de código, revisión de arquitectura y resolución de problemas técnicos.
-
-> **Nota:** La dirección del proyecto, la arquitectura del sistema y todas las decisiones de diseño han sido responsabilidad del equipo humano. Las herramientas de IA se han utilizado como apoyo para acelerar el desarrollo y mejorar la calidad del código.
+| Capa Conceptual | Stack Lógico Implementado | Versión Validada (LTS) |
+|-----------------|---------------------------|------------------------| 
+| Servidor Backend | Entorno V8 Node.js + Framework Express | Mínimo 20.x / 5.x |
+| Framework Frontend | Framework Angular con Arquitectura Signals API | Versión 21 |
+| Persistencia Datos | Clúster de bases de datos no estructuradas MongoDB | Release 7.x |
+| Balanceo de Carga | Servidor Caddy (Manejo TLS automatizado) | Serie 2.x |
+| Comunicación Bidireccional | API Socket.io (Transporte de Eventos WebSocket Puros) | Release 4.x |
+| Encriptación e Identidad | Estándar JsonWebToken (Firmas seguras SHA-256) | Core 9.x |
 
 ---
 
-## Licencia
+## 11. Conformidad, Seguridad y Auditoría
 
-Disher.io está distribuido bajo la [Licencia MIT](./LICENSE). Puede usarse, modificarse y distribuirse para cualquier propósito que se desee.
+La revisión y contribución sobre la base de código deben seguir en todo momento los estándares señalados normativamente dentro de `CONTRIBUTING.md`.
+
+Frente al hallazgo de vulnerabilidades de diseño, desbordamiento del sistema, brechas de inyección y/o debilidades estructurales, se ruega encarecidamente la observancia y reporte privado siguiendo las guías provistas en el anexo de `SECURITY.md`. La publicación no autorizada de issues destructivas viola nuestra política de reporte responsable.
+
+### Soporte a través de Inteligencia Artificial
+
+Las fases constructivas del presente repositorio han contado con soporte metodológico derivado de análisis asistidos por IA:
+
+- **Gemini CLI:** Terminal de interacción algorítmica y orquestación asistida.
+- **Gemini 3.0:** Modelo fundacional empleado transversalmente durante depuraciones de red, refactorización heurística y optimización semántica.
+
+*La autoría intelectual, gestión de diseño de microservicios, estructura de decisión condicional y revisiones exhaustivas finales son responsabilidad humana innegociable. El asistente actúa de soporte colateral de integración rápida.*
+
+---
+
+## 12. Asignación de Permisos y Licencia Base
+
+El código fuente de Disher.io se halla licenciado y distribuido íntegramente de acuerdo con los términos formales y no exclusivos de la Licencia Open-Source [MIT](./LICENSE). 
+Otorga libertad máxima al receptor final en materia de usabilidad, alteración comercial privada y compilación, eximiendo a la fuente del origen de toda obligación contractual por mal funcionamiento.
