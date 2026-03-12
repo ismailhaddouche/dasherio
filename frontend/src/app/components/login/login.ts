@@ -42,7 +42,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
         </form>
 
         <footer class="login-footer">
-          <p class="text-label-small opacity-40">© 2024 DISHER.IO ENGINE</p>
+          <p class="text-label-small opacity-40">© 2026 DISHER.IO ENGINE</p>
         </footer>
       </div>
     </div>

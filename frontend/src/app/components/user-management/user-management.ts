@@ -1,10 +1,12 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserManagementViewModel } from './user-management.viewmodel';
 import { AuthService } from '../../services/auth.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { TranslateModule } from '@ngx-translate/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-user-management',
@@ -12,7 +14,7 @@ import { TranslateModule } from '@ngx-translate/core';
   imports: [CommonModule, FormsModule, LucideAngularModule, TranslateModule],
   providers: [UserManagementViewModel],
   template: `
-    <div class="user-management-container">
+    <div class="user-management-container animate-fade-in">
       @if (vm.editingUser(); as editUser) {
         <!-- Edit View -->
         <header class="section-header-md3">
@@ -118,8 +120,8 @@ import { TranslateModule } from '@ngx-translate/core';
           
         <main class="users-main-md3">
           @if (vm.loading()) {
-            <div class="md-loading-state">
-              <div class="spinner"></div>
+            <div class="md-loader-container">
+              <lucide-icon name="loader-2" [size]="48" class="animate-spin opacity-20"></lucide-icon>
               <p class="text-body-medium opacity-60">{{ 'USER_MGMT.LOADING' | translate }}</p>
             </div>
           }
@@ -140,7 +142,7 @@ import { TranslateModule } from '@ngx-translate/core';
                   </div>
                   <div class="user-meta-md3">
                     <span class="text-title-large">{{ user.username }}</span>
-                    <div class="md-badge-tonal-sm" [class]="user.role">{{ 'ROLES.' + user.role | translate }}</div>
+                    <div class="md-badge-tonal-sm" [class]="user.role">{{ 'ROLES.' + user.role| translate }}</div>
                   </div>
                 </div>
 
@@ -205,8 +207,23 @@ import { TranslateModule } from '@ngx-translate/core';
 
     .user-add-controls-md3 {
       display: flex;
-      gap: 16px;
+      gap: 12px;
       align-items: center;
+      background: var(--md-sys-color-surface-container-low);
+      padding: 8px 16px;
+      border-radius: 40px;
+    }
+    
+    .user-add-controls-md3 .btn-sm {
+        padding: 0 40px;
+        height: 44px;
+        white-space: nowrap;
+    }
+
+    .btn-primary.btn-sm {
+        padding: 8px 32px;
+        border-radius: 20px;
+        white-space: nowrap;
     }
 
     .users-grid-md3 {
@@ -321,9 +338,10 @@ import { TranslateModule } from '@ngx-translate/core';
     .mb-32 { margin-bottom: 32px; }
     .mt-32 { margin-top: 32px; }
     .opacity-60 { opacity: 0.6; }
+    .opacity-20 { opacity: 0.2; }
     .flex-1 { flex: 1; }
 
-    .md-loading-state {
+    .md-loader-container {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -332,18 +350,8 @@ import { TranslateModule } from '@ngx-translate/core';
       gap: 16px;
     }
 
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid var(--md-sys-color-secondary-container);
-      border-top-color: var(--md-sys-color-primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    .animate-spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
     @media (max-width: 768px) {
       .user-add-controls-md3 {
@@ -363,6 +371,24 @@ import { TranslateModule } from '@ngx-translate/core';
     }
   `]
 })
-export class UserManagementComponent {
+export class UserManagementComponent implements OnInit, OnDestroy {
   public vm = inject(UserManagementViewModel);
+  private router = inject(Router);
+  private routerSub?: Subscription;
+
+  ngOnInit() {
+    this.vm.loadData();
+
+    this.routerSub = this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd)
+    ).subscribe((e: any) => {
+      if (e.url?.includes('/users')) {
+        this.vm.loadData();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.routerSub?.unsubscribe();
+  }
 }

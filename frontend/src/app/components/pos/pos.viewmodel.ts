@@ -1,8 +1,10 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, DestroyRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommunicationService } from '../../services/communication.service';
 import { AuthService } from '../../services/auth.service';
+import { NotifyService } from '../../services/notify.service';
 import { environment } from '../../../environments/environment';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -21,13 +23,15 @@ export class POSViewModel {
     private comms = inject(CommunicationService);
     private auth = inject(AuthService);
     private translate = inject(TranslateService);
+    private notify = inject(NotifyService);
+    private destroyRef = inject(DestroyRef);
 
     // State
     public orders = signal<any[]>([]);
     public tables = signal<any[]>([]);
     public tickets = signal<any[]>([]);
     public selectedTable = signal<POSTable | null>(null);
-    public loading = signal<boolean>(true);
+    public loading = signal<boolean>(false);
     public viewMode = signal<'tables' | 'history'>('tables');
     public billingConfig = signal<any>(null);
     public menuItems = signal<any[]>([]);
@@ -65,7 +69,8 @@ export class POSViewModel {
         this.setupRealTime();
     }
 
-    private async initPOS() {
+    public async initPOS() {
+        if (this.loading()) return;
         this.loading.set(true);
         try {
             const [orders, totems, tickets, restaurant, menu] = await Promise.all([
@@ -76,12 +81,12 @@ export class POSViewModel {
                 firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/menu`))
             ]);
 
-            if (orders) this.orders.set(orders as any[]);
-            if (totems) this.tables.set(totems);
-            if (tickets) this.tickets.set(tickets);
-            if (restaurant?.billing) this.billingConfig.set(restaurant.billing);
-            if (restaurant?.printers) this.globalPrinters.set(restaurant.printers);
-            if (menu) this.menuItems.set(menu);
+            this.orders.set((orders as any[]) || []);
+            this.tables.set(totems || []);
+            this.tickets.set(tickets || []);
+            this.billingConfig.set(restaurant?.billing || null);
+            this.globalPrinters.set(restaurant?.printers || []);
+            this.menuItems.set(menu || []);
 
         } catch (e) {
             console.error('POS Init Error', e);
@@ -97,10 +102,7 @@ export class POSViewModel {
 
                 if (updatedOrder.status === 'completed') {
                     this.loadHistory();
-                    if (index !== -1) {
-                        return prev.filter(o => o._id !== updatedOrder._id);
-                    }
-                    return prev;
+                    return prev.filter(o => o._id !== updatedOrder._id);
                 }
 
                 if (index !== -1) {
@@ -123,8 +125,7 @@ export class POSViewModel {
     public selectTable(table: POSTable) {
         this.selectedTable.set(table);
         if (table?.order) {
-            const config = this.billingConfig();
-            this.activeTipPercentage.set(config?.tipPercentage || 0);
+            this.activeTipPercentage.set(this.billingConfig()?.tipPercentage || 0);
         }
     }
 
@@ -132,7 +133,7 @@ export class POSViewModel {
         if (!order) return [];
         const usersMap = new Map();
         order.items.forEach((item: any, originalIndex: number) => {
-            if (item.isPaid) return; // Only show unpaid items in breakdown
+            if (item.isPaid) return;
             const user = item.orderedBy;
             const userId = user.id || 'orphan';
             if (!usersMap.has(userId)) {
@@ -152,9 +153,7 @@ export class POSViewModel {
 
     public calculateBilling(totalWithVAT: number, customTip?: number) {
         const config = this.billingConfig();
-        if (!config || config.vatPercentage === null) {
-            return null;
-        }
+        if (!config || config.vatPercentage === null) return null;
 
         const tipPercent = customTip !== undefined ? customTip : this.activeTipPercentage();
         const vatMultiplier = 1 + (config.vatPercentage / 100);
@@ -185,15 +184,14 @@ export class POSViewModel {
 
     public async processPayment(orderId?: string, splitType: 'single' | 'equal' | 'by-user' = 'single', parts: number = 1, userId?: string) {
         const targetOrderId = orderId || this.selectedTable()?.order?._id;
-
         if (!targetOrderId) {
-            alert(this.translate.instant('POS.PAY_ERROR_NO_SELECTION'));
+            this.notify.warning(this.translate.instant('POS.PAY_ERROR_NO_SELECTION'));
             return;
         }
 
         const config = this.billingConfig();
         if (!config || config.vatPercentage === null || config.vatPercentage === undefined) {
-            alert(this.translate.instant('POS.PAY_ERROR_VAT_CONFIG'));
+            this.notify.warning(this.translate.instant('POS.PAY_ERROR_VAT_CONFIG'));
             return;
         }
 
@@ -205,11 +203,7 @@ export class POSViewModel {
 
         try {
             const resData: any = await firstValueFrom(this.http.post(`${environment.apiUrl}/api/orders/${targetOrderId}/checkout`, {
-                splitType,
-                parts,
-                userId,
-                method: 'cash',
-                billingConfig: config
+                splitType, parts, userId, method: 'cash', billingConfig: config
             }, { withCredentials: true }));
 
             this.auth.logActivity('ORDER_PAID', { orderId: targetOrderId, type: splitType, userId });
@@ -223,24 +217,21 @@ export class POSViewModel {
             const updatedOrders = await this.comms.syncOrders();
             if (updatedOrders) this.orders.set(updatedOrders as any[]);
 
-            // Auto-print if enabled for this device
-            const autoPrint = localStorage.getItem('disher_local_autoprint') === 'true';
-            if (autoPrint && resData.tickets?.[0]) {
+            if (localStorage.getItem('disher_local_autoprint') === 'true' && resData.tickets?.[0]) {
                 resData.tickets.forEach((t: any) => this.printTicket(t));
             }
 
         } catch (e: any) {
-            if (e.error?.code === 'ORPHANS_EXIST') {
-                alert(this.translate.instant('POS.ORPHANS_WARNING'));
-            } else {
-                alert(this.translate.instant('POS.PAY_ERROR') + ': ' + (e.error?.error || e.message || ''));
-            }
+            const msg = e.error?.code === 'ORPHANS_EXIST'
+                ? this.translate.instant('POS.ORPHANS_WARNING')
+                : (this.translate.instant('POS.PAY_ERROR') + ': ' + (e.error?.error || e.message || ''));
+            this.notify.error(msg);
         }
     }
 
     public async payByUser(userId: string) {
         if (userId === 'orphan') {
-            alert(this.translate.instant('POS.PAY_ERROR_ORPHAN'));
+            this.notify.warning(this.translate.instant('POS.PAY_ERROR_ORPHAN'));
             return;
         }
         await this.processPayment(undefined, 'by-user', 1, userId);
@@ -248,16 +239,13 @@ export class POSViewModel {
 
     public async deleteTicket(ticketId: string) {
         if (!confirm(this.translate.instant('POS.DELETE_TICKET_CONFIRM'))) return;
-
         try {
             await firstValueFrom(this.http.delete(`${environment.apiUrl}/api/tickets/${ticketId}`, { withCredentials: true }));
-
             this.auth.logActivity('TICKET_DELETED', { ticketId });
             this.loadHistory();
-
         } catch (e) {
             console.error('Error deleting ticket', e);
-            alert(this.translate.instant('POS.DELETE_TICKET_ERROR'));
+            this.notify.error(this.translate.instant('POS.DELETE_TICKET_ERROR'));
         }
     }
 
@@ -265,35 +253,34 @@ export class POSViewModel {
         const currentUser = this.auth.currentUser();
         let p = null;
 
-        // 1. First try to use the user's assigned printer
         if (currentUser?.printerId) {
             p = this.globalPrinters().find(pr => pr.id === currentUser.printerId);
         }
-
-        // 2. Fallback to local device config
         if (!p) {
             const localId = localStorage.getItem('disher_local_printer');
             if (localId) p = this.globalPrinters().find(pr => pr.id === localId);
         }
 
         if (!p) {
-            alert(this.translate.instant('POS.NO_PRINTER_CONFIGURED'));
+            this.notify.warning(this.translate.instant('POS.NO_PRINTER_CONFIGURED'));
             return;
         }
 
         if (p.type === 'thermal' || p.type === 'network') {
             const ip = p.address || p.ip;
-            console.log(`Printing to thermal/network ${ip}:${p.port || p.connection}...`);
-            alert(`🖨️ (${this.translate.instant('POS.PRINT_THERMAL')} ${ip}) ${this.translate.instant('POS.PRINT_MSG')} ${ticket.customId}\nTotal: ${ticket.amount}€\n\n${currentUser?.printTemplate?.header || ''}`);
+            this.notify.success(`🖨️ ${this.translate.instant('POS.PRINT_THERMAL')} ${ip} — ${ticket.customId} (${ticket.amount}€)`);
         } else {
-            console.log('Printing to system printer...');
-            alert(`🖨️ (${this.translate.instant('POS.PRINT_SYSTEM')}) ${this.translate.instant('POS.PRINT_MSG')} ${ticket.customId}\nTotal: ${ticket.amount}€`);
+            this.notify.success(`🖨️ ${this.translate.instant('POS.PRINT_SYSTEM')} — ${ticket.customId} (${ticket.amount}€)`);
             window.print();
         }
     }
 
     public toggleEditMode() {
         this.editMode.update(v => !v);
+    }
+
+    private async patchOrder(orderId: string, payload: any) {
+        return firstValueFrom(this.http.patch(`${environment.apiUrl}/api/orders/${orderId}`, payload, { withCredentials: true }));
     }
 
     public async updateItemPrice(orderId: string, itemIndex: number, newPrice: number) {
@@ -303,11 +290,9 @@ export class POSViewModel {
 
             const updatedItems = [...order.items];
             updatedItems[itemIndex].price = newPrice;
-
             const newTotal = updatedItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
 
-            await firstValueFrom(this.http.patch(`${environment.apiUrl}/api/orders/${orderId}`, { items: updatedItems, totalAmount: newTotal }, { withCredentials: true }));
-
+            await this.patchOrder(orderId, { items: updatedItems, totalAmount: newTotal });
         } catch (e) { console.error('Error updating price', e); }
     }
 
@@ -318,9 +303,7 @@ export class POSViewModel {
 
             const updatedItems = [...order.items];
             updatedItems[itemIndex].name = newName;
-
-            await firstValueFrom(this.http.patch(`${environment.apiUrl}/api/orders/${orderId}`, { items: updatedItems }, { withCredentials: true }));
-
+            await this.patchOrder(orderId, { items: updatedItems });
         } catch (e) { console.error('Error updating name', e); }
     }
 
@@ -332,9 +315,7 @@ export class POSViewModel {
             const updatedItems = [...order.items];
             const guestId = guestName.toLowerCase().replace(/\s+/g, '-');
             updatedItems[itemIndex].orderedBy = { id: guestId, name: guestName };
-
-            await firstValueFrom(this.http.patch(`${environment.apiUrl}/api/orders/${orderId}`, { items: updatedItems }, { withCredentials: true }));
-
+            await this.patchOrder(orderId, { items: updatedItems });
         } catch (e) { console.error('Error reassigning item', e); }
     }
 
@@ -346,13 +327,11 @@ export class POSViewModel {
             const updatedItems = order.items.filter((_: any, idx: number) => idx !== itemIndex);
             const newTotal = updatedItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
 
-            await firstValueFrom(this.http.patch(`${environment.apiUrl}/api/orders/${orderId}`, { items: updatedItems, totalAmount: newTotal }, { withCredentials: true }));
-
+            await this.patchOrder(orderId, { items: updatedItems, totalAmount: newTotal });
             this.auth.logActivity('ORDER_ITEM_REMOVED', { orderId, itemIndex });
-
         } catch (e) {
             console.error('Error removing item', e);
-            alert(this.translate.instant('POS.REMOVE_ITEM_ERROR'));
+            this.notify.error(this.translate.instant('POS.REMOVE_ITEM_ERROR'));
         }
     }
 
@@ -360,10 +339,9 @@ export class POSViewModel {
         try {
             const updatedOrder: any = await firstValueFrom(this.http.patch(`${environment.apiUrl}/api/orders/${orderId}/items/${itemId}/associate`, { userId, userName }, { withCredentials: true }));
             this.orders.update(prev => prev.map(o => o._id === orderId ? updatedOrder : o));
-
         } catch (e) {
             console.error('Error associating item', e);
-            alert(this.translate.instant('POS.ASSOCIATE_ERROR'));
+            this.notify.error(this.translate.instant('POS.ASSOCIATE_ERROR'));
         }
     }
 
@@ -384,20 +362,18 @@ export class POSViewModel {
             const updatedItems = [...order.items, newItem];
             const newTotal = updatedItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
 
-            await firstValueFrom(this.http.patch(`${environment.apiUrl}/api/orders/${orderId}`, { items: updatedItems, totalAmount: newTotal }, { withCredentials: true }));
-
+            await this.patchOrder(orderId, { items: updatedItems, totalAmount: newTotal });
             this.auth.logActivity('ORDER_ITEM_ADDED', { orderId, itemName: menuItem.name });
             this.showAddItemModal.set(false);
-
         } catch (e) {
             console.error('Error adding item', e);
-            alert(this.translate.instant('POS.ADD_ITEM_ERROR'));
+            this.notify.error(this.translate.instant('POS.ADD_ITEM_ERROR'));
         }
     }
 
     public async addCustomLineToOrder(orderId: string, customName: string, customPrice: number) {
         if (!customName || customPrice <= 0) {
-            alert(this.translate.instant('POS.CUSTOM_VALIDATION_ERROR'));
+            this.notify.warning(this.translate.instant('POS.CUSTOM_VALIDATION_ERROR'));
             return;
         }
 
@@ -418,14 +394,12 @@ export class POSViewModel {
             const updatedItems = [...order.items, newItem];
             const newTotal = updatedItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
 
-            await firstValueFrom(this.http.patch(`${environment.apiUrl}/api/orders/${orderId}`, { items: updatedItems, totalAmount: newTotal }, { withCredentials: true }));
-
+            await this.patchOrder(orderId, { items: updatedItems, totalAmount: newTotal });
             this.auth.logActivity('CUSTOM_LINE_ADDED', { orderId, customName, customPrice });
             this.showCustomLineModal.set(false);
-
         } catch (e) {
             console.error('Error adding custom line', e);
-            alert(this.translate.instant('POS.ADD_CUSTOM_LINE_ERROR'));
+            this.notify.error(this.translate.instant('POS.ADD_CUSTOM_LINE_ERROR'));
         }
     }
 
@@ -436,12 +410,10 @@ export class POSViewModel {
                 totemId: table.id,
                 items: []
             }, { withCredentials: true }));
-
             this.auth.logActivity('TABLE_OPENED_MANUALLY', { tableNumber: table.number });
-
         } catch (e) {
             console.error('Error opening table', e);
-            alert(this.translate.instant('POS.OPEN_TABLE_ERROR'));
+            this.notify.error(this.translate.instant('POS.OPEN_TABLE_ERROR'));
         }
     }
 
@@ -451,33 +423,27 @@ export class POSViewModel {
 
     public async deleteVirtualTable(tableId: number) {
         if (!confirm(this.translate.instant('POS.DELETE_VIRTUAL_CONFIRM'))) return;
-
         try {
             await firstValueFrom(this.http.delete(`${environment.apiUrl}/api/totems/${tableId}`, { withCredentials: true }));
-
             const totems: any[] = await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/totems`));
             this.tables.set(totems);
-            if (this.selectedTable()?.id === tableId) {
-                this.selectedTable.set(null);
-            }
+            if (this.selectedTable()?.id === tableId) this.selectedTable.set(null);
         } catch (e) {
             console.error('Error deleting virtual table', e);
-            alert(this.translate.instant('POS.DELETE_VIRTUAL_ERROR'));
+            this.notify.error(this.translate.instant('POS.DELETE_VIRTUAL_ERROR'));
         }
     }
 
     public async closeShift() {
         if (!confirm(this.translate.instant('POS.CONFIRM_CLOSE_SHIFT'))) return;
-
         try {
             const result: any = await firstValueFrom(this.http.post(`${environment.apiUrl}/api/close-shift`, {}, { withCredentials: true }));
-            alert(result.message);
-
+            this.notify.success(result.message);
             this.initPOS();
             this.selectedTable.set(null);
         } catch (e) {
             console.error('Error closing shift', e);
-            alert(this.translate.instant('POS.CLOSE_SHIFT_ERROR'));
+            this.notify.error(this.translate.instant('POS.CLOSE_SHIFT_ERROR'));
         }
     }
 }

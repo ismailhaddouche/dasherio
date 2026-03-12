@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const MenuItemSchema = new mongoose.Schema({
     category: { type: String, required: true }, // e.g., 'Entrantes', 'Principales'
@@ -11,27 +11,32 @@ const MenuItemSchema = new mongoose.Schema({
 
     // Different versions or sizes
     variants: [{
-        name: String, // e.g., 'Tamaño XL'
-        price: { type: Number, default: 0 } // PM FIX: Absolute price for this variant
+        name: { type: String, required: true },
+        price: { type: Number, required: true, min: 0 }
     }],
 
     // Complements that can be added
     addons: [{
-        name: String,
-        price: Number
+        name: { type: String, required: true },
+        price: { type: Number, required: true, min: 0 }
     }],
 
-    available: { type: Boolean, default: true },
-    order: { type: Number, default: 0 },
+    available: { type: Boolean, default: true, index: true },
+    order: { type: Number, default: 0, index: true },
 
     // Menu logic (e.g., Menu del día)
     isMenu: { type: Boolean, default: false },
     menuSections: [{
-        name: String, // e.g., 'Primer Plato'
-        options: [String], // List of dish names to choose from
-        minChoices: { type: Number, default: 1 },
-        maxChoices: { type: Number, default: 1 }
+        name: { type: String, required: true },
+        options: { type: [String], required: true },
+        minChoices: { type: Number, default: 1, min: 0 },
+        maxChoices: { type: Number, default: 1, min: 1 }
     }]
 }, { timestamps: true });
 
-module.exports = mongoose.model('MenuItem', MenuItemSchema);
+// Indexes for performance
+MenuItemSchema.index({ category: 1 });
+MenuItemSchema.index({ available: 1 });
+MenuItemSchema.index({ order: 1 });
+
+export default mongoose.model('MenuItem', MenuItemSchema);

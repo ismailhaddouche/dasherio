@@ -228,6 +228,13 @@ interface TotemWithStatus {
     .chip-active.free {
         background: var(--md-sys-color-surface-variant); color: var(--md-sys-color-on-surface-variant);
     }
+    
+    .chip {
+        font-size: 0.65rem; font-weight: 700; padding: 2px 10px; border-radius: 10px;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+    .chip-outline { border: 1px solid var(--md-sys-color-outline); }
+    .chip-outline.primary { border-color: var(--md-sys-color-primary); color: var(--md-sys-color-primary); }
 
     .icon-btn-sm {
         width: 32px; height: 32px; border-radius: 50%; border: none;
@@ -322,7 +329,7 @@ export class WaiterViewComponent implements OnInit, OnDestroy {
 
   public totems = signal<any[]>([]);
   public orders = signal<any[]>([]);
-  public loading = signal(true);
+  public loading = signal(false);
   public showAddModal = signal(false);
 
   private routerSub?: Subscription;
@@ -398,7 +405,7 @@ export class WaiterViewComponent implements OnInit, OnDestroy {
   }
 
   async loadData() {
-    // Show skeleton but don't block
+    if (this.loading()) return;
     this.loading.set(true);
     try {
       // Load both in parallel

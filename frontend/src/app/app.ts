@@ -8,13 +8,14 @@ import { CommunicationService } from './services/communication.service';
 import { AuthService } from './services/auth.service';
 import { ThemeService } from './services/theme.service';
 import { SidebarComponent } from './components/sidebar/sidebar';
+import { NotificationComponent } from './components/notification/notification.component';
 import { LucideAngularModule } from 'lucide-angular';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, SidebarComponent, LucideAngularModule, TranslateModule],
+  imports: [RouterOutlet, CommonModule, SidebarComponent, NotificationComponent, LucideAngularModule, TranslateModule],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

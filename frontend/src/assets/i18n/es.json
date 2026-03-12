@@ -151,7 +151,8 @@
         "EQUITATIVE_PARTS": "A partes iguales",
         "EQUITATIVE_HELPER": "Cada persona paga una parte proporcional de la cuenta total.",
         "PROCEED_PAY": "Proceder al Pago",
-        "PERS": "pers."
+        "PERS": "pers.",
+        "SUBTITLE": "Selecciona el método de pago"
     },
     "CUSTOMER": {
         "CONNECTING": "Conectando con la mesa...",
@@ -229,6 +230,8 @@
         "ADDON_PH": "Extra (ej: Queso)",
         "PRICE_PH": "Precio",
         "DEL_PERMANENTLY": "Eliminar Plato Permanentemente",
+        "DANGER_ZONE": "Zona de Peligro",
+        "DANGER_DESC": "Una vez borrado el producto, no habrá forma de recuperarlo.",
         "PRO_MANAGER": "Gestor de Menú Profesional",
         "SELECT_HINT": "Selecciona un plato para editar sus detalles o crea uno nuevo desde cero."
     },

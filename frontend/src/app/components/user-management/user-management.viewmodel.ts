@@ -18,10 +18,10 @@ export class UserManagementViewModel {
     public editingUser = signal<any | null>(null);
 
     constructor() {
-        this.loadData();
     }
 
-    private async loadData() {
+    public async loadData() {
+        if (this.loading()) return;
         this.loading.set(true);
         this.error.set(null);
         try {
@@ -29,7 +29,7 @@ export class UserManagementViewModel {
                 lastValueFrom(this.http.get(`${environment.apiUrl}/api/users`)),
                 lastValueFrom(this.http.get(`${environment.apiUrl}/api/restaurant`))
             ]);
-            
+
             if (users) this.users.set(users);
             if (config && config.printers) this.printers.set(config.printers);
 
@@ -96,7 +96,7 @@ export class UserManagementViewModel {
             }
 
             const updatedUser: any = await lastValueFrom(this.http.post(`${environment.apiUrl}/api/users`, payload));
-            
+
             this.users.update(curr => curr.map(u => u._id === updatedUser._id ? updatedUser : u));
             this.auth.logActivity('USER_UPDATED', { username: updatedUser.username });
             this.closeEditModal();

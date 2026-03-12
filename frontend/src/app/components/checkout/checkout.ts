@@ -20,7 +20,7 @@ import { LucideAngularModule } from 'lucide-angular';
             </button>
             <div>
               <h1 class="text-headline-medium">{{ 'CHECKOUT.TITLE' | translate }}</h1>
-              <p class="text-body-small opacity-60">Selecciona el método de pago</p>
+              <p class="text-body-small opacity-60">{{ 'CHECKOUT.SUBTITLE' | translate }}</p>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, DestroyRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { CommunicationService } from '../../services/communication.service';
@@ -22,6 +22,7 @@ export class KDSViewModel {
     private comms = inject(CommunicationService);
     private auth = inject(AuthService);
     private translate = inject(TranslateService);
+    private destroyRef = inject(DestroyRef);
 
     // State
     public orders = signal<KDSOrder[]>([]);
@@ -32,30 +33,42 @@ export class KDSViewModel {
     public showStockManager = signal<boolean>(false);
     public currentFilter = signal<'pending' | 'preparing' | 'ready'>('pending');
     public localConfig = signal<any>(null);
+    public currentTime = signal<number>(Date.now());
 
+    // Optimized computed signal that updates when orders OR currentTime changes
     public filteredOrders = computed(() => {
-        return this.orders()
+        const allOrders = this.orders();
+        const now = this.currentTime(); // Dependency for auto-refresh
+
+        return allOrders
             .filter(order => order.status === 'active')
-            .map(order => ({
-                ...order,
-                kitchenItems: order.items.filter(item =>
+            .map(order => {
+                const kitchenItems = order.items.filter(item =>
                     item.status !== 'served' &&
                     item.status !== 'completed' &&
                     item.status !== 'cancelled'
-                )
-            }))
+                );
+                return {
+                    ...order,
+                    kitchenItems,
+                    urgent: this.getTimeDiffMinutes(order.createdAt, now) >= 15
+                };
+            })
             .filter(order => order.kitchenItems.length > 0)
             .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     });
 
     constructor() {
-        this.initKDS();
         this.setupRealTime();
         this.loadLocalConfig();
 
-        setInterval(() => {
-            this.orders.update(orders => [...orders]);
+        const intervalId = setInterval(() => {
+            this.currentTime.set(Date.now());
         }, 60000);
+
+        this.destroyRef.onDestroy(() => {
+            clearInterval(intervalId);
+        });
     }
 
     private loadLocalConfig() {
@@ -67,7 +80,7 @@ export class KDSViewModel {
         }
     }
 
-    private async initKDS() {
+    public async initKDS() {
         this.loading.set(true);
         this.error.set(null);
 
@@ -103,15 +116,15 @@ export class KDSViewModel {
         });
     }
 
-    public getTimeDiff(createdAt: string): string {
+    public getTimeDiff(createdAt: string, now: number = this.currentTime()): string {
         if (!createdAt) return '0m';
-        const diff = Math.floor((new Date().getTime() - new Date(createdAt).getTime()) / 60000);
+        const diff = Math.floor((now - new Date(createdAt).getTime()) / 60000);
         return `${diff}m`;
     }
 
-    public getTimeDiffMinutes(createdAt: string): number {
+    public getTimeDiffMinutes(createdAt: string, now: number = this.currentTime()): number {
         if (!createdAt) return 0;
-        return Math.floor((new Date().getTime() - new Date(createdAt).getTime()) / 60000);
+        return Math.floor((now - new Date(createdAt).getTime()) / 60000);
     }
 
     public async updateItemStatus(orderId: string, itemId: string, nextStatus: string, print: boolean = false) {

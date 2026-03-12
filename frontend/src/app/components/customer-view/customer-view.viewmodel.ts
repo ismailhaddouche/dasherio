@@ -1,12 +1,12 @@
-import { Injectable, signal, inject, computed } from '@angular/core';
+import { Injectable, signal, inject, computed, DestroyRef } from '@angular/core';
 import { CommunicationService } from '../../services/communication.service';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export interface TableSession {
     tableNumber: string;
@@ -23,6 +23,7 @@ export class CustomerViewModel {
     private router = inject(Router);
     private theme = inject(ThemeService);
     public auth = inject(AuthService);
+    private destroyRef = inject(DestroyRef);
 
     // State
     public session = signal<TableSession | null>(null);
@@ -58,36 +59,23 @@ export class CustomerViewModel {
         const totemParam = this.route.snapshot.paramMap.get('tableNumber');
         const sessionParam = this.route.snapshot.paramMap.get('sessionCode');
 
-        // REDIRECT LOGIC: If on physical totem ID route, check if session is active
         if (totemParam) {
             try {
-                const data: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/totems/${totemParam}/session`));
+                const res: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/totems/${totemParam}/session`));
+                const data = res.data;
 
                 if (data.sessionId) {
-                    // Session already exists! Redirect to it
                     localStorage.setItem('disher_current_session', JSON.stringify({
-                        sessionId: data.sessionId,
-                        totemId: data.totemId,
-                        tableNumber: data.tableNumber,
-                        activeOrder: null
+                        sessionId: data.sessionId, totemId: data.totemId, tableNumber: data.tableNumber, activeOrder: null
                     }));
                     this.router.navigate(['/s', data.sessionId], { replaceUrl: true });
                     return;
                 } else {
-                    // Session is NOT started. Wait for user to input name.
                     this.session.set({
-                        sessionId: undefined,
-                        totemId: data.totemId,
-                        tableNumber: data.tableNumber,
-                        activeOrder: null
+                        sessionId: undefined, totemId: data.totemId, tableNumber: data.tableNumber, activeOrder: null
                     });
-
-                    // Fetch restaurant config for basics (name)
-                    const restData: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/restaurant`));
-                    if (restData) {
-                        this.restaurantName.set(restData.name);
-                    }
-
+                    const restRes: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/restaurant`));
+                    if (restRes?.data?.name) this.restaurantName.set(restRes.data.name);
                     this.loading.set(false);
                     return;
                 }
@@ -100,34 +88,19 @@ export class CustomerViewModel {
         }
 
         if (sessionParam) {
-            // We are already in a secure session URL
             const savedSession = localStorage.getItem('disher_current_session');
-            let initialData: TableSession = {
-                tableNumber: '...',
-                sessionId: sessionParam,
-                activeOrder: null
-            };
+            let initialData: TableSession = { tableNumber: '...', sessionId: sessionParam, activeOrder: null };
 
-            // TRY to recover basic info from saved session if it matches
             if (savedSession) {
                 const parsed = JSON.parse(savedSession);
-                if (parsed.sessionId === sessionParam) {
-                    initialData = parsed;
-                }
+                if (parsed.sessionId === sessionParam) initialData = parsed;
             }
-
             this.session.set(initialData);
 
-            // Fetch data
             try {
-                // Get Menu
-                const menuRes = await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/menu`));
-                this.menu.set(menuRes || []);
-
-                // Get Real Session State (this will also populate restaurantName and tableNumber)
+                const menuRes: any = await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/menu`));
+                this.menu.set(menuRes.data || []);
                 await this.loadTableState();
-
-                // Store for recovery
                 localStorage.setItem('disher_current_session', JSON.stringify(this.session()));
             } catch (e) {
                 console.error('Error loading session data', e);
@@ -136,25 +109,21 @@ export class CustomerViewModel {
         } else {
             this.error.set('Enlace no válido. Por favor, escanea el código QR de nuevo.');
         }
-
         this.loading.set(false);
     }
 
     public async registerNameAndStartSession(name: string) {
-        if (!name || name.trim() === '') name = 'Comensal ' + Math.floor(Math.random() * 100);
-        this.comms.setUserName(name);
+        const userName = (!name || name.trim() === '') ? 'Comensal ' + Math.floor(Math.random() * 100) : name.trim();
+        this.comms.setUserName(userName);
 
         const currentSession = this.session();
-
-        // If we are on the /:totemId page and there's no sessionId, we must start one
         if (currentSession && !currentSession.sessionId && currentSession.totemId) {
             this.loading.set(true);
             try {
-                const data: any = await firstValueFrom(this.http.post(`${environment.apiUrl}/api/totems/${currentSession.totemId}/session`, {}, {
+                const res: any = await firstValueFrom(this.http.post(`${environment.apiUrl}/api/totems/${currentSession.totemId}/session`, {}, {
                     headers: this.auth.getHeaders()
                 }));
-
-                // Immediately navigate to the secure session URL.
+                const data = res.data;
                 this.router.navigate(['/s', data.sessionId], { replaceUrl: true });
             } catch (error) {
                 console.error('Error starting new session', error);
@@ -214,31 +183,26 @@ export class CustomerViewModel {
 
     private async loadTableState() {
         const s = this.session();
-        if (!s || !s.sessionId) return;
+        if (!s?.sessionId) return;
 
         try {
-            // Fetch restaurant config for basics
-            const restData: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/restaurant`));
-            this.restaurantName.set(restData.name);
+            const restRes: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/restaurant`));
+            if (restRes?.data?.name) this.restaurantName.set(restRes.data.name);
 
             const savedCart = localStorage.getItem(`disher_cart_${s.sessionId}`);
             if (savedCart) this.cart.set(JSON.parse(savedCart));
 
-            const activeOrder: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/orders/session/${s.sessionId}`));
+            const orderRes: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/orders/session/${s.sessionId}`));
+            const activeOrder = orderRes.data;
 
             if (activeOrder) {
                 if (activeOrder.status === 'completed' || activeOrder.paymentStatus === 'paid') {
-                    // Safety check: if order is already paid, invalidating session locally
                     this.session.update(prev => prev ? { ...prev, activeOrder: null } : prev);
-                    // If it's already paid, the user should scan QR AGAIN to get a new session
                     return;
                 }
 
                 this.session.update(prev => prev ? {
-                    ...prev,
-                    activeOrder,
-                    tableNumber: activeOrder.tableNumber,
-                    totemId: activeOrder.totemId
+                    ...prev, activeOrder, tableNumber: activeOrder.tableNumber, totemId: activeOrder.totemId
                 } : prev);
             } else {
                 this.session.update(prev => prev ? { ...prev, activeOrder: null } : prev);

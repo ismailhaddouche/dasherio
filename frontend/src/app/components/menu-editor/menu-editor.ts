@@ -1,9 +1,12 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MenuEditorViewModel } from './menu-editor.viewmodel';
 import { LucideAngularModule } from 'lucide-angular';
 import { TranslateModule } from '@ngx-translate/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-menu-editor',
@@ -220,9 +223,9 @@ import { TranslateModule } from '@ngx-translate/core';
                   <div class="danger-section-md3">
                     <div class="danger-header">
                         <lucide-icon name="alert-triangle" [size]="20"></lucide-icon>
-                        <span class="text-title-small">ZONA DE PELIGRO</span>
+                        <span class="text-title-small">{{ 'MENU_EDITOR.DANGER_ZONE' | translate }}</span>
                     </div>
-                    <p class="text-body-small opacity-60">Una vez borrado el producto, no habrá forma de recuperarlo.</p>
+                    <p class="text-body-small opacity-60">{{ 'MENU_EDITOR.DANGER_DESC' | translate }}</p>
                     <button class="btn-error" (click)="vm.deleteItem(vm.selectedItem()!._id!)">
                         {{ 'MENU_EDITOR.DEL_PERMANENTLY' | translate }}
                     </button>
@@ -467,8 +470,22 @@ import { TranslateModule } from '@ngx-translate/core';
     .flex-1 { flex: 1; }
     .flex-2 { flex: 2; }
   `]
-
 })
-export class MenuEditorComponent {
+export class MenuEditorComponent implements OnInit {
   public vm = inject(MenuEditorViewModel);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+
+  ngOnInit() {
+    this.vm.loadMenu();
+
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((e: any) => {
+      if (e.url?.includes('/menu')) {
+        this.vm.loadMenu();
+      }
+    });
+  }
 }

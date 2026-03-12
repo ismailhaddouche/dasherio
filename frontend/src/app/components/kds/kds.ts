@@ -1,10 +1,13 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KDSViewModel } from './kds.viewmodel';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { TranslateModule } from '@ngx-translate/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-kds',
@@ -12,7 +15,7 @@ import { TranslateModule } from '@ngx-translate/core';
   imports: [CommonModule, LucideAngularModule, TranslateModule],
   providers: [KDSViewModel],
   template: `
-    <div class="kds-container">
+    <div class="kds-container animate-fade-in">
       <header class="section-header-md3">
         <div class="header-content">
           <div class="title-with-icon">
@@ -49,13 +52,13 @@ import { TranslateModule } from '@ngx-translate/core';
       <main class="kds-layout">
         @if (vm.loading()) {
             <div class="kds-loader">
-                <div class="md-spinner"></div>
+                <lucide-icon name="loader-2" [size]="48" class="animate-spin opacity-20"></lucide-icon>
                 <p class="text-body-medium opacity-60">{{ 'KDS.SYNCING' | translate }}</p>
             </div>
         } @else {
             <section class="kds-grid">
             @for (order of vm.filteredOrders(); track order._id) {
-                <div class="order-card-md3" [class.urgent]="vm.getTimeDiffMinutes(order.createdAt) >= 15">
+                <div class="order-card-md3" [class.urgent]="order.urgent">
                   <header class="order-header-md3">
                     <div class="order-meta">
                         <span class="text-title-large color-primary">{{ 'ROLES.Table' | translate }} #{{ order.totemId || order.tableNumber }}</span>
@@ -204,41 +207,49 @@ import { TranslateModule } from '@ngx-translate/core';
 
     .kds-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 24px;
       align-items: start;
     }
 
-    /* Order Card MD3 */
+    /* Glassmorphic Order Card */
     .order-card-md3 {
-      background: var(--md-sys-color-surface-1);
-      border-radius: 24px;
-      padding: 0;
+      background: rgba(var(--md-sys-color-surface-rgb, 255, 255, 255), 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 28px;
       overflow: hidden;
-      border: 1px solid var(--md-sys-color-outline-variant);
-      box-shadow: var(--md-sys-elevation-1);
-      transition: box-shadow 0.2s;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: slideUp 0.5s ease-out;
     }
-    .order-card-md3:hover { box-shadow: var(--md-sys-elevation-2); }
+    
+    .order-card-md3:hover { 
+      transform: translateY(-4px);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.12);
+      border-color: rgba(var(--md-sys-color-primary-rgb, 103, 80, 164), 0.3);
+    }
     
     .order-card-md3.urgent {
       border: 2px solid var(--md-sys-color-error);
+      background: rgba(var(--md-sys-color-error-container-rgb, 255, 218, 214), 0.4);
       animation: urgentPulse 2s infinite;
     }
 
     @keyframes urgentPulse {
       0% { box-shadow: 0 0 0 0 rgba(186, 26, 26, 0.4); }
-      70% { box-shadow: 0 0 16px 8px rgba(186, 26, 26, 0); }
+      70% { box-shadow: 0 0 20px 10px rgba(186, 26, 26, 0); }
       100% { box-shadow: 0 0 0 0 rgba(186, 26, 26, 0); }
     }
 
     .order-header-md3 {
-      padding: 16px 20px;
-      background: var(--md-sys-color-surface-2);
+      padding: 20px 24px;
+      background: rgba(var(--md-sys-color-surface-variant-rgb), 0.3);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .order-meta { display: flex; flex-direction: column; gap: 4px; }
@@ -247,79 +258,103 @@ import { TranslateModule } from '@ngx-translate/core';
       display: flex;
       align-items: center;
       gap: 6px;
+      padding: 4px 10px;
+      background: rgba(0,0,0,0.05);
+      border-radius: 20px;
       color: var(--md-sys-color-on-surface-variant);
     }
 
     .bulk-actions-md3 { display: flex; gap: 8px; }
 
-    .items-list-md3 { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .items-list-md3 { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 
     .kds-item-md3 {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 16px;
-      border-radius: 16px;
-      background: var(--md-sys-color-surface-container-low);
-      transition: all 0.2s;
+      padding: 14px 18px;
+      border-radius: 20px;
+      background: rgba(var(--md-sys-color-surface-container-rgb), 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.25s ease;
+    }
+
+    .kds-item-md3:hover {
+      background: rgba(var(--md-sys-color-surface-container-high-rgb), 0.6);
+      transform: scale(1.02);
     }
 
     .kds-item-md3.preparing {
-      background: var(--md-sys-color-primary-container);
+      background: linear-gradient(135deg, var(--md-sys-color-primary-container), rgba(var(--md-sys-color-primary-container-rgb), 0.6));
       color: var(--md-sys-color-on-primary-container);
+      border-color: var(--md-sys-color-primary);
     }
     .kds-item-md3.preparing .opacity-60 { color: var(--md-sys-color-on-primary-container); opacity: 0.7; }
 
     .kds-item-md3.ready {
-      opacity: 0.6;
-      background: var(--md-sys-color-surface-container-high);
+      opacity: 0.7;
+      background: rgba(var(--md-sys-color-surface-container-highest-rgb), 0.3);
+      filter: grayscale(0.5);
     }
 
     .kds-item-md3.cancelled {
-      opacity: 0.5;
+      opacity: 0.4;
       text-decoration: line-through;
       border: 1px dashed var(--md-sys-color-error);
+      background: transparent;
     }
 
-    .item-main-md3 { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-    .item-name-row { display: flex; align-items: baseline; gap: 10px; }
-    .item-qty { font-weight: 800; color: var(--md-sys-color-primary); }
+    .item-main-md3 { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .item-name-row { display: flex; align-items: baseline; gap: 12px; }
+    .item-qty { font-weight: 900; color: var(--md-sys-color-primary); font-size: 1.1rem; }
+    .item-name { font-weight: 600; }
     
     .kds-item-md3.preparing .item-qty { color: inherit; }
 
     .item-timer-md3 {
-      padding: 2px 8px;
-      border-radius: 6px;
-      background: var(--md-sys-color-surface-variant);
+      padding: 4px 12px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.08);
       font-size: 0.75rem;
-      font-weight: 700;
+      font-weight: 800;
       color: var(--md-sys-color-on-surface-variant);
     }
-    .item-timer-md3.urgent { background: var(--md-sys-color-error); color: var(--md-sys-color-on-error); }
+    .item-timer-md3.urgent { 
+      background: var(--md-sys-color-error); 
+      color: var(--md-sys-color-on-error);
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0.7; } }
 
     .item-sub-info { display: flex; align-items: center; gap: 12px; }
     
     .item-note-md3 {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
+      padding: 4px 12px;
+      background: rgba(var(--md-sys-color-secondary-container-rgb), 0.3);
+      border-radius: 8px;
       font-size: 0.75rem;
       color: var(--md-sys-color-secondary);
       font-weight: 600;
     }
 
-    .item-actions-md3 { display: flex; align-items: center; gap: 8px; }
+    .item-actions-md3 { display: flex; align-items: center; gap: 10px; }
 
-    .ready-action-group { display: flex; gap: 6px; }
+    .ready-action-group { display: flex; gap: 8px; }
 
-    .ready-status-md3 { display: flex; align-items: center; gap: 12px; }
-    .status-icon.success { color: #34d399; }
+    .ready-status-md3 { display: flex; align-items: center; gap: 16px; }
+    .status-icon.success { color: #10b981; }
 
     .status-tag {
-      padding: 4px 10px;
+      padding: 6px 14px;
       border-radius: 100px;
       text-transform: uppercase;
-      font-weight: 800;
+      font-weight: 900;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
     }
     .status-tag.error { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
 
@@ -327,24 +362,26 @@ import { TranslateModule } from '@ngx-translate/core';
     .stock-drawer-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.3);
       z-index: 1000;
       display: flex;
       justify-content: flex-end;
-      animation: fadeIn 0.2s ease-out;
+      animation: fadeIn 0.3s ease-out;
+      backdrop-filter: blur(12px);
     }
 
     .stock-drawer-md3 {
       width: 100%;
-      max-width: 400px;
+      max-width: 440px;
       height: 100%;
-      background: var(--md-sys-color-surface-1);
-      box-shadow: var(--md-sys-elevation-4);
-      padding: 32px;
+      background: rgba(var(--md-sys-color-surface-rgb), 0.9);
+      backdrop-filter: blur(24px);
+      box-shadow: -16px 0 64px rgba(0,0,0,0.2);
+      padding: 40px;
       display: flex;
       flex-direction: column;
-      gap: 24px;
-      animation: slideInRight 0.3s cubic-bezier(0, 0, 0.2, 1);
+      gap: 32px;
+      animation: slideInRight 0.4s cubic-bezier(0.05, 0.7, 0.1, 1);
     }
 
     .drawer-header-md3 { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -352,78 +389,90 @@ import { TranslateModule } from '@ngx-translate/core';
     .stock-list-md3 {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
       overflow-y: auto;
-      padding-right: 8px;
+      padding-right: 12px;
     }
 
     .stock-item-row-md3 {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px;
-      background: var(--md-sys-color-surface-container-low);
-      border-radius: 16px;
-      border: 1px solid var(--md-sys-color-outline-variant);
+      padding: 20px;
+      background: rgba(var(--md-sys-color-surface-container-low-rgb), 0.5);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: all 0.2s;
     }
+    .stock-item-row-md3:hover { transform: scale(1.02); background: rgba(var(--md-sys-color-surface-container-rgb), 0.7); }
 
     .md-toggle-btn {
-      padding: 8px 16px;
+      padding: 10px 20px;
       border-radius: 100px;
       border: none;
       background: var(--md-sys-color-primary-container);
       color: var(--md-sys-color-on-primary-container);
       font-size: 0.75rem;
-      font-weight: 800;
+      font-weight: 900;
       cursor: pointer;
-      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
+    .md-toggle-btn:active { transform: scale(0.9); }
     .md-toggle-btn.off {
       background: var(--md-sys-color-surface-variant);
       color: var(--md-sys-color-on-surface-variant);
+      box-shadow: none;
     }
 
     /* Helper Classes */
-    .icon-box-md3.primary { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+    .icon-box-md3.primary { 
+      background: var(--md-sys-color-primary-container); 
+      color: var(--md-sys-color-on-primary-container); 
+      box-shadow: 0 8px 24px rgba(var(--md-sys-color-primary-rgb), 0.2);
+    }
     
     .stat-chip-md3 {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 8px 20px;
+      gap: 12px;
+      padding: 10px 24px;
       background: var(--md-sys-color-secondary-container);
       color: var(--md-sys-color-on-secondary-container);
       border-radius: 100px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
     .md-badge-error {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 16px;
+      padding: 10px 20px;
       background: var(--md-sys-color-error-container);
       color: var(--md-sys-color-on-error-container);
       border-radius: 100px;
-      font-size: 0.8rem;
-      font-weight: 700;
+      font-size: 0.85rem;
+      font-weight: 800;
     }
 
     .empty-state-md3 {
       grid-column: 1 / -1;
       text-align: center;
-      padding: 80px 20px;
+      padding: 120px 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
+      gap: 24px;
     }
     .empty-icon-box {
-      width: 120px; height: 120px;
+      width: 140px; height: 140px;
       border-radius: 50%;
-      background: var(--md-sys-color-surface-container-high);
+      background: rgba(var(--md-sys-color-surface-container-high-rgb), 0.5);
+      backdrop-filter: blur(8px);
       display: flex; align-items: center; justify-content: center;
       color: var(--md-sys-color-on-surface-variant);
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      box-shadow: inset 0 0 24px rgba(0,0,0,0.05);
     }
 
     .kds-loader {
@@ -431,20 +480,16 @@ import { TranslateModule } from '@ngx-translate/core';
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 16px;
-      padding: 100px;
+      gap: 24px;
+      padding: 150px;
     }
 
-    .md-spinner {
-      width: 48px; height: 48px;
-      border: 4px solid var(--md-sys-color-surface-variant);
-      border-top-color: var(--md-sys-color-primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
+    .animate-spin { animation: spin 1s linear infinite; }
+    .animate-fade-in { animation: fadeIn 0.6s ease-out; }
+    
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
     @media (max-width: 768px) {
@@ -453,23 +498,42 @@ import { TranslateModule } from '@ngx-translate/core';
     }
 
     .btn-primary-sm, .btn-success-sm, .btn-tonal-sm {
-       padding: 8px 16px; border-radius: 100px; border: none; font-weight: 700; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px;
+       padding: 10px 20px; border-radius: 100px; border: none; font-weight: 800; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 8px;
+       transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
+    .btn-primary-sm:hover, .btn-success-sm:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .btn-primary-sm:active, .btn-success-sm:active { transform: scale(0.95); }
+    
     .btn-primary-sm { background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
-    .btn-success-sm { background: #34d399; color: #064e3b; }
+    .btn-success-sm { background: #10b981; color: white; }
 
     .color-primary { color: var(--md-sys-color-primary); }
     .opacity-60 { opacity: 0.6; }
 
     .header-actions {
       display: flex;
-      gap: 16px;
+      gap: 32px;
       align-items: center;
     }
   `]
 })
-export class KDSComponent {
+export class KDSComponent implements OnInit {
   public vm = inject(KDSViewModel);
   public auth = inject(AuthService);
   public theme = inject(ThemeService);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+
+  ngOnInit() {
+    this.vm.initKDS();
+
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((e: any) => {
+      if (e.url?.includes('/kds')) {
+        this.vm.initKDS();
+      }
+    });
+  }
 }

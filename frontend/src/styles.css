@@ -64,6 +64,18 @@
 
     --sidebar-width: 260px;
     --sidebar-collapsed-width: 88px;
+
+    /* RGB Helpers for Glassmorphism & Translucency */
+    --md-sys-color-primary-rgb: 208, 188, 255;
+    --md-sys-color-surface-rgb: 28, 27, 31;
+    --md-sys-color-surface-variant-rgb: 73, 69, 79;
+    --md-sys-color-surface-container-rgb: 31, 29, 34;
+    --md-sys-color-surface-container-low-rgb: 25, 24, 28;
+    --md-sys-color-surface-container-high-rgb: 38, 36, 42;
+    --md-sys-color-surface-container-highest-rgb: 46, 44, 51;
+    --md-sys-color-error-container-rgb: 140, 29, 24;
+    --md-sys-color-primary-container-rgb: 79, 55, 139;
+    --md-sys-color-secondary-container-rgb: 74, 68, 88;
 }
 
 *,

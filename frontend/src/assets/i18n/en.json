@@ -151,7 +151,8 @@
         "EQUITATIVE_PARTS": "Equal parts",
         "EQUITATIVE_HELPER": "Each person pays a proportional part of the total bill.",
         "PROCEED_PAY": "Proceed to Payment",
-        "PERS": "pers."
+        "PERS": "pers.",
+        "SUBTITLE": "Select payment method"
     },
     "CUSTOMER": {
         "CONNECTING": "Connecting to the table...",
@@ -229,6 +230,8 @@
         "ADDON_PH": "Extra (e.g., Cheese)",
         "PRICE_PH": "Price",
         "DEL_PERMANENTLY": "Delete Dish Permanently",
+        "DANGER_ZONE": "Danger Zone",
+        "DANGER_DESC": "Once deleted, this product cannot be recovered.",
         "PRO_MANAGER": "Professional Menu Manager",
         "SELECT_HINT": "Select a dish to edit its details or create a new one from scratch."
     },

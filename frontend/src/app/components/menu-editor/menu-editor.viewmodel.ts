@@ -46,7 +46,6 @@ export class MenuEditorViewModel {
     });
 
     constructor() {
-        this.loadMenu();
     }
 
     public async loadMenu() {

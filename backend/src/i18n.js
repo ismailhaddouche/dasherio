@@ -1,7 +1,7 @@
-const i18n = require('i18next');
-const middleware = require('i18next-http-middleware');
-const es = require('./locales/es.json');
-const en = require('./locales/en.json');
+import i18n from 'i18next';
+import middleware from 'i18next-http-middleware';
+import es from './locales/es.json' with { type: 'json' };
+import en from './locales/en.json' with { type: 'json' };
 
 i18n
     .use(middleware.LanguageDetector)
@@ -19,4 +19,4 @@ i18n
         }
     });
 
-module.exports = { i18n, middleware };
+export { i18n, middleware };

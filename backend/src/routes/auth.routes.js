@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { body, validationResult } = require('express-validator');
-const User = require('../models/User');
-const { generateToken, getCookieOptions, COOKIE_NAME } = require('../middleware/auth.middleware');
+import { body, validationResult } from 'express-validator';
+import User from '../models/User.js';
+import { generateToken, getCookieOptions, COOKIE_NAME } from '../middleware/auth.middleware.js';
 
 // POST /auth/login
 router.post('/login',
@@ -13,31 +13,27 @@ router.post('/login',
     async (req, res) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ error: errors.array()[0].msg });
+            return res.error(errors.array()[0].msg, 400);
         }
 
-        try {
-            const { username, password } = req.body;
-            const user = await User.findOne({ username, active: true });
+        const { username, password } = req.body;
+        const user = await User.findOne({ username, active: true });
 
-            if (!user || !(await user.comparePassword(password))) {
-                return res.status(401).json({ error: req.t('ERRORS.INVALID_CREDENTIALS') });
-            }
-
-            const token = generateToken({ userId: user._id, username: user.username, role: user.role });
-
-            // Set token as httpOnly cookie — inaccessible to JavaScript
-            res.cookie(COOKIE_NAME, token, getCookieOptions());
-
-            res.json({
-                username: user.username,
-                role: user.role,
-                printerId: user.printerId,
-                printTemplate: user.printTemplate
-            });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
+        if (!user || !(await user.comparePassword(password))) {
+            return res.error(req.t('ERRORS.INVALID_CREDENTIALS'), 401);
         }
+
+        const token = generateToken({ userId: user._id, username: user.username, role: user.role });
+
+        // Set token as httpOnly cookie — inaccessible to JavaScript
+        res.cookie(COOKIE_NAME, token, getCookieOptions());
+
+        res.success({
+            username: user.username,
+            role: user.role,
+            printerId: user.printerId,
+            printTemplate: user.printTemplate
+        });
     }
 );
 
@@ -50,35 +46,30 @@ router.post('/customer-session',
     ],
     async (req, res) => {
         const errors = validationResult(req);
-        if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg });
+        if (!errors.isEmpty()) return res.error(errors.array()[0].msg, 400);
 
-        try {
-            const { restaurantSlug, totemId, name } = req.body;
+        const { restaurantSlug, totemId, name } = req.body;
 
-            // Create a temporary JWT for the customer
-            const token = generateToken({
-                userId: `guest-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-                username: name,
-                role: 'customer',
-                restaurantSlug,
-                totemId
-            });
+        // Create a temporary JWT for the customer
+        const token = generateToken({
+            userId: `guest-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            username: name,
+            role: 'customer',
+            restaurantSlug,
+            totemId
+        });
 
-            res.cookie(COOKIE_NAME, token, getCookieOptions());
-            res.json({ username: name, role: 'customer', restaurantSlug, totemId });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        res.cookie(COOKIE_NAME, token, getCookieOptions());
+        res.success({ username: name, role: 'customer', restaurantSlug, totemId });
     }
 );
 
 // POST /auth/logout
 router.post('/logout', (req, res) => {
-    const { getCookieOptions, COOKIE_NAME } = require('../middleware/auth.middleware');
     const options = { ...getCookieOptions() };
     delete options.maxAge; // Remove maxAge for clearing
     res.clearCookie(COOKIE_NAME, { path: options.path || '/' });
-    res.json({ message: req.t('ERRORS.LOGGED_OUT') });
+    res.success({ message: req.t('ERRORS.LOGGED_OUT') });
 });
 
-module.exports = router;
+export default router;

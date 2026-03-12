@@ -1,126 +1,99 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
-const rateLimit = require('express-rate-limit');
-const cookieParser = require('cookie-parser');
-const path = require('path');
-const routes = require('./routes');
-const { i18n, middleware } = require('./i18n');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import routes from './routes/index.js';
+import { i18n, middleware as i18nMiddleware } from './i18n.js';
+import { responseHandler } from './middleware/response.middleware.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
-// Middleware de internacionalización (i18n)
-app.use(middleware.handle(i18n));
-
-
-// Trust proxy for express-rate-limit when behind Caddy
+// ── Security ─────────────────────────────────────────────────────────────────
 app.set('trust proxy', 1);
 
-// Serve static files from the uploads directory
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
-
-// Security: Helmet protects against common vulnerabilities
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
-            defaultSrc: ['\'self\''],
-            styleSrc: ['\'self\'', '\'unsafe-inline\''],
-            scriptSrc: ['\'self\''],
-            imgSrc: ['\'self\'', 'data:', 'https:'],
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
         }
     },
     hsts: { maxAge: 31536000, includeSubDomains: true }
 }));
 
-// Performance: Compress all responses
+// ── Performance ──────────────────────────────────────────────────────────────
 app.use(compression());
 
-// Security: Global rate limiting to prevent abuse
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000, // Increased to 1000 to support heavy admin dashboard navigation
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: (req, res, next, options) => {
-        res.status(options.statusCode).json({ error: req.t('errors.too_many_requests') });
-    }
-});
-app.use('/api/', limiter);
-
-// Security: Stricter rate limit on login to prevent brute-force attacks
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // Max 10 login attempts per 15 minutes per IP
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: (req, res, next, options) => {
-        res.status(options.statusCode).json({ error: req.t('errors.too_many_login_attempts') });
-    }
-});
-app.use('/api/auth/login', loginLimiter);
-
-// CORS configuration — supports CORS_ORIGIN for dev, falls back to DOMAIN
-const rawOrigin = process.env.CORS_ORIGIN || process.env.DOMAIN || 'http://localhost';
-const allowedOrigins = rawOrigin.split(',').map(o => o.trim());
-
-const corsOptions = {
-    origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
+// ── CORS ─────────────────────────────────────────────────────────────────────
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production'
+        ? [process.env.DOMAIN, /\.disher\.io$/]
+        : true,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    maxAge: 86400
-};
-app.use(cors(corsOptions));
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language']
+}));
 
-// Cookie parser (required for httpOnly JWT cookies)
+// ── Body Parsers ─────────────────────────────────────────────────────────────
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Request body parser with size limits
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ limit: '1mb', extended: true }));
+// ── I18n ─────────────────────────────────────────────────────────────────────
+app.use(i18nMiddleware.handle(i18n));
 
-// Request ID middleware for tracking
-app.use((req, res, next) => {
-    req.id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    res.setHeader('X-Request-ID', req.id);
-    next();
+// ── Standardized Response Helpers ────────────────────────────────────────────
+app.use(responseHandler);
+
+// ── Rate Limiting ────────────────────────────────────────────────────────────
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: process.env.NODE_ENV === 'production' ? 2000 : 10000,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+        res.error(req.t?.('errors.too_many_requests') || 'Too many requests', 429);
+    }
 });
+app.use('/api/', apiLimiter);
 
-// Health check endpoint (used by Docker healthchecks and monitoring)
-app.get('/api/health', (req, res) => {
-    res.status(200).json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    });
-});
+// ── Static Files ─────────────────────────────────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
-// Main API Router
+// ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api', routes);
 
-// 404 handler
+// ── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
-    res.status(404).json({
-        error: req.t('errors.not_found'),
-        message: req.t('errors.cannot_method_path', { method: req.method, path: req.path }),
-        requestId: req.id
-    });
+    res.error(req.t?.('ERRORS.ROUTE_NOT_FOUND', { route: req.originalUrl }) || 'Route not found', 404);
 });
 
-// Error handling middleware - must be last
+// ── Global Error Handler ─────────────────────────────────────────────────────
 app.use((err, req, res, _next) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || req.t('errors.internal_error');
+    console.error(`[SERVER ERROR] ${new Date().toISOString()}:`, err.message);
 
-    console.error(`[ERROR] ${req.method} ${req.path} - Status: ${status}`, err);
+    if (err.name === 'ValidationError') {
+        const messages = Object.values(err.errors).map(val => val.message);
+        return res.error(messages[0], 400, err);
+    }
 
-    res.status(status).json({
-        error: message,
-        status,
-        requestId: req.id,
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-    });
+    if (err.name === 'UnauthorizedError' || err.name === 'JsonWebTokenError') {
+        return res.error(req.t?.('ERRORS.UNAUTHORIZED') || 'Unauthorized', 401);
+    }
+
+    const statusCode = err.statusCode || 500;
+    const message = process.env.NODE_ENV === 'production'
+        ? (req.t?.('ERRORS.INTERNAL_SERVER_ERROR') || 'Internal server error')
+        : err.message;
+
+    res.error(message, statusCode, err);
 });
 
-module.exports = app;
+export default app;

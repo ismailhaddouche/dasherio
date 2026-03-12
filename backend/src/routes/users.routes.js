@@ -1,45 +1,35 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { body, param, validationResult } = require('express-validator');
-const User = require('../models/User');
-const { verifyToken } = require('../middleware/auth.middleware');
+import { body, param, validationResult } from 'express-validator';
+import User from '../models/User.js';
+import { verifyToken } from '../middleware/auth.middleware.js';
 
 const validate = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ error: errors.array()[0].msg });
+        return res.error(errors.array()[0].msg, 400);
     }
     next();
 };
 
 // Middleware to ensure admin role
 const requireAdmin = (req, res, next) => {
-    console.log(`[DEBUG AUTH] User: ${req.user?.userId}, Role: ${req.user?.role}`);
     if (!req.user || req.user.role !== 'admin') {
-        console.error(`[AUTH DENIED] User with role ${req.user?.role} tried to access admin route`);
-        return res.status(403).json({ error: req.t('ERRORS.ACCESS_DENIED_ADMIN') });
+        return res.error(req.t('ERRORS.ACCESS_DENIED_ADMIN'), 403);
     }
     next();
 };
 
-// GET / - List all users (Full path: /api/users/)
+// GET / - List all users
 router.get('/', verifyToken, requireAdmin, async (req, res) => {
-    try {
-        const users = await User.find().select('-password');
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+    const users = await User.find().select('-password');
+    res.success(users);
 });
 
 // GET /restaurant/:slug - Get users for a restaurant
 router.get('/restaurant/:slug', verifyToken, requireAdmin, async (req, res) => {
-    try {
-        const users = await User.find({ restaurantSlug: req.params.slug }).select('-password');
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+    const users = await User.find({ restaurantSlug: req.params.slug }).select('-password');
+    res.success(users);
 });
 
 // PATCH /me - Update own profile
@@ -51,24 +41,22 @@ router.patch('/me',
     ],
     validate,
     async (req, res) => {
+        const user = await User.findById(req.user.userId);
+        if (!user) return res.error(req.t('ERRORS.USER_NOT_FOUND'), 404);
+
+        if (req.body.username) user.username = req.body.username;
+        if (req.body.password) user.password = req.body.password;
+
         try {
-            const user = await User.findById(req.user.userId);
-            if (!user) return res.status(404).json({ error: req.t('ERRORS.USER_NOT_FOUND') });
-
-            if (req.body.username) user.username = req.body.username;
-            if (req.body.password) user.password = req.body.password;
-
             await user.save();
-            
-            const result = user.toObject();
-            delete result.password;
-            res.json(result);
         } catch (error) {
-            if (error.code === 11000) {
-                return res.status(400).json({ error: req.t('ERRORS.USERNAME_IN_USE') });
-            }
-            res.status(500).json({ error: error.message });
+            if (error.code === 11000) return res.error(req.t('ERRORS.USERNAME_IN_USE'), 400);
+            throw error;
         }
+
+        const result = user.toObject();
+        delete result.password;
+        res.success(result);
     }
 );
 
@@ -88,25 +76,21 @@ router.post('/',
     ],
     validate,
     async (req, res) => {
-        try {
-            const { _id, ...data } = req.body;
+        const { _id, ...data } = req.body;
 
-            let user;
-            if (_id) {
-                user = await User.findById(_id);
-                if (!user) return res.status(404).json({ error: req.t('ERRORS.USER_NOT_FOUND') });
-                Object.assign(user, data);
-                await user.save();
-            } else {
-                user = new User(data);
-                await user.save();
-            }
-            const result = user.toObject();
-            delete result.password;
-            res.json(result);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
+        let user;
+        if (_id) {
+            user = await User.findById(_id);
+            if (!user) return res.error(req.t('ERRORS.USER_NOT_FOUND'), 404);
+            Object.assign(user, data);
+            await user.save();
+        } else {
+            user = new User(data);
+            await user.save();
         }
+        const result = user.toObject();
+        delete result.password;
+        res.success(result);
     }
 );
 
@@ -117,12 +101,9 @@ router.delete('/:id',
     param('id').isMongoId().withMessage('Invalid user ID'),
     validate,
     async (req, res) => {
-        try {
-            await User.findByIdAndDelete(req.params.id);
-            res.json({ message: 'User deleted' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) return res.error(req.t('ERRORS.USER_NOT_FOUND'), 404);
+        res.success({ message: 'User deleted' });
     }
 );
 
@@ -137,20 +118,16 @@ router.patch('/:id/print-settings',
     ],
     validate,
     async (req, res) => {
-        try {
-            const user = await User.findById(req.params.id);
-            if (!user) return res.status(404).json({ error: req.t('ERRORS.USER_NOT_FOUND') });
+        const user = await User.findById(req.params.id);
+        if (!user) return res.error(req.t('ERRORS.USER_NOT_FOUND'), 404);
 
-            if (req.body.printerId) user.printerId = req.body.printerId;
-            if (req.body.printTemplate) {
-                user.printTemplate = { ...user.printTemplate.toObject(), ...req.body.printTemplate };
-            }
-
-            await user.save();
-            res.json(user);
-        } catch (error) {
-            res.status(500).json({ error: error.message });
+        if (req.body.printerId) user.printerId = req.body.printerId;
+        if (req.body.printTemplate) {
+            user.printTemplate = { ...user.printTemplate.toObject(), ...req.body.printTemplate };
         }
+
+        await user.save();
+        res.success(user);
     }
 );
 
@@ -164,22 +141,18 @@ router.post('/:id/copy-print-settings/:sourceUserId',
     ],
     validate,
     async (req, res) => {
-        try {
-            const sourceUser = await User.findById(req.params.sourceUserId);
-            if (!sourceUser) return res.status(404).json({ error: req.t('ERRORS.SOURCE_USER_NOT_FOUND') });
+        const sourceUser = await User.findById(req.params.sourceUserId);
+        if (!sourceUser) return res.error(req.t('ERRORS.SOURCE_USER_NOT_FOUND'), 404);
 
-            const targetUser = await User.findById(req.params.id);
-            if (!targetUser) return res.status(404).json({ error: req.t('ERRORS.TARGET_USER_NOT_FOUND') });
+        const targetUser = await User.findById(req.params.id);
+        if (!targetUser) return res.error(req.t('ERRORS.TARGET_USER_NOT_FOUND'), 404);
 
-            targetUser.printerId = sourceUser.printerId;
-            targetUser.printTemplate = sourceUser.printTemplate;
+        targetUser.printerId = sourceUser.printerId;
+        targetUser.printTemplate = sourceUser.printTemplate;
 
-            await targetUser.save();
-            res.json({ message: 'Print settings copied successfully', targetUser });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
+        await targetUser.save();
+        res.success({ message: 'Print settings copied successfully', targetUser });
     }
 );
 
-module.exports = router;
+export default router;

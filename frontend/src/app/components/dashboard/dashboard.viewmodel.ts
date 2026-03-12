@@ -43,11 +43,11 @@ export class DashboardViewModel {
     );
 
     constructor() {
-        this.loadInitialData();
         this.setupRealTimeListeners();
     }
 
-    private async loadInitialData() {
+    public async loadInitialData() {
+        if (this.loading()) return;
         this.loading.set(true);
         this.error.set(null);
 

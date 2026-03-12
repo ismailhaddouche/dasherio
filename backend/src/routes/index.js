@@ -1,10 +1,10 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const authRoutes = require('./auth.routes');
-const orderRoutes = require('./orders.routes');
-const menuRoutes = require('./menu.routes');
-const restaurantRoutes = require('./restaurants.routes');
-const userRoutes = require('./users.routes');
+import authRoutes from './auth.routes.js';
+import orderRoutes from './orders.routes.js';
+import menuRoutes from './menu.routes.js';
+import restaurantRoutes from './restaurants.routes.js';
+import userRoutes from './users.routes.js';
 
 // Health Check - includes deployment info for frontend config
 router.get('/health', (req, res) => {
@@ -32,4 +32,4 @@ router.use('/orders', orderRoutes);
 router.use('/menu', menuRoutes);
 router.use('/', restaurantRoutes); // Mounted at root since it contains global settings, totems, and history
 
-module.exports = router;
+export default router;

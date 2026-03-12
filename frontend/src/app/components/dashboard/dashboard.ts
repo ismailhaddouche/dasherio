@@ -1,9 +1,11 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardViewModel } from './dashboard.viewmodel';
 import { AuthService } from '../../services/auth.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { TranslateModule } from '@ngx-translate/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -75,35 +77,46 @@ import { TranslateModule } from '@ngx-translate/core';
         </div>
 
         <div class="totem-grid">
-            @for (totem of vm.totems(); track totem.id) {
-                <div class="totem-card md-card-elevated">
-                    <div class="totem-avatar">#{{ totem.id }}</div>
-                    <div class="totem-info">
-                        <span class="text-title-medium">{{ totem.name }}</span>
-                        @if (totem.isVirtual) {
-                            <span class="text-label-small color-primary"> ({{ 'WAITER.VIRTUAL_TAG' | translate }})</span>
-                        }
-                    </div>
-                    
-                    <div class="totem-actions">
-                        <button class="icon-btn" (click)="openQR(totem.id)" [title]="'DASHBOARD.VIEW_QR' | translate">
-                            <lucide-icon name="printer" [size]="18"></lucide-icon>
+            @if (vm.loading()) {
+               @for (i of [1,2,3,4]; track i) {
+                 <div class="md-card-elevated totem-card-skeleton animate-pulse"></div>
+               }
+            } @else {
+              @for (totem of vm.totems(); track totem.id) {
+                   <div class="totem-card md-card-elevated">
+                      <div class="totem-avatar" [class.is-virtual]="totem.isVirtual">
+                          <lucide-icon [name]="totem.isVirtual ? 'monitor' : 'armchair'" [size]="20"></lucide-icon>
+                      </div>
+                      <div class="totem-info">
+                          <div class="totem-id-row">
+                            <div class="text-label-small opacity-40">#{{ totem.id }}</div>
+                            @if (totem.isVirtual) {
+                                <span class="md-badge-tonal-sm primary">{{ 'WAITER.VIRTUAL_TAG' | translate }}</span>
+                            }
+                          </div>
+                          <span class="text-title-medium">{{ totem.name }}</span>
+                      </div>
+                      
+                       <div class="totem-actions">
+                        <button class="icon-btn-md3 tonal-sm" (click)="vm.editingTotem.set(totem)" [title]="'DASHBOARD.EDIT' | translate">
+                          <lucide-icon name="pen-line" [size]="16"></lucide-icon>
                         </button>
-                        <button class="icon-btn" (click)="vm.editingTotem.set(totem)" [title]="'DASHBOARD.EDIT' | translate">
-                            <lucide-icon name="pen" [size]="18"></lucide-icon>
+                        <button class="icon-btn-md3 tonal-sm" (click)="openQR(totem.id)" [title]="'DASHBOARD.VIEW_QR' | translate">
+                          <lucide-icon name="qr-code" [size]="16"></lucide-icon>
                         </button>
-                        <button class="icon-btn error" (click)="vm.deleteTotem(totem.id)" [title]="'DASHBOARD.DELETE' | translate">
-                            <lucide-icon name="trash-2" [size]="18"></lucide-icon>
+                        <button class="icon-btn-md3 error-tonal-sm" (click)="vm.deleteTotem(totem.id)" [title]="'DASHBOARD.DELETE' | translate">
+                          <lucide-icon name="trash-2" [size]="16"></lucide-icon>
                         </button>
-                    </div>
-                </div>
-            } @empty {
-                <div class="empty-state text-body-large">{{ 'DASHBOARD.NO_TOTEMS' | translate }}</div>
+                      </div>
+                  </div>
+              } @empty {
+                  <div class="empty-state text-body-large">{{ 'DASHBOARD.NO_TOTEMS' | translate }}</div>
+              }
             }
         </div>
       </div>
 
-      <!-- Edit Totem Modal (Bottom Sheet-like for mobile, dialog for desktop) -->
+      <!-- Edit Totem Modal -->
       @if (vm.editingTotem(); as totem) {
         <div class="modal-overlay" (click)="vm.editingTotem.set(null)">
           <div class="modal-dialog md-card-elevated" (click)="$event.stopPropagation()">
@@ -111,7 +124,7 @@ import { TranslateModule } from '@ngx-translate/core';
             
             <div class="form-field">
                 <label class="text-label-large">{{ 'DASHBOARD.TOTEM_NAME' | translate }}</label>
-                <input type="text" #editName [value]="totem.name" class="md-input" (keyup.enter)="vm.updateTotem(totem.id, editName.value)">
+                <input type="text" #editName [value]="totem.name" class="md-input" (keyup.enter)="vm.updateTotem(totem.id, editName.value)" autofocus>
             </div>
 
             <div class="modal-actions">
@@ -132,7 +145,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
           @if (vm.loading()) {
             <div class="loader-container">
-                <div class="loader-ripple"><div></div><div></div></div>
+                <lucide-icon name="loader-2" [size]="48" class="animate-spin opacity-20 "></lucide-icon>
                 <p class="text-body-medium">{{ 'DASHBOARD.SYNCING' | translate }}</p>
             </div>
           } @else {
@@ -293,24 +306,32 @@ import { TranslateModule } from '@ngx-translate/core';
     }
 
     .totem-avatar {
-        width: 48px; height: 48px; 
+        width: 44px; height: 44px; 
         background: var(--md-sys-color-secondary-container);
         border-radius: 12px;
         display: flex; align-items: center; justify-content: center;
-        font-weight: 700; color: var(--md-sys-color-on-secondary-container);
+        color: var(--md-sys-color-on-secondary-container);
+        flex-shrink: 0;
     }
 
-    .totem-info { flex: 1; }
+    .totem-avatar.is-virtual {
+        background: var(--md-sys-color-tertiary-container);
+        color: var(--md-sys-color-on-tertiary-container);
+    }
+
+    .totem-id-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+
+    .totem-info { flex: 1; min-width: 0; }
+    .totem-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     
     .totem-actions { display: flex; gap: 4px; }
-    .icon-btn {
-        width: 36px; height: 36px; border-radius: 50%; border: none;
-        background: transparent; color: var(--md-sys-color-on-surface-variant);
-        cursor: pointer; display: flex; align-items: center; justify-content: center;
-        transition: background 0.2s;
+    
+    .totem-card-skeleton {
+        height: 80px;
+        border-radius: 16px;
+        background: var(--md-sys-color-surface-variant);
+        opacity: 0.1;
     }
-    .icon-btn:hover { background: var(--md-sys-color-surface-variant); }
-    .icon-btn.error:hover { color: var(--md-sys-color-error); }
 
     .dashboard-main-grid {
         display: grid;
@@ -340,7 +361,6 @@ import { TranslateModule } from '@ngx-translate/core';
     .active-pulse {
         background: color-mix(in srgb, var(--md-sys-color-primary) 15%, transparent);
         color: var(--md-sys-color-primary);
-        position: relative;
     }
 
     .orders-column { display: grid; gap: 16px; }
@@ -372,9 +392,7 @@ import { TranslateModule } from '@ngx-translate/core';
     .order-footer-md3 {
         display: flex; justify-content: space-between; align-items: center;
         padding-top: 16px; border-top: 1px solid var(--md-sys-color-outline);
-        opacity: 0.8;
     }
-    .price-container { display: flex; flex-direction: column; }
 
     .log-entries-column { display: flex; flex-direction: column; gap: 12px; }
     .log-item-md3 {
@@ -398,12 +416,18 @@ import { TranslateModule } from '@ngx-translate/core';
         font-weight: 700;
     }
 
+    .loader-container {
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; min-height: 200px; gap: 16px;
+    }
+
     .modal-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,0.5);
         display: flex; align-items: center; justify-content: center; z-index: 1000;
+        backdrop-filter: blur(4px);
     }
     .modal-dialog {
-        width: 100%; max-width: 400px; padding: 24px;
+        width: 100%; max-width: 400px; padding: 32px;
         display: flex; flex-direction: column; gap: 24px;
     }
     .modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
@@ -411,13 +435,33 @@ import { TranslateModule } from '@ngx-translate/core';
     .opacity-60 { opacity: 0.6; }
     .opacity-40 { opacity: 0.4; }
     .opacity-20 { opacity: 0.2; }
-    .mt-16 { margin-top: 16px; }
+    .animate-spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
   `]
 
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit, OnDestroy {
   public vm = inject(DashboardViewModel);
-  private auth = inject(AuthService);
+  private router = inject(Router);
+  private routerSub?: Subscription;
+
+  ngOnInit() {
+    this.vm.loadInitialData();
+
+    this.routerSub = this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd)
+    ).subscribe((e: any) => {
+      if (e.url?.includes('/dashboard')) {
+        this.vm.loadInitialData();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.routerSub?.unsubscribe();
+  }
 
   public openQR(totemId: number) {
     const base = window.location.origin;
@@ -425,6 +469,6 @@ export class DashboardComponent {
   }
 
   public loadAgain() {
-    location.reload();
+    this.vm.loadInitialData();
   }
 }

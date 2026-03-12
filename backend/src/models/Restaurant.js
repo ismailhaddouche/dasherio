@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const TotemSchema = new mongoose.Schema({
     id: { type: Number, required: true }, // The identifying number (1, 2, 3...)
@@ -64,4 +64,4 @@ const RestaurantSchema = new mongoose.Schema({
     defaultLanguage: { type: String, enum: ['es', 'en'], default: 'es' }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Restaurant', RestaurantSchema);
+export default mongoose.model('Restaurant', RestaurantSchema);

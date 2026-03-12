@@ -1,19 +1,37 @@
-const request = require('supertest');
-const app = require('../app');
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import request from 'supertest';
+import { setupDB, teardownDB } from './setup.js';
+import app from '../app.js';
+
+beforeAll(async () => {
+    await setupDB();
+});
+
+afterAll(async () => {
+    await teardownDB();
+});
 
 describe('Health Check API', () => {
-    it('should return 200 and healthy status', async () => {
+    it('should return 200 and status ok', async () => {
         const res = await request(app).get('/api/health');
-        expect(res.statusCode).toEqual(200);
-        expect(res.body).toHaveProperty('status', 'healthy');
+        expect(res.status).toBe(200);
+        expect(res.body.status).toBe('ok');
     });
 
-    it('should return 200 and router health info', async () => {
+    it('should include installMode', async () => {
         const res = await request(app).get('/api/health');
-        expect(res.statusCode).toEqual(200);
-        // The router health check is also at /api/health due to mounting
-        // but it returns different structure. Wait, let's check app.js mounting.
-        // app.get('/api/health', ...) is defined BEFORE app.use('/api', routes)
-        // so it takes precedence.
+        expect(res.body.installMode).toBeDefined();
+    });
+
+    it('should include baseUrl', async () => {
+        const res = await request(app).get('/api/health');
+        expect(res.body.baseUrl).toBeDefined();
+    });
+});
+
+describe('404 Handler', () => {
+    it('should return 404 for unknown routes', async () => {
+        const res = await request(app).get('/api/nonexistent-route');
+        expect(res.status).toBe(404);
     });
 });
