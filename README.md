@@ -49,12 +49,12 @@ La arquitectura sigue el patrón cliente-servidor, haciendo uso intensivo de Web
               │              Frontend (Angular 21)                              │
               │                                                                 │
               │  ┌────────────┐  ┌────────────┐  ┌──────────────┐               │
-              │  │  Admin     │  │  KDS       │  │  Cliente     │               │
-              │  │  Dashboard │  │  Cocina    │  │  Menú + QR   │               │
+              │  │  Admin     │  │  KDS       │  │  Camarero    │               │
+              │  │  Dashboard │  │  Cocina    │  │  (Waiter)    │               │
               │  └────────────┘  └────────────┘  └──────────────┘               │
               │  ┌────────────┐  ┌────────────┐  ┌──────────────┐               │
-              │  │  TPV /     │  │  Editor    │  │  Pago /      │               │
-              │  │  Cajero    │  │  de Menú   │  │  Checkout    │               │
+              │  │  TPV /     │  │  Editor    │  │  Visualizar  │               │
+              │  │  Cajero    │  │  de Menú   │  │  Estado      │               │
               │  └────────────┘  └────────────┘  └──────────────┘               │
               └─────────────────────────────────────────────────────────────────┘
 ```
@@ -66,23 +66,27 @@ La arquitectura sigue el patrón cliente-servidor, haciendo uso intensivo de Web
 ### 3.1. Experiencia del Cliente
 - Interacción inicial mediante código QR localizado por mesa, evitando la necesidad de instalar software en el dispositivo del cliente.
 - Menú digital dinámico con estructuración por categorías, gestión de precios por variantes y declaración exhaustiva de alérgenos.
-- Sistema automatizado de pedidos directos.
-- Proceso de "Checkout" integrado que permite cierres de mesa, incluyendo propinas configurables.
+- Sistema automatizado de pedidos directos y seguimiento de los mismos.
 
-### 3.2. Operativa de Cocina (KDS - Kitchen Display System)
+### 3.2. Operativa de Sala y Camareros (Waiter View)
+- Vista en tiempo real del estado de ocupación de las mesas (libres, ocupadas, con pedidos pendientes o por cobrar).
+- Gestión activa de los comensales y seguimiento del progreso de los platos solicitados.
+- Notificaciones dinámicas y capacidad de intervenir en nombre del cliente para crear pedidos de forma manual o modificar los existentes.
+
+### 3.3. Operativa de Cocina (KDS - Kitchen Display System)
 - Interfaz reactiva adaptada a dispositivos tipo tablet.
 - Flujo de estados del pedido: seguimiento granular por plato ("Pendiente", "En preparación", "Listo para servir").
 - Alertas visuales y temporizadores para control estricto de los tiempos de espera del cliente.
 
-### 3.3. Punto de Venta (TPV / POS)
+### 3.4. Punto de Venta (TPV / POS)
 - Tablero de gestión interactivo presentando el plano de mesas en tiempo real.
 - Finalización de transacciones con cálculos integrados de impuestos (IVA ajustado al momento).
 - Sistema avanzado de división de pagos (equitativo o selección manual por comensal).
 - Registro categorizado según método de pago (Efectivo/Tarjeta).
 
-### 3.4. Panel de Administración
+### 3.5. Panel de Administración
 - Editor gráfico de la base de datos de productos (menús, modificadores y extras).
-- Control de acceso basado en roles (RBAC) para el staff del restaurante (Admin, Kitchen, POS).
+- Control de acceso basado en roles (RBAC) para el staff del restaurante (Admin, Waiter, Kitchen, POS).
 - Estructura de marca blanca que permite configurar identidad corporativa (nombre, colores, logotipos).
 - Modulo generador de PDF para la creación dinámica e impresión de tótems con QR asociados a las mesas operativas.
 - Registro completo para auditoría y revisión de la actividad.
@@ -215,13 +219,13 @@ El sistema impone aislamiento rígido de sus módulos. A continuación se define
 | Definición Lógica del Módulo | Endpoint Base de Acceso | Privilegio de Acceso Asignado |
 |------------------------------|-------------------------|-------------------------------|
 | Panel Estadístico de Administración | `/admin/dashboard` | Administrator |
+| Interfaz Operativa de Sala (Camareros) | `/admin/waiter` | Waiter Staff / Administrator |
 | Display de Coordinación Cocina (KDS)| `/admin/kds` | Kitchen Staff / Administrator |
 | Terminal Integrado de Cobros (TPV) | `/admin/pos` | POS Staff / Administrator |
 | Suite de Edición de Catálogo | `/admin/menu` | Administrator |
 | Gestión Externa del Personal | `/admin/users` | Administrator |
 | Configurador Global Corporativo | `/admin/config` | Administrator |
 | Consulta Pública de Mesa (Client)| `/:tableNumber` | Unauthenticated (User) |
-| Autorización Formal de Pago (Client)| `/:tableNumber/checkout`| Unauthenticated (User) |
 
 ---
 
