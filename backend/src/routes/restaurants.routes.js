@@ -10,9 +10,10 @@ import { fileURLToPath } from 'url';
 import Restaurant from '../models/Restaurant.js';
 import Ticket from '../models/Ticket.js';
 import ActivityLog from '../models/ActivityLog.js';
+import AuditService from '../services/audit.service.js';
 import Order from '../models/Order.js';
 import { verifyToken } from '../middleware/auth.middleware.js';
-import { validate, mongoIdSchema } from '../middleware/validation.middleware.js';
+import { validate, mongoIdSchema, restaurantUpdateSchema } from '../middleware/validation.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,30 +39,19 @@ const upload = multer({
 
 // ── Joi Schemas ──────────────────────────────────────────────────────────────
 
-const restaurantUpdateSchema = Joi.object({
-    name: Joi.string().max(100).trim(),
-    address: Joi.string().max(200).trim().allow(''),
-    phone: Joi.string().max(20).trim().allow(''),
-    email: Joi.string().email().max(100).trim().allow(''),
-    description: Joi.string().max(500).trim().allow(''),
-    theme: Joi.object().unknown(true),
-    billing: Joi.object().unknown(true),
-    socials: Joi.object().unknown(true),
-    stations: Joi.array().items(Joi.string().max(50)).max(20),
-    defaultLanguage: Joi.string().valid('es', 'en').default('es')
-}).min(1);
+// ── Joi Schemas ──────────────────────────────────────────────────────────────
 
 const totemSchema = Joi.object({
     name: Joi.string().required().min(1).max(50).trim(),
     isVirtual: Joi.boolean().default(false)
-});
+}).unknown(false);
 
 const logSchema = Joi.object({
     action: Joi.string().required().max(100).trim(),
     userId: Joi.string().required().max(100).trim(),
-    details: Joi.object().unknown(true).optional(),
+    details: Joi.object().optional(),
     tableNumber: Joi.string().max(20).optional()
-}).unknown(true);
+}).unknown(false);
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 
@@ -104,7 +94,10 @@ router.patch('/restaurant',
             }
         }
 
+        const oldState = restaurant.toObject();
         await restaurant.save();
+
+        await AuditService.logChange(req, 'RESTAURANT_CONFIG_UPDATED', oldState, restaurant.toObject());
 
         const io = req.app.get('io');
         if (io) io.emit('config-updated', restaurant);
@@ -276,6 +269,12 @@ router.post('/totems',
         restaurant.nextTotemId += 1;
         await restaurant.save();
 
+        await AuditService.log(req, 'TOTEM_CREATED', {
+            totemId: newTotem.id,
+            name: newTotem.name,
+            isVirtual: newTotem.isVirtual
+        });
+
         res.success(newTotem, 201);
     }
 );
@@ -299,8 +298,13 @@ router.patch('/totems/:id',
         const duplicate = restaurant.totems.find(t => t.name.toLowerCase() === name.toLowerCase() && String(t.id) !== id);
         if (duplicate) return res.error(req.t('ERRORS.DUPLICATE_TOTEM_NAME'), 400);
 
+        const oldTotem = { ...totem.toObject() };
         totem.name = name;
         await restaurant.save();
+
+        await AuditService.logChange(req, 'TOTEM_UPDATED', oldTotem, totem.toObject(), {
+            totemId: totem.id
+        });
 
         res.success(totem);
     }
@@ -326,6 +330,12 @@ router.delete('/totems/:id',
         if (req.user.role !== 'admin' && req.user.role !== 'waiter') {
             return res.error(req.t('ERRORS.ACCESS_DENIED_ADMIN'), 403);
         }
+
+        await AuditService.log(req, 'TOTEM_DELETED', {
+            totemId: totem.id,
+            name: totem.name,
+            isVirtual: totem.isVirtual
+        });
 
         restaurant.totems = restaurant.totems.filter(t => String(t.id) !== id);
         await restaurant.save();

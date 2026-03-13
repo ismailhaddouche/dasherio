@@ -18,14 +18,16 @@ const addItemsSchema = Joi.object({
         quantity: Joi.number().integer().min(1).required(),
         image: Joi.string().allow('').optional()
     }).unknown(true)).min(1).required(),
-    guestId: Joi.string().allow(''),
-    guestName: Joi.string().allow('')
-}).unknown(true);
+    guestId: Joi.string().allow('').optional(),
+    guestName: Joi.string().allow('').optional(),
+    __v: Joi.number().optional() // OCC support
+}).unknown(false);
 
 const associateSchema = Joi.object({
     userId: Joi.string().required(),
-    userName: Joi.string().required()
-});
+    userName: Joi.string().required(),
+    __v: Joi.number().required() // OCC support
+}).unknown(false);
 
 const orderUpdateSchema = Joi.object({
     status: Joi.string().valid('active', 'completed', 'cancelled'),
@@ -33,21 +35,22 @@ const orderUpdateSchema = Joi.object({
     items: Joi.array(),
     totalAmount: Joi.number(),
     __v: Joi.number().required() // Version for optimistic concurrency
-}).min(2); // At least __v and one other field
+}).min(2).unknown(false); // At least __v and one other field
 
 const itemStatusSchema = Joi.object({
-    status: Joi.string().valid('pending', 'preparing', 'ready', 'served', 'cancelled').required()
-});
+    status: Joi.string().valid('pending', 'preparing', 'ready', 'served', 'cancelled').required(),
+    __v: Joi.number().required() // OCC support
+}).unknown(false);
 
 const checkoutSchema = Joi.object({
     method: Joi.string().valid('cash', 'card').required(),
     splitType: Joi.string().valid('equal', 'single', 'by-item', 'by-user'),
-    parts: Joi.number().integer().min(1),
-    userId: Joi.string().allow(''),
-    itemIds: Joi.array().items(Joi.string()),
-    billingConfig: Joi.object().unknown(true),
-    __v: Joi.number().required()
-}).unknown(true);
+    parts: Joi.number().integer().min(1).optional(),
+    userId: Joi.string().allow('').optional(),
+    itemIds: Joi.array().items(Joi.string()).optional(),
+    billingConfig: Joi.object().optional(),
+    __v: Joi.number().optional()
+}).unknown(false);
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 
@@ -104,7 +107,18 @@ router.post('/table/:tableNumber/add-items',
 
         order.items.push(...newItems);
         order.totalAmount = OrderService.calculateTotal(order.items);
-        await order.save();
+        
+        // Apply version for OCC
+        if (req.body.__v !== undefined) order.__v = req.body.__v;
+
+        try {
+            await order.save();
+        } catch (error) {
+            if (error.name === 'VersionError') {
+                return res.error('Conflicto de concurrencia: El pedido ha sido actualizado por otro camarero. Por favor, refresca los datos.', 409);
+            }
+            throw error;
+        }
 
         const io = req.app.get('io');
         if (io) io.emit('order-updated', order);
@@ -113,20 +127,41 @@ router.post('/table/:tableNumber/add-items',
     }
 );
 
-// PATCH /:orderId/items/:itemId/associate - Restricted to staff
-router.patch('/:orderId/items/:itemId/associate',
+// PATCH /:id/items/:itemId/associate - Restricted to staff
+router.patch('/:id/items/:itemId/associate',
     verifyToken,
     validate(mongoIdSchema, 'params'),
     validate(associateSchema),
     async function(req, res) {
-        const order = await Order.findById(req.params.orderId);
+        const order = await Order.findById(req.params.id);
         if (!order) return res.error(req.t('ERRORS.ORDER_NOT_FOUND'), 404);
 
         const item = order.items.id(req.params.itemId) || order.items.find(i => String(i._id) === req.params.itemId);
         if (!item) return res.error(req.t('ERRORS.ITEM_NOT_FOUND'), 404);
 
+        const oldBy = item.orderedBy ? { ...item.orderedBy.toObject() } : null;
         item.orderedBy = { id: req.body.userId, name: req.body.userName };
-        await order.save();
+        
+        // Apply version for OCC
+        order.__v = req.body.__v;
+
+        try {
+            await order.save();
+
+            await AuditService.log(req, 'ORDER_ITEM_ASSOCIATED', {
+                orderId: order._id,
+                tableNumber: order.tableNumber,
+                itemId: item._id,
+                itemName: item.name,
+                from: oldBy,
+                to: item.orderedBy
+            });
+        } catch (error) {
+            if (error.name === 'VersionError') {
+                return res.error('Conflicto de concurrencia: El pedido ha cambiado durante la asociación.', 409);
+            }
+            throw error;
+        }
 
         const io = req.app.get('io');
         if (io) io.emit('order-updated', order);
@@ -176,8 +211,8 @@ router.post('/',
     }
 );
 
-// PATCH /:orderId - Update order (Restricted)
-router.patch('/:orderId',
+// PATCH /:id - Update order (Restricted)
+router.patch('/:id',
     verifyToken,
     validate(mongoIdSchema, 'params'),
     validate(orderUpdateSchema),
@@ -190,7 +225,7 @@ router.patch('/:orderId',
             }
         }
 
-        const order = await Order.findById(req.params.orderId);
+        const order = await Order.findById(req.params.id);
         if (!order) return res.error(req.t('ERRORS.ORDER_NOT_FOUND'), 404);
 
         // If status is being updated, use the service to record history
@@ -201,8 +236,9 @@ router.patch('/:orderId',
         // Remove status from manual update to avoid double update
         delete updateData.status;
 
-        // Apply __v for OCC
-        order.__v = req.body.__v;
+        // Apply version for OCC
+        if (req.body.__v !== undefined) order.__v = req.body.__v;
+        
         const oldState = order.toObject();
         Object.assign(order, updateData);
         
@@ -230,13 +266,13 @@ router.patch('/:orderId',
     }
 );
 
-// PATCH /:orderId/items/bulk-status - Bulk status update (Restricted)
-router.patch('/:orderId/items/bulk-status',
+// PATCH /:id/items/bulk-status - Bulk status update (Restricted)
+router.patch('/:id/items/bulk-status',
     verifyToken,
     validate(mongoIdSchema, 'params'),
     validate(itemStatusSchema),
     async function(req, res) {
-        const order = await Order.findById(req.params.orderId);
+        const order = await Order.findById(req.params.id);
         if (!order) return res.error(req.t('ERRORS.ORDER_NOT_FOUND'), 404);
 
         for (const item of order.items) {
@@ -246,7 +282,19 @@ router.patch('/:orderId/items/bulk-status',
         }
 
         try {
+            const previousItems = order.items.map(i => ({ id: i._id, status: i.status }));
+            
+            // Apply version for OCC
+            order.__v = req.body.__v;
+
             await order.save();
+            
+            await AuditService.log(req, 'ORDER_ITEMS_BULK_STATUS_CHANGED', {
+                orderId: order._id,
+                tableNumber: order.tableNumber,
+                status: req.body.status,
+                affectedItems: previousItems.filter(i => i.status !== req.body.status).map(i => i.id)
+            });
         } catch (error) {
             if (error.name === 'VersionError') {
                 return res.error('Conflicto de concurrencia: El pedido ha cambiado durante la actualización masiva.', 409);
@@ -261,13 +309,13 @@ router.patch('/:orderId/items/bulk-status',
     }
 );
 
-// PATCH /:orderId/items/:itemId - Status update (Restricted)
-router.patch('/:orderId/items/:itemId',
+// PATCH /:id/items/:itemId - Status update (Restricted)
+router.patch('/:id/items/:itemId',
     verifyToken,
     validate(mongoIdSchema, 'params'),
     validate(itemStatusSchema),
     async function(req, res) {
-        const order = await Order.findById(req.params.orderId);
+        const order = await Order.findById(req.params.id);
         if (!order) return res.error(req.t('ERRORS.ORDER_NOT_FOUND'), 404);
 
         const item = order.items.id(req.params.itemId);
@@ -298,14 +346,14 @@ router.patch('/:orderId/items/:itemId',
     }
 );
 
-// POST /:orderId/checkout - Process payment (Restricted)
-router.post('/:orderId/checkout',
+// POST /:id/checkout - Process payment (Restricted)
+router.post('/:id/checkout',
     verifyToken,
     validate(mongoIdSchema, 'params'),
     validate(checkoutSchema),
     async function(req, res) {
         const { splitType, parts, method, billingConfig, itemIds, userId } = req.body;
-        const order = await Order.findById(req.params.orderId);
+        const order = await Order.findById(req.params.id);
         if (!order) return res.error(req.t('ERRORS.ORDER_NOT_FOUND'), 404);
 
         // Validations for complex split types
@@ -348,7 +396,8 @@ router.post('/:orderId/checkout',
 
         if (totalPaidFlag) {
             try {
-                await OrderService.updateOrderStatus(order, 'completed');
+                OrderService.updateOrderStatus(order, 'completed');
+                await order.save();
             } catch (error) {
                 if (error.name === 'VersionError') {
                     return res.error('Error al finalizar: El pedido ha cambiado. Por favor, actualice la cuenta.', 409);

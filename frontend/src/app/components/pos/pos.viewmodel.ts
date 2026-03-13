@@ -347,11 +347,24 @@ export class POSViewModel {
 
     public async associateOrphanItem(orderId: string, itemId: string, userId: string, userName: string) {
         try {
-            const updatedOrder: any = await firstValueFrom(this.http.patch(`${environment.apiUrl}/api/orders/${orderId}/items/${itemId}/associate`, { userId, userName }, { withCredentials: true }));
+            const order = this.orders().find(o => o._id === orderId);
+            const version = order?.__v ?? 0;
+
+            const updatedOrder: any = await firstValueFrom(this.http.patch(`${environment.apiUrl}/api/orders/${orderId}/items/${itemId}/associate`, { 
+                userId, 
+                userName,
+                __v: version
+            }, { withCredentials: true }));
+            
             this.orders.update(prev => prev.map(o => o._id === orderId ? updatedOrder : o));
-        } catch (e) {
-            console.error('Error associating item', e);
-            this.notify.error(this.translate.instant('POS.ASSOCIATE_ERROR'));
+        } catch (e: any) {
+            if (e.status === 409) {
+                this.notify.warning(this.translate.instant('POS.CONCURRENCY_ERROR'));
+                this.initPOS(); // Reload to get fresh data
+            } else {
+                console.error('Error associating item', e);
+                this.notify.error(this.translate.instant('POS.ASSOCIATE_ERROR'));
+            }
         }
     }
 

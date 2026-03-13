@@ -135,7 +135,8 @@
         "DELETE_TITLE": "Eliminar Registro",
         "CHARGE_ONLY_THIS": "Cobrar solo platos de esta persona",
         "ORPHANS_EXIST": "Faltan platos por asignar.",
-        "ORPHANS_WARNING": "Asigna todos los platos a alguien antes de cobrar de forma individual."
+        "ORPHANS_WARNING": "Asigna todos los platos a alguien antes de cobrar de forma individual.",
+        "CONCURRENCY_ERROR": "¡Conflicto de Concurrencia! La mesa ha sido actualizada por otro camarero. Recargando..."
     },
     "CHECKOUT": {
         "BACK": "← Botón Volver",

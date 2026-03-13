@@ -64,15 +64,50 @@ export const orderItemSchema = Joi.object({
         price: Joi.number().min(0).max(10000).required()
     })).max(50).default([]),
     image: Joi.string().max(255).allow('').optional(),
-    menuChoices: Joi.object().pattern(Joi.string().max(100), Joi.string().max(100)).max(20).default({})
+    menuChoices: Joi.object().pattern(Joi.string().max(100), Joi.string().max(100)).max(20).default({}),
+    __v: Joi.number().optional()
 }).unknown(false);
 
 export const orderPlacementSchema = Joi.object({
     items: Joi.array().items(orderItemSchema).min(1).max(50).required(),
     tableNumber: Joi.string().max(10).optional(),
     totemId: Joi.number().integer().optional(),
-    sessionId: Joi.string().max(100).optional()
+    sessionId: Joi.string().max(100).optional(),
+    __v: Joi.number().optional()
 }).unknown(false);
+
+/**
+ * Restaurant Configuration Schemas
+ */
+export const restaurantUpdateSchema = Joi.object({
+    name: Joi.string().min(2).max(100).trim(),
+    address: Joi.string().max(200).trim().allow(''),
+    phone: Joi.string().max(20).trim().allow(''),
+    email: Joi.string().email().max(100).trim().allow(''),
+    description: Joi.string().max(500).trim().allow(''),
+    defaultLanguage: Joi.string().valid('es', 'en'),
+    theme: Joi.object({
+        primaryColor: Joi.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/).optional(),
+        secondaryColor: Joi.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/).optional(),
+        fontFamily: Joi.string().max(50).optional(),
+        borderRadius: Joi.string().max(20).optional(),
+        darkMode: Joi.boolean().optional()
+    }).optional(),
+    billing: Joi.object({
+        vatPercentage: Joi.number().min(0).max(100).required(),
+        tipEnabled: Joi.boolean().required(),
+        tipPercentage: Joi.number().min(0).max(100).optional(),
+        tipDescription: Joi.string().max(100).allow('').optional(),
+        currency: Joi.string().length(3).default('EUR')
+    }).optional(),
+    socials: Joi.object({
+        website: Joi.string().uri().allow('').optional(),
+        instagram: Joi.string().max(100).allow('').optional(),
+        facebook: Joi.string().max(100).allow('').optional(),
+        twitter: Joi.string().max(100).allow('').optional()
+    }).optional(),
+    stations: Joi.array().items(Joi.string().max(50)).max(20)
+}).min(1).unknown(false);
 
 /**
  * Common MongoID Schema

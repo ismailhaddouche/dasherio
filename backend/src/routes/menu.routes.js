@@ -5,6 +5,7 @@ import MenuItem from '../models/MenuItem.js';
 import { verifyToken } from '../middleware/auth.middleware.js';
 import { validate, menuItemSchema, mongoIdSchema } from '../middleware/validation.middleware.js';
 import MenuService from '../services/menu.service.js';
+import AuditService from '../services/audit.service.js';
 import multer from 'multer';
 
 // Configure multer storage (memory storage for sharp processing)
@@ -45,6 +46,12 @@ router.post('/upload-image', verifyToken, authorizeKitchenAction, upload.single(
 
     try {
         const fileUrl = await MenuService.processImage(req.file.buffer);
+        
+        await AuditService.log(req, 'MENU_ITEM_IMAGE_UPLOADED', {
+            url: fileUrl,
+            originalName: req.file.originalname
+        });
+
         res.success({ url: fileUrl });
     } catch (error) {
         console.error('Error processing image:', error);
@@ -124,7 +131,7 @@ router.delete('/:id',
 // POST /:productId/toggle - Toggle item availability
 router.post('/:productId/toggle',
     verifyToken,
-    validate(Joi.object({ productId: Joi.string().hex().length(24).required() }), 'params'),
+    validate(Joi.object({ productId: Joi.string().hex().length(24).required() }).unknown(false), 'params'),
     async function(req, res, next) {
         if (['admin', 'kitchen'].includes(req.user.role)) return next();
         res.error('Solo administración o cocina pueden cambiar la disponibilidad', 403);

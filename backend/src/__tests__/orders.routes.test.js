@@ -119,7 +119,8 @@ describe('Order Routes — Integration Tests', () => {
                 .post('/api/orders/table/T10/add-items')
                 .set('Cookie', [`disher_token=${adminToken}`])
                 .send({
-                    items: [{ name: 'Postre', price: 5, quantity: 1 }]
+                    items: [{ name: 'Postre', price: 5, quantity: 1 }],
+                    __v: 0
                 });
 
             if (res.status !== 200) console.log('[DEBUG] add-items existing fail:', JSON.stringify(res.body, null, 2));
@@ -169,7 +170,7 @@ describe('Order Routes — Integration Tests', () => {
             const res = await request(app)
                 .patch(`/api/orders/${order._id}`)
                 .set('Cookie', [`disher_token=${adminToken}`])
-                .send({ status: 'completed' });
+                .send({ status: 'completed', __v: order.__v });
 
             expect(res.status).toBe(200);
             expect(res.body.data.status).toBe('completed');
@@ -203,7 +204,7 @@ describe('Order Routes — Integration Tests', () => {
             const res = await request(app)
                 .patch(`/api/orders/${order._id}`)
                 .set('Cookie', [`disher_token=${adminToken}`])
-                .send({});
+                .send({ __v: order.__v });
 
             expect(res.status).toBe(400);
         });
@@ -222,7 +223,7 @@ describe('Order Routes — Integration Tests', () => {
             const res = await request(app)
                 .patch(`/api/orders/${order._id}/items/${itemId}`)
                 .set('Cookie', [`disher_token=${adminToken}`])
-                .send({ status: 'preparing' });
+                .send({ status: 'preparing', __v: order.__v });
 
             expect(res.status).toBe(200);
             const updatedItem = res.body.data.items.find(i => i._id === itemId.toString());
@@ -263,7 +264,7 @@ describe('Order Routes — Integration Tests', () => {
             const res = await request(app)
                 .patch(`/api/orders/${order._id}/items/bulk-status`)
                 .set('Cookie', [`disher_token=${adminToken}`])
-                .send({ status: 'ready' });
+                .send({ status: 'ready', __v: order.__v });
 
             expect(res.status).toBe(200);
             const items = res.body.data.items;

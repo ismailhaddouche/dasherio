@@ -140,6 +140,11 @@ export class CustomerViewModel {
             }
         });
 
+        this.comms.conflictDetected$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+            alert('La mesa ha sido actualizada por otro usuario. Recargando datos...');
+            this.loadTableState();
+        });
+
         this.comms.subscribeToMenu((updatedItem: any) => {
             this.menu.update(prev =>
                 prev.map(item => item._id === updatedItem._id ? updatedItem : item)
@@ -346,7 +351,8 @@ export class CustomerViewModel {
             totemId: s?.totemId,
             sessionId: s?.sessionId,
             items: this.cart(),
-            totalAmount: this.cart().reduce((acc, item) => acc + (item.price * item.quantity), 0)
+            totalAmount: this.cart().reduce((acc, item) => acc + (item.price * item.quantity), 0),
+            __v: s?.activeOrder?.__v ?? 0
         };
 
         try {

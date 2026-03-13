@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest --forceExit --detectOpenHandles",
+    "test": "cross-env JWT_SECRET=test_secret_key_for_testing NODE_OPTIONS=--experimental-vm-modules npx jest --forceExit --detectOpenHandles",
     "lint": "eslint src"
   },
   "keywords": [],

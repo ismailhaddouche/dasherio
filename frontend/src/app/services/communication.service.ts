@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { lastValueFrom } from 'rxjs';
 
@@ -13,6 +14,7 @@ export class CommunicationService {
     // Signals for state management
     public isOnline = signal<boolean>(navigator.onLine);
     public connectionStatus = signal<'connected' | 'disconnected' | 'reconnecting'>('disconnected');
+    public conflictDetected$ = new Subject<void>();
     public userId = signal<string>(this.getOrCreateUserId());
     public userName = signal<string>(localStorage.getItem('disher_user_name') || 'Comensal');
 
@@ -115,10 +117,21 @@ export class CommunicationService {
 
     public async sendOrder(order: any) {
         if (this.isOnline()) {
-            return lastValueFrom(this.http.post(`${environment.apiUrl}/api/orders`, order));
+            try {
+                return await lastValueFrom(this.http.post(`${environment.apiUrl}/api/orders`, order));
+            } catch (error: any) {
+                if (error.status === 409) {
+                    this.conflictDetected$.next();
+                }
+                throw error;
+            }
         } else {
             console.log('Order saved locally for later sync');
             return null;
         }
+    }
+
+    public reportConflict() {
+        this.conflictDetected$.next();
     }
 }

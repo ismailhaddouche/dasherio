@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 import Joi from 'joi';
 import User from '../models/User.js';
+import AuditService from '../services/audit.service.js';
 import { verifyToken } from '../middleware/auth.middleware.js';
 import { validate, mongoIdSchema } from '../middleware/validation.middleware.js';
 
@@ -20,7 +21,7 @@ const userAdminSchema = Joi.object({
     restaurantSlug: Joi.string().max(100).optional(),
     printerId: Joi.string().max(100).optional(),
     printTemplate: Joi.object().optional()
-}).unknown(true);
+}).unknown(false);
 
 const printSettingsSchema = Joi.object({
     printerId: Joi.string().max(100).optional(),
@@ -63,7 +64,12 @@ router.patch('/me',
         if (req.body.password) user.password = req.body.password;
 
         try {
+            const oldState = user.toObject();
             await user.save();
+            
+            await AuditService.logChange(req, 'USER_PROFILE_UPDATED', oldState, user.toObject(), {
+                fields: Object.keys(req.body)
+            });
         } catch (error) {
             if (error.code === 11000) return res.error(req.t('ERRORS.USERNAME_IN_USE'), 400);
             throw error;
@@ -140,12 +146,19 @@ router.patch('/:id/print-settings',
         const user = await User.findById(req.params.id);
         if (!user) return res.error(req.t('ERRORS.USER_NOT_FOUND'), 404);
 
+        const oldState = user.toObject();
         if (req.body.printerId) user.printerId = req.body.printerId;
         if (req.body.printTemplate) {
             user.printTemplate = { ...user.printTemplate.toObject(), ...req.body.printTemplate };
         }
 
         await user.save();
+        
+        await AuditService.logChange(req, 'USER_PRINT_SETTINGS_UPDATED', oldState, user.toObject(), {
+            targetUserId: user._id,
+            targetUsername: user.username
+        });
+
         res.success(user);
     }
 );

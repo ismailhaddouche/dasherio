@@ -1,4 +1,5 @@
 import Order from '../models/Order.js';
+import IVAUtils from '../utils/calculosIVA.js';
 
 /**
  * Service to handle business logic for Orders
@@ -11,13 +12,7 @@ class OrderService {
      * @returns {number}
      */
     calculateTotal(items) {
-        if (!Array.isArray(items)) return 0;
-        const total = items.reduce((acc, item) => {
-            const price = Number(item.price) || 0;
-            const quantity = Number(item.quantity) || 0;
-            return acc + (price * quantity);
-        }, 0);
-        return Math.round(total * 100) / 100;
+        return IVAUtils.calcularTotalDesdeProductos(items);
     }
 
     /**
@@ -34,7 +29,7 @@ class OrderService {
             timestamp: new Date()
         });
         
-        return await order.save();
+        return order;
     }
 
     /**
@@ -53,7 +48,7 @@ class OrderService {
             timestamp: new Date()
         });
 
-        return await order.save();
+        return order;
     }
 
     /**
@@ -117,10 +112,9 @@ class OrderService {
         finalAmount = Math.round(finalAmount * 100) / 100;
         tipAmount = Math.round(tipAmount * 100) / 100;
 
-        // Base and VAT are calculated from the itemsTotal (which is VAT inclusive)
+        // Use central utility for fiscal breakdown
         const totalItemsOnly = finalAmount - tipAmount;
-        const baseAmount = totalItemsOnly / (1 + (vatPercent / 100));
-        const vatAmount = totalItemsOnly - baseAmount;
+        const { base: baseAmount, iva: vatAmount } = IVAUtils.desgloseDesdeTotal(totalItemsOnly, vatPercent);
 
         return { 
             finalAmount,
