@@ -168,6 +168,7 @@
         "OPEN_TABLE_ERROR": "Could not open the table",
         "DELETE_VIRTUAL_CONFIRM": "Delete this temporary table?",
         "DELETE_VIRTUAL_ERROR": "Could not delete the temporary table",
+        "CLOSE_SHIFT_SUCCESS": "Shift closed successfully",
         "CLOSE_SHIFT_ERROR": "Could not close the shift",
         "UNKNOWN_ERROR": "Unknown error",
         "PRINT_THERMAL_MESSAGE": "🖨️ {{label}} {{printer}} — {{ticketId}} ({{amount}}€){{fiscalInfo}}",
@@ -334,7 +335,13 @@
         "SAVE_SUCCESS": "Configuration saved. Reloading...",
         "SAVE_ERROR": "Could not save the configuration",
         "LOGO_SUCCESS": "Logo updated",
-        "LOGO_ERROR": "Could not upload the logo"
+        "LOGO_ERROR": "Could not upload the logo",
+        "THEME_MIDNIGHT": "Dark",
+        "THEME_LIGHT": "Light",
+        "THEME_EMERALD": "Green",
+        "THEME_OCEAN": "Blue",
+        "NEW_PRINTER_NAME": "New Printer",
+        "DEFAULT_TIP_DESC": "Tip is optional"
     },
     "WAITER": {
         "PANEL": "Waiter Panel",
@@ -385,6 +392,7 @@
         "PRINTER_ASSIGNED": "🖨️ Printer Assigned",
         "EDIT": "Edit",
         "SYSTEM": "System",
+        "DEFAULT_FOOTER": "Thank you for your visit",
         "LOAD_ERROR": "Could not load users",
         "ADD_SUCCESS": "User {{username}} created",
         "ADD_ERROR": "Could not create the user",

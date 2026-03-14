@@ -25,7 +25,7 @@ export class StoreConfigViewModel {
             vatPercentage: null,
             tipEnabled: false,
             tipPercentage: 0,
-            tipDescription: 'La propina es opcional'
+            tipDescription: this.translate.instant('STORE_CONFIG.DEFAULT_TIP_DESC')
         },
         printers: []
     });
@@ -37,10 +37,10 @@ export class StoreConfigViewModel {
     public message = signal<string>('');
 
     public readonly predefinedThemes = [
-        { id: 'midnight', name: 'Oscuro', colors: { primaryColor: '#6366f1', secondaryColor: '#a855f7', backgroundColor: '#09090b', textColor: '#f8fafc' } },
-        { id: 'light', name: 'Claro', colors: { primaryColor: '#2563eb', secondaryColor: '#60a5fa', backgroundColor: '#f8fafc', textColor: '#0f172a' } },
-        { id: 'emerald', name: 'Verde', colors: { primaryColor: '#10b981', secondaryColor: '#14b8a6', backgroundColor: '#022c22', textColor: '#f0fdf4' } },
-        { id: 'ocean', name: 'Azul', colors: { primaryColor: '#0ea5e9', secondaryColor: '#3b82f6', backgroundColor: '#082f49', textColor: '#f0f9ff' } },
+        { id: 'midnight', nameKey: 'STORE_CONFIG.THEME_MIDNIGHT', colors: { primaryColor: '#6366f1', secondaryColor: '#a855f7', backgroundColor: '#09090b', textColor: '#f8fafc' } },
+        { id: 'light', nameKey: 'STORE_CONFIG.THEME_LIGHT', colors: { primaryColor: '#2563eb', secondaryColor: '#60a5fa', backgroundColor: '#f8fafc', textColor: '#0f172a' } },
+        { id: 'emerald', nameKey: 'STORE_CONFIG.THEME_EMERALD', colors: { primaryColor: '#10b981', secondaryColor: '#14b8a6', backgroundColor: '#022c22', textColor: '#f0fdf4' } },
+        { id: 'ocean', nameKey: 'STORE_CONFIG.THEME_OCEAN', colors: { primaryColor: '#0ea5e9', secondaryColor: '#3b82f6', backgroundColor: '#082f49', textColor: '#f0f9ff' } },
     ];
 
     private loadLocal(): any {
@@ -165,7 +165,7 @@ export class StoreConfigViewModel {
         const current = this.config();
         const newPrinter = {
             id: 'printer_' + Date.now(),
-            name: 'Nueva Impresora',
+            name: this.translate.instant('STORE_CONFIG.NEW_PRINTER_NAME'),
             type: 'network',
             address: '192.168.1.100',
             connection: '9100'

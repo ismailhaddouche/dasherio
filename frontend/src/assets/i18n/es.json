@@ -168,6 +168,7 @@
         "OPEN_TABLE_ERROR": "No se pudo abrir la mesa",
         "DELETE_VIRTUAL_CONFIRM": "¿Eliminar esta mesa temporal?",
         "DELETE_VIRTUAL_ERROR": "No se pudo eliminar la mesa temporal",
+        "CLOSE_SHIFT_SUCCESS": "Caja cerrada correctamente",
         "CLOSE_SHIFT_ERROR": "No se pudo cerrar la caja",
         "UNKNOWN_ERROR": "Error desconocido",
         "PRINT_THERMAL_MESSAGE": " ({{label}} {{printer}}) — {{ticketId}} ({{amount}}€){{fiscalInfo}}",
@@ -334,7 +335,13 @@
         "SAVE_SUCCESS": "Configuración guardada. Recargando...",
         "SAVE_ERROR": "No se pudo guardar la configuración",
         "LOGO_SUCCESS": "Logo actualizado",
-        "LOGO_ERROR": "No se pudo subir el logo"
+        "LOGO_ERROR": "No se pudo subir el logo",
+        "THEME_MIDNIGHT": "Oscuro",
+        "THEME_LIGHT": "Claro",
+        "THEME_EMERALD": "Verde",
+        "THEME_OCEAN": "Azul",
+        "NEW_PRINTER_NAME": "Nueva Impresora",
+        "DEFAULT_TIP_DESC": "La propina es opcional"
     },
     "WAITER": {
         "PANEL": "Panel de Camarero",
@@ -385,6 +392,7 @@
         "PRINTER_ASSIGNED": "🖨️ Impresora Asignada",
         "EDIT": "Editar",
         "SYSTEM": "Sistema",
+        "DEFAULT_FOOTER": "Gracias por su visita",
         "LOAD_ERROR": "No se pudieron cargar los usuarios",
         "ADD_SUCCESS": "Usuario {{username}} creado",
         "ADD_ERROR": "No se pudo crear el usuario",

@@ -86,7 +86,7 @@ export class UserManagementViewModel {
             password: '', // Empty password field means it won't be updated
             printTemplate: user.printTemplate || {
                 header: '',
-                footer: 'Gracias por su visita'
+                footer: this.translate.instant('USER_MGMT.DEFAULT_FOOTER')
             }
         });
     }

@@ -150,7 +150,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
                     </div>
                     
                     <div class="theme-info-md3">
-                      <span class="text-label-large">{{ theme.name }}</span>
+                      <span class="text-label-large">{{ theme.nameKey | translate }}</span>
                       @if (vm.isThemeActive(theme.id)) {
                         <lucide-icon name="check-circle-2" [size]="18" class="color-primary"></lucide-icon>
                       }
