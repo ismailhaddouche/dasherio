@@ -34,7 +34,7 @@ app.use(compression());
 // ── CORS ─────────────────────────────────────────────────────────────────────
 app.use(cors({
     origin: process.env.NODE_ENV === 'production'
-        ? [process.env.DOMAIN, /\.disher\.io$/]
+        ? [process.env.DOMAIN, /\.disher\.io$/, /^http:\/\/\d+\.\d+\.\d+\.\d+$/]  // Allow IP addresses
         : true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

@@ -44,7 +44,7 @@ export const menuItemSchema = Joi.object({
         name: Joi.string().required().max(100).trim(),
         options: Joi.array().items(Joi.string().max(100)).min(1).max(20).required()
     })).max(10)
-}).unknown(false);
+}).unknown(true);
 
 /**
  * Order iteration schema (for adding items to a session/order)
