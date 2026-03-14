@@ -93,6 +93,7 @@
         "HISTORY": "HISTORIAL",
         "ITEMS": "artículos",
         "CLOSE_SHIFT": "Cerrar Caja (Cierre de Turno)",
+        "CONFIRM_CLOSE_SHIFT": "¿Estás seguro de que quieres cerrar la caja? Se terminarán todas las sesiones de los clientes.",
         "EDIT_MODE": "Modo Edición Activado",
         "EDIT_ORDER": "Editar Comanda",
         "FINISH_EDIT": "Finalizar Edición",

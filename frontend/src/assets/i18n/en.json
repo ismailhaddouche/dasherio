@@ -93,6 +93,7 @@
         "HISTORY": "HISTORY",
         "ITEMS": "items",
         "CLOSE_SHIFT": "Close Cashier / Shift",
+        "CONFIRM_CLOSE_SHIFT": "Are you sure you want to close the cashier? All customer sessions will be ended.",
         "EDIT_MODE": "Edit Mode Active",
         "EDIT_ORDER": "Edit Order",
         "FINISH_EDIT": "Finish Editing",
