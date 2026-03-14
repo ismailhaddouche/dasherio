@@ -6,7 +6,7 @@ import Ticket from '../models/Ticket.js';
 import Restaurant from '../models/Restaurant.js';
 import OrderService from '../services/order.service.js';
 import AuditService from '../services/audit.service.js';
-import { verifyToken } from '../middleware/auth.middleware.js';
+import { verifyToken, requireRole } from '../middleware/auth.middleware.js';
 import { validate, orderPlacementSchema, mongoIdSchema } from '../middleware/validation.middleware.js';
 
 // ── Joi Schemas ──────────────────────────────────────────────────────────────
@@ -54,8 +54,10 @@ const checkoutSchema = Joi.object({
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 
+const staffAccess = (...roles) => [verifyToken, requireRole(...roles)];
+
 // GET / - List active orders (Restricted to staff)
-router.get('/', verifyToken, async function(req, res) {
+router.get('/', verifyToken, requireRole('admin', 'waiter', 'kitchen', 'pos'), async function(req, res) {
     const orders = await Order.find({ status: 'active' }).sort({ createdAt: -1 });
     res.success(orders);
 });
@@ -81,6 +83,7 @@ router.get('/session/:sessionId', async function(req, res) {
 // POST /table/:tableNumber/add-items - Waiter adding items (Restricted)
 router.post('/table/:tableNumber/add-items',
     verifyToken,
+    requireRole('admin', 'waiter', 'pos'),
     validate(addItemsSchema),
     async function(req, res) {
         const { tableNumber } = req.params;
@@ -107,15 +110,16 @@ router.post('/table/:tableNumber/add-items',
 
         order.items.push(...newItems);
         order.totalAmount = OrderService.calculateTotal(order.items);
-        
-        // Apply version for OCC
-        if (req.body.__v !== undefined) order.__v = req.body.__v;
+
+        if (req.body.__v !== undefined && order.__v !== req.body.__v) {
+            return res.error(req.t('ERRORS.VERSION_CONFLICT'), 409);
+        }
 
         try {
             await order.save();
         } catch (error) {
             if (error.name === 'VersionError') {
-                return res.error('Conflicto de concurrencia: El pedido ha sido actualizado por otro camarero. Por favor, refresca los datos.', 409);
+                return res.error(req.t('ERRORS.ORDER_CONCURRENCY'), 409);
             }
             throw error;
         }
@@ -130,6 +134,7 @@ router.post('/table/:tableNumber/add-items',
 // PATCH /:id/items/:itemId/associate - Restricted to staff
 router.patch('/:id/items/:itemId/associate',
     verifyToken,
+    requireRole('admin', 'waiter', 'pos'),
     validate(mongoIdSchema, 'params'),
     validate(associateSchema),
     async function(req, res) {
@@ -139,11 +144,12 @@ router.patch('/:id/items/:itemId/associate',
         const item = order.items.id(req.params.itemId) || order.items.find(i => String(i._id) === req.params.itemId);
         if (!item) return res.error(req.t('ERRORS.ITEM_NOT_FOUND'), 404);
 
-        const oldBy = item.orderedBy ? { ...item.orderedBy.toObject() } : null;
+        const oldBy = item.orderedBy ? { ...item.orderedBy } : null;
         item.orderedBy = { id: req.body.userId, name: req.body.userName };
         
-        // Apply version for OCC
-        order.__v = req.body.__v;
+        if (req.body.__v !== undefined && order.__v !== req.body.__v) {
+            return res.error(req.t('ERRORS.VERSION_CONFLICT') || 'Version conflict detected.', 409);
+        }
 
         try {
             await order.save();
@@ -158,7 +164,7 @@ router.patch('/:id/items/:itemId/associate',
             });
         } catch (error) {
             if (error.name === 'VersionError') {
-                return res.error('Conflicto de concurrencia: El pedido ha cambiado durante la asociación.', 409);
+                return res.error(req.t('ERRORS.ORDER_CONCURRENCY'), 409);
             }
             throw error;
         }
@@ -175,12 +181,39 @@ router.post('/',
     validate(orderPlacementSchema),
     async function(req, res) {
         const { tableNumber, totemId, sessionId, items } = req.body;
-        const tId = totemId;
-        const tNumber = tableNumber || String(tId);
+        const numericTotemId = Number(totemId);
+
+        if (!Number.isInteger(numericTotemId)) {
+            return res.error(req.t('ERRORS.INVALID_TOTEM_ID') || 'Invalid totem identifier', 400);
+        }
+
+        if (!sessionId) {
+            return res.error(req.t('ERRORS.SESSION_REQUIRED') || 'Session is required to place orders', 400);
+        }
+
+        const restaurant = await Restaurant.findOne();
+        if (!restaurant) {
+            return res.error(req.t('ERRORS.RESTAURANT_NOT_FOUND'), 404);
+        }
+
+        const totem = restaurant.totems.find(t => t.id === numericTotemId);
+        if (!totem) {
+            return res.error(req.t('ERRORS.TOTEM_NOT_FOUND'), 404);
+        }
+
+        if (!totem.active) {
+            return res.error(req.t('ERRORS.TOTEM_INACTIVE'), 403);
+        }
+
+        if (!totem.currentSessionId || totem.currentSessionId !== sessionId) {
+            return res.error(req.t('ERRORS.SESSION_INVALID'), 409);
+        }
+
+        const tNumber = tableNumber || String(totem.name || numericTotemId);
 
         let order = await Order.findOne({ sessionId: sessionId, status: 'active' });
         if (!order) {
-            order = new Order({ tableNumber: tNumber, totemId: tId, sessionId: sessionId, items: [], totalAmount: 0 });
+            order = new Order({ tableNumber: tNumber, totemId: numericTotemId, sessionId: sessionId, items: [], totalAmount: 0 });
         }
 
         const taggedItems = items.map(item => ({
@@ -199,7 +232,7 @@ router.post('/',
             await order.save();
         } catch (error) {
             if (error.name === 'VersionError') {
-                return res.error('Error de concurrencia al procesar el pedido. Por favor, inténtelo de nuevo.', 409);
+                return res.error(req.t('ERRORS.ORDER_CONCURRENCY'), 409);
             }
             throw error;
         }
@@ -207,13 +240,14 @@ router.post('/',
         const io = req.app.get('io');
         if (io) io.emit('order-updated', order);
 
-        res.success(order, 201);
+        res.success(order, undefined, 201);
     }
 );
 
 // PATCH /:id - Update order (Restricted)
 router.patch('/:id',
     verifyToken,
+    requireRole('admin', 'waiter', 'kitchen', 'pos'),
     validate(mongoIdSchema, 'params'),
     validate(orderUpdateSchema),
     async function(req, res) {
@@ -236,8 +270,9 @@ router.patch('/:id',
         // Remove status from manual update to avoid double update
         delete updateData.status;
 
-        // Apply version for OCC
-        if (req.body.__v !== undefined) order.__v = req.body.__v;
+        if (req.body.__v !== undefined && order.__v !== req.body.__v) {
+            return res.error(req.t('ERRORS.VERSION_CONFLICT') || 'Version conflict detected.', 409);
+        }
         
         const oldState = order.toObject();
         Object.assign(order, updateData);
@@ -254,7 +289,7 @@ router.patch('/:id',
             }
         } catch (error) {
             if (error.name === 'VersionError') {
-                return res.error('Conflicto de concurrencia: El pedido ha sido actualizado por otro usuario. Por favor, recarga los datos.', 409);
+                return res.error(req.t('ERRORS.ORDER_CONCURRENCY'), 409);
             }
             throw error;
         }
@@ -269,12 +304,14 @@ router.patch('/:id',
 // PATCH /:id/items/bulk-status - Bulk status update (Restricted)
 router.patch('/:id/items/bulk-status',
     verifyToken,
+    requireRole('admin', 'kitchen'),
     validate(mongoIdSchema, 'params'),
     validate(itemStatusSchema),
     async function(req, res) {
         const order = await Order.findById(req.params.id);
         if (!order) return res.error(req.t('ERRORS.ORDER_NOT_FOUND'), 404);
 
+        const previousItems = order.items.map(i => ({ id: i._id.toString(), status: i.status }));
         for (const item of order.items) {
             if (item.status !== 'served' && item.status !== 'cancelled') {
                 item.status = req.body.status;
@@ -282,10 +319,9 @@ router.patch('/:id/items/bulk-status',
         }
 
         try {
-            const previousItems = order.items.map(i => ({ id: i._id, status: i.status }));
-            
-            // Apply version for OCC
-            order.__v = req.body.__v;
+            if (req.body.__v !== undefined && order.__v !== req.body.__v) {
+                return res.error(req.t('ERRORS.VERSION_CONFLICT'), 409);
+            }
 
             await order.save();
             
@@ -297,7 +333,7 @@ router.patch('/:id/items/bulk-status',
             });
         } catch (error) {
             if (error.name === 'VersionError') {
-                return res.error('Conflicto de concurrencia: El pedido ha cambiado durante la actualización masiva.', 409);
+                return res.error(req.t('ERRORS.ORDER_CONCURRENCY'), 409);
             }
             throw error;
         }
@@ -312,6 +348,7 @@ router.patch('/:id/items/bulk-status',
 // PATCH /:id/items/:itemId - Status update (Restricted)
 router.patch('/:id/items/:itemId',
     verifyToken,
+    requireRole('admin', 'kitchen'),
     validate(mongoIdSchema, 'params'),
     validate(itemStatusSchema),
     async function(req, res) {
@@ -334,7 +371,7 @@ router.patch('/:id/items/:itemId',
             });
         } catch (error) {
             if (error.name === 'VersionError') {
-                return res.error('Conflicto de concurrencia en cocina: El pedido ha cambiado. Sincronizando...', 409);
+                return res.error(req.t('ERRORS.ITEM_CONCURRENCY'), 409);
             }
             throw error;
         }
@@ -349,6 +386,7 @@ router.patch('/:id/items/:itemId',
 // POST /:id/checkout - Process payment (Restricted)
 router.post('/:id/checkout',
     verifyToken,
+    requireRole('admin', 'pos'),
     validate(mongoIdSchema, 'params'),
     validate(checkoutSchema),
     async function(req, res) {
@@ -361,7 +399,7 @@ router.post('/:id/checkout',
             const unpaidItems = order.items.filter(i => !i.isPaid);
             const hasOrphans = unpaidItems.some(item => !item.orderedBy || !item.orderedBy.id || ['orphan', 'staff', 'pos'].includes(item.orderedBy.id));
             if (hasOrphans) {
-                return res.error('Existen platos sin comensal asignado. Asígnalos a un nombre antes de cobrar individualmente.', 400);
+                return res.error(req.t('ERRORS.ITEMS_WITHOUT_OWNER'), 400);
             }
         }
 
@@ -371,7 +409,7 @@ router.post('/:id/checkout',
         });
 
         if (finalAmount <= 0 && splitType !== 'equal') {
-            return res.error('Error en el cálculo del importe del ticket.', 400);
+            return res.error(req.t('ERRORS.TICKET_CALCULATION_ERROR'), 400);
         }
 
         const generatedTickets = [];
@@ -391,8 +429,11 @@ router.post('/:id/checkout',
             generatedTickets.push(ticket);
         }
 
+        if (req.body.__v !== undefined && order.__v !== req.body.__v) {
+            return res.error(req.t('ERRORS.VERSION_CONFLICT') || 'Version conflict detected.', 409);
+        }
+
         order.paymentStatus = totalPaidFlag ? 'paid' : 'split';
-        order.__v = req.body.__v; // Apply version for OCC
 
         if (totalPaidFlag) {
             try {
@@ -400,7 +441,7 @@ router.post('/:id/checkout',
                 await order.save();
             } catch (error) {
                 if (error.name === 'VersionError') {
-                    return res.error('Error al finalizar: El pedido ha cambiado. Por favor, actualice la cuenta.', 409);
+                    return res.error(req.t('ERRORS.ORDER_CONCURRENCY'), 409);
                 }
                 throw error;
             }
@@ -417,12 +458,11 @@ router.post('/:id/checkout',
                 }
             }
         } else {
-            order.__v = req.body.__v;
             try {
                 await order.save();
             } catch (error) {
                 if (error.name === 'VersionError') {
-                    return res.error('Error al cobrar: El pedido ha cambiado. Por favor, actualice la cuenta.', 409);
+                    return res.error(req.t('ERRORS.ORDER_CONCURRENCY'), 409);
                 }
                 throw error;
             }

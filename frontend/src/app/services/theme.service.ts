@@ -1,4 +1,6 @@
 import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { CommunicationService } from './communication.service';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
@@ -9,7 +11,9 @@ import { environment } from '../../environments/environment';
 export class ThemeService {
     private comms = inject(CommunicationService);
     private auth = inject(AuthService);
+    private http = inject(HttpClient);
     private currentSlug: string | null = null;
+    private configListenerAttached = false;
     public restaurantName: string = '';
 
     constructor() {
@@ -22,21 +26,21 @@ export class ThemeService {
         this.currentSlug = slug;
         // Legacy shim: keep for API compatibility, but main loader uses singleton endpoint
         this.loadAndApplyConfig();
-        this.comms.subscribeToConfig((config: any) => {
-            console.log('Applying real-time theme update', config);
-            this.applyTheme(config.theme);
-            if (config.name) this.restaurantName = config.name;
-        });
+        if (!this.configListenerAttached) {
+            this.configListenerAttached = true;
+            this.comms.subscribeToConfig((config: any) => {
+                console.log('Applying real-time theme update', config);
+                this.applyTheme(config.theme);
+                if (config.name) this.restaurantName = config.name;
+            });
+        }
     }
 
     private async loadAndApplyConfig() {
         try {
-            const res = await fetch(`${environment.apiUrl}/api/restaurant`);
-            const config = await res.json();
-            if (config) {
-                if (config.theme) this.applyTheme(config.theme);
-                if (config.name) this.restaurantName = config.name;
-            }
+            const config = await firstValueFrom(this.http.get<any>(`${environment.apiUrl}/api/restaurant`));
+            if (config?.theme) this.applyTheme(config.theme);
+            if (config?.name) this.restaurantName = config.name;
         } catch (e) {
             console.error('Failed to load theme', e);
         }

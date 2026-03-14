@@ -3,11 +3,15 @@ import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
+import { TranslateService } from '@ngx-translate/core';
+import { NotifyService } from '../../services/notify.service';
 
 @Injectable()
 export class UserManagementViewModel {
     private auth = inject(AuthService);
     private http = inject(HttpClient);
+    private translate = inject(TranslateService);
+    private notify = inject(NotifyService);
 
     public users = signal<any[]>([]);
     public printers = signal<any[]>([]);
@@ -35,7 +39,8 @@ export class UserManagementViewModel {
 
         } catch (error: any) {
             console.error('Error loading data', error);
-            this.error.set(error.message || 'Error al conectar con el servidor');
+            this.error.set(this.translate.instant('USER_MGMT.LOAD_ERROR'));
+            this.notify.errorKey('USER_MGMT.LOAD_ERROR');
         } finally {
             this.loading.set(false);
         }
@@ -52,21 +57,26 @@ export class UserManagementViewModel {
 
             this.users.update(curr => [...curr, newUser]);
             this.auth.logActivity('USER_ADDED', { username, role });
+            this.notify.successKey('USER_MGMT.ADD_SUCCESS', { username });
         } catch (e: any) {
             console.error(e);
-            this.error.set('No se pudo crear el usuario.');
+            this.error.set(this.translate.instant('USER_MGMT.ADD_ERROR'));
+            this.notify.errorKey('USER_MGMT.ADD_ERROR');
         }
     }
 
     public async deleteUser(userId: string) {
-        if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
+        if (!confirm(this.translate.instant('USER_MGMT.DELETE_CONFIRM'))) return;
 
         try {
             await lastValueFrom(this.http.delete(`${environment.apiUrl}/api/users/${userId}`));
             this.users.update(curr => curr.filter(u => u._id !== userId));
             this.auth.logActivity('USER_DELETED', { userId });
+            this.notify.successKey('USER_MGMT.DELETE_SUCCESS');
         } catch (e: any) {
-            this.error.set('No se pudo eliminar el usuario.');
+            console.error('Error deleting user', e);
+            this.error.set(this.translate.instant('USER_MGMT.DELETE_ERROR'));
+            this.notify.errorKey('USER_MGMT.DELETE_ERROR');
         }
     }
 
@@ -100,9 +110,10 @@ export class UserManagementViewModel {
             this.users.update(curr => curr.map(u => u._id === updatedUser._id ? updatedUser : u));
             this.auth.logActivity('USER_UPDATED', { username: updatedUser.username });
             this.closeEditModal();
+            this.notify.successKey('USER_MGMT.UPDATE_SUCCESS', { username: updatedUser.username });
         } catch (e: any) {
-            console.error(e);
-            alert('No se pudo actualizar el usuario.');
+            console.error('Error updating user', e);
+            this.notify.errorKey('USER_MGMT.UPDATE_ERROR');
         }
     }
 }

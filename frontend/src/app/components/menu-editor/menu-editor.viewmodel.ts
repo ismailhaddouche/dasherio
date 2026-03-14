@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
 import { lastValueFrom } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
+import { NotifyService } from '../../services/notify.service';
 
 export interface MenuItem {
     _id?: string;
@@ -25,6 +27,8 @@ export interface MenuItem {
 export class MenuEditorViewModel {
     private http = inject(HttpClient);
     private auth = inject(AuthService);
+    private translate = inject(TranslateService);
+    private notify = inject(NotifyService);
 
     // State
     public items = signal<MenuItem[]>([]);
@@ -57,7 +61,7 @@ export class MenuEditorViewModel {
             if (data) this.items.set(data);
         } catch (e: any) {
             console.error('Error loading menu', e);
-            this.error.set(e.message || 'Error al cargar los datos del menú.');
+            this.error.set(this.translate.instant('MENU_EDITOR.LOAD_ERROR'));
         } finally {
             this.loading.set(false);
         }
@@ -99,19 +103,19 @@ export class MenuEditorViewModel {
             this.isEditing.set(false);
         } catch (e) {
             console.error('Error saving item', e);
-            alert('No se pudo guardar el plato. Revisa tu conexión.');
+            this.notify.errorKey('MENU_EDITOR.SAVE_ERROR');
         }
     }
 
     public async deleteItem(id: string) {
-        if (!confirm('¿Estás seguro de eliminar este elemento?')) return;
+        if (!confirm(this.translate.instant('MENU_EDITOR.DELETE_CONFIRM'))) return;
         try {
             await lastValueFrom(this.http.delete(`${environment.apiUrl}/api/menu/${id}`));
             this.auth.logActivity('MENU_ITEM_DELETED', { itemId: id });
             this.loadMenu();
         } catch (e) {
             console.error('Error deleting item', e);
-            alert('Error al intentar eliminar el elemento.');
+            this.notify.errorKey('MENU_EDITOR.DELETE_ERROR');
         }
     }
 
@@ -198,7 +202,7 @@ export class MenuEditorViewModel {
             return res.url;
         } catch (e) {
             console.error('Error uploading image', e);
-            alert('Error al subir la imagen. Verifica que sea un archivo menor a 5MB.');
+            this.notify.errorKey('MENU_EDITOR.UPLOAD_ERROR');
             return null;
         }
     }

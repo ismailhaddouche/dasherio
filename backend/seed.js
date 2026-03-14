@@ -1,10 +1,12 @@
-const mongoose = require('mongoose');
-const Restaurant = require('./src/models/Restaurant');
-const MenuItem = require('./src/models/MenuItem');
-const User = require('./src/models/User');
-const Order = require('./src/models/Order');
-const ActivityLog = require('./src/models/ActivityLog');
-require('dotenv').config();
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import Restaurant from './src/models/Restaurant.js';
+import MenuItem from './src/models/MenuItem.js';
+import User from './src/models/User.js';
+import Order from './src/models/Order.js';
+import ActivityLog from './src/models/ActivityLog.js';
+
+dotenv.config();
 
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/disher';
 
@@ -105,9 +107,11 @@ async function seed() {
         console.log('Menu items created (including Daily Menu and Variants)');
 
         console.log('Seed completed successfully!');
+        await mongoose.disconnect();
         process.exit(0);
     } catch (error) {
         console.error('Seed error:', error);
+        await mongoose.disconnect().catch(() => {});
         process.exit(1);
     }
 }

@@ -83,6 +83,8 @@ router.patch('/restaurant',
             restaurant = new Restaurant({ name: 'Mi Restaurante', slug: 'default' });
         }
 
+        const oldState = restaurant.toObject();
+
         const ALLOWED_FIELDS = [
             'name', 'address', 'phone', 'email', 'description',
             'theme', 'billing', 'socials', 'stations', 'defaultLanguage'
@@ -93,8 +95,6 @@ router.patch('/restaurant',
                 restaurant[field] = req.body[field];
             }
         }
-
-        const oldState = restaurant.toObject();
         await restaurant.save();
 
         await AuditService.logChange(req, 'RESTAURANT_CONFIG_UPDATED', oldState, restaurant.toObject());
@@ -149,11 +149,11 @@ router.get('/totems/:id/session',
     async function(req, res) {
         const totemId = parseInt(req.params.id);
         const restaurant = await Restaurant.findOne();
-        if (!restaurant) return res.error('Restaurant not found', 404);
+        if (!restaurant) return res.error(req.t('ERRORS.RESTAURANT_NOT_FOUND'), 404);
 
         const totem = restaurant.totems.find(t => t.id === totemId);
-        if (!totem) return res.error('Totem not found', 404);
-        if (!totem.active) return res.error('Mesa desactivada', 403);
+        if (!totem) return res.error(req.t('ERRORS.TOTEM_NOT_FOUND'), 404);
+        if (!totem.active) return res.error(req.t('ERRORS.TOTEM_INACTIVE'), 403);
 
         let sessionId = totem.currentSessionId;
 
@@ -181,11 +181,11 @@ router.post('/totems/:id/session',
     async function(req, res) {
         const totemId = parseInt(req.params.id);
         const restaurant = await Restaurant.findOne();
-        if (!restaurant) return res.error('Restaurant not found', 404);
+        if (!restaurant) return res.error(req.t('ERRORS.RESTAURANT_NOT_FOUND'), 404);
 
         const totem = restaurant.totems.find(t => t.id === totemId);
-        if (!totem) return res.error('Totem not found', 404);
-        if (!totem.active) return res.error('Mesa desactivada', 403);
+        if (!totem) return res.error(req.t('ERRORS.TOTEM_NOT_FOUND'), 404);
+        if (!totem.active) return res.error(req.t('ERRORS.TOTEM_INACTIVE'), 403);
 
         let sessionId = totem.currentSessionId;
 
@@ -340,7 +340,7 @@ router.delete('/totems/:id',
         restaurant.totems = restaurant.totems.filter(t => String(t.id) !== id);
         await restaurant.save();
 
-        res.success({ message: 'Totem deleted successfully' });
+        res.success({ message: req.t('ERRORS.TOTEM_DELETED_SUCCESSFULLY') });
     }
 );
 
@@ -402,7 +402,7 @@ router.post('/close-shift', verifyToken, requireAdmin, async function(req, res) 
         io.to('customer').emit('all-sessions-ended', { reason: 'SHIFT_CLOSED' });
     }
 
-    res.success({ message: 'Cierre de caja realizado. Todas las sesiones de clientes han sido liquidadas.' });
+    res.success({ message: req.t('ERRORS.SHIFT_CLOSED') });
 });
 
 // POST /logs - Create activity log (Maintained for legacy frontend logs but secured)
@@ -454,7 +454,7 @@ router.delete('/tickets/:ticketId',
         });
 
         await Ticket.findByIdAndDelete(req.params.ticketId);
-        res.success({ message: 'Ticket deleted' });
+        res.success({ message: req.t('ERRORS.TICKET_DELETED_SUCCESSFULLY') });
     }
 );
 

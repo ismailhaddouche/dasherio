@@ -185,13 +185,13 @@ export class POSViewModel {
     public async processPayment(orderId?: string, splitType: 'single' | 'equal' | 'by-user' = 'single', parts: number = 1, userId?: string) {
         const targetOrderId = orderId || this.selectedTable()?.order?._id;
         if (!targetOrderId) {
-            this.notify.warning(this.translate.instant('POS.PAY_ERROR_NO_SELECTION'));
+            this.notify.warningKey('POS.PAY_ERROR_NO_SELECTION');
             return;
         }
 
         const config = this.billingConfig();
         if (!config || config.vatPercentage === null || config.vatPercentage === undefined) {
-            this.notify.warning(this.translate.instant('POS.PAY_ERROR_VAT_CONFIG'));
+            this.notify.warningKey('POS.PAY_ERROR_VAT_CONFIG');
             return;
         }
 
@@ -223,16 +223,18 @@ export class POSViewModel {
             }
 
         } catch (e: any) {
-            const msg = e.error?.code === 'ORPHANS_EXIST'
-                ? this.translate.instant('POS.ORPHANS_WARNING')
-                : (this.translate.instant('POS.PAY_ERROR') + ': ' + (e.error?.error || e.message || ''));
-            this.notify.error(msg);
+            if (e.error?.code === 'ORPHANS_EXIST') {
+                this.notify.warningKey('POS.ORPHANS_WARNING');
+            } else {
+                const fallback = e.error?.error || e.message || this.translate.instant('POS.UNKNOWN_ERROR');
+                this.notify.error(`${this.translate.instant('POS.PAY_ERROR')}: ${fallback}`);
+            }
         }
     }
 
     public async payByUser(userId: string) {
         if (userId === 'orphan') {
-            this.notify.warning(this.translate.instant('POS.PAY_ERROR_ORPHAN'));
+            this.notify.warningKey('POS.PAY_ERROR_ORPHAN');
             return;
         }
         await this.processPayment(undefined, 'by-user', 1, userId);
@@ -263,17 +265,32 @@ export class POSViewModel {
         }
 
         if (!p) {
-            this.notify.warning(this.translate.instant('POS.NO_PRINTER_CONFIGURED'));
+            this.notify.warningKey('POS.NO_PRINTER_CONFIGURED');
             return;
         }
 
         if (p.type === 'thermal' || p.type === 'network') {
             const ip = p.address || p.ip;
-            const fiscalInfo = ticket.baseAmount ? ` (Base: ${ticket.baseAmount}€ + IVA: ${ticket.vatAmount}€)` : '';
-            this.notify.success(`🖨️ ${this.translate.instant('POS.PRINT_THERMAL')} ${ip} — ${ticket.customId} (${ticket.amount}€)${fiscalInfo}`);
+            const fiscalInfo = ticket.baseAmount
+                ? this.translate.instant('POS.PRINT_FISCAL_INFO', { base: ticket.baseAmount, vat: ticket.vatAmount })
+                : '';
+            this.notify.successKey('POS.PRINT_THERMAL_MESSAGE', {
+                label: this.translate.instant('POS.PRINT_THERMAL'),
+                printer: ip,
+                ticketId: ticket.customId,
+                amount: ticket.amount,
+                fiscalInfo
+            });
         } else {
-            const fiscalInfo = ticket.baseAmount ? ` (Base: ${ticket.baseAmount}€ + IVA: ${ticket.vatAmount}€)` : '';
-            this.notify.success(`🖨️ ${this.translate.instant('POS.PRINT_SYSTEM')} — ${ticket.customId} (${ticket.amount}€)${fiscalInfo}`);
+            const fiscalInfo = ticket.baseAmount
+                ? this.translate.instant('POS.PRINT_FISCAL_INFO', { base: ticket.baseAmount, vat: ticket.vatAmount })
+                : '';
+            this.notify.successKey('POS.PRINT_SYSTEM_MESSAGE', {
+                label: this.translate.instant('POS.PRINT_SYSTEM'),
+                ticketId: ticket.customId,
+                amount: ticket.amount,
+                fiscalInfo
+            });
             window.print();
         }
     }
@@ -341,7 +358,7 @@ export class POSViewModel {
             this.auth.logActivity('ORDER_ITEM_REMOVED', { orderId, itemIndex });
         } catch (e) {
             console.error('Error removing item', e);
-            this.notify.error(this.translate.instant('POS.REMOVE_ITEM_ERROR'));
+            this.notify.errorKey('POS.REMOVE_ITEM_ERROR');
         }
     }
 
@@ -359,11 +376,11 @@ export class POSViewModel {
             this.orders.update(prev => prev.map(o => o._id === orderId ? updatedOrder : o));
         } catch (e: any) {
             if (e.status === 409) {
-                this.notify.warning(this.translate.instant('POS.CONCURRENCY_ERROR'));
+                this.notify.warningKey('POS.CONCURRENCY_ERROR');
                 this.initPOS(); // Reload to get fresh data
             } else {
                 console.error('Error associating item', e);
-                this.notify.error(this.translate.instant('POS.ASSOCIATE_ERROR'));
+                this.notify.errorKey('POS.ASSOCIATE_ERROR');
             }
         }
     }
@@ -391,13 +408,13 @@ export class POSViewModel {
             this.showAddItemModal.set(false);
         } catch (e) {
             console.error('Error adding item', e);
-            this.notify.error(this.translate.instant('POS.ADD_ITEM_ERROR'));
+            this.notify.errorKey('POS.ADD_ITEM_ERROR');
         }
     }
 
     public async addCustomLineToOrder(orderId: string, customName: string, customPrice: number) {
         if (!customName || customPrice <= 0) {
-            this.notify.warning(this.translate.instant('POS.CUSTOM_VALIDATION_ERROR'));
+            this.notify.warningKey('POS.CUSTOM_VALIDATION_ERROR');
             return;
         }
 
@@ -423,7 +440,7 @@ export class POSViewModel {
             this.showCustomLineModal.set(false);
         } catch (e) {
             console.error('Error adding custom line', e);
-            this.notify.error(this.translate.instant('POS.ADD_CUSTOM_LINE_ERROR'));
+            this.notify.errorKey('POS.ADD_CUSTOM_LINE_ERROR');
         }
     }
 
@@ -437,7 +454,7 @@ export class POSViewModel {
             this.auth.logActivity('TABLE_OPENED_MANUALLY', { tableNumber: table.number });
         } catch (e) {
             console.error('Error opening table', e);
-            this.notify.error(this.translate.instant('POS.OPEN_TABLE_ERROR'));
+            this.notify.errorKey('POS.OPEN_TABLE_ERROR');
         }
     }
 
@@ -454,7 +471,7 @@ export class POSViewModel {
             if (this.selectedTable()?.id === tableId) this.selectedTable.set(null);
         } catch (e) {
             console.error('Error deleting virtual table', e);
-            this.notify.error(this.translate.instant('POS.DELETE_VIRTUAL_ERROR'));
+            this.notify.errorKey('POS.DELETE_VIRTUAL_ERROR');
         }
     }
 
@@ -462,12 +479,12 @@ export class POSViewModel {
         if (!confirm(this.translate.instant('POS.CONFIRM_CLOSE_SHIFT'))) return;
         try {
             const result: any = await firstValueFrom(this.http.post(`${environment.apiUrl}/api/close-shift`, {}, { withCredentials: true }));
-            this.notify.success(result.message);
+            this.notify.success(result.message || this.translate.instant('POS.CLOSE_SHIFT_SUCCESS'));
             this.initPOS();
             this.selectedTable.set(null);
         } catch (e) {
             console.error('Error closing shift', e);
-            this.notify.error(this.translate.instant('POS.CLOSE_SHIFT_ERROR'));
+            this.notify.errorKey('POS.CLOSE_SHIFT_ERROR');
         }
     }
 }

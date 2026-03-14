@@ -13,7 +13,8 @@
         "CANCEL": "Cancel",
         "EDIT": "Edit",
         "DELETE": "Delete",
-        "LOADING": "Loading..."
+        "LOADING": "Loading...",
+        "UNEXPECTED_ERROR": "An unexpected error occurred"
     },
     "CONFIG": {
         "TITLE": "System Configuration",
@@ -45,7 +46,12 @@
         "ACTIVITY_LOG": "Activity Log",
         "NO_ACTIVITY": "No activity registered.",
         "LIVE": "LIVE",
-        "TOTEM": "Totem"
+        "TOTEM": "Totem",
+        "TOTEM_ADD_ERROR": "Could not create the totem",
+        "TOTEM_UPDATE_ERROR": "Could not update the totem",
+        "TOTEM_DELETE_ERROR": "Could not delete the totem",
+        "DELETE_TOTEM_CONFIRM": "Delete this totem? Existing QR links will stop working.",
+        "COMPLETE_ERROR": "Could not complete the order"
     },
     "ROLES": {
         "admin": "Administrator",
@@ -79,12 +85,14 @@
         "UPDATE_ERROR": "Could not update the item. Check your connection.",
         "CANCEL_CONFIRM": "Are you sure you want to CANCEL this item?",
         "CANCEL_ERROR": "Could not cancel the item.",
+        "NO_PRINTER_CONFIGURED": "No printer configured for this terminal",
         "PRINTER_THERMAL": "Thermal",
         "PRINTER_SYSTEM": "System",
         "TICKET_TITLE": "ISSUING SERVICE VOUCHER",
         "ITEM_LABEL": "ITEM",
         "QTY_LABEL": "QTY",
-        "ORIGIN_LABEL": "ORIGIN"
+        "ORIGIN_LABEL": "ORIGIN",
+        "PRINT_MESSAGE": "🖨️ ({{printerLabel}} {{printer}})\n{{title}}\n----------------------\n{{item}} × {{quantity}}\n{{table}}{{details}}\n----------------------"
     },
     "POS": {
         "TITLE": "Cash Register",
@@ -136,7 +144,35 @@
         "DELETE_TITLE": "Delete Record",
         "CHARGE_ONLY_THIS": "Charge only dishes of this person",
         "ORPHANS_EXIST": "Plates still pending assignment.",
-        "ORPHANS_WARNING": "Assign all dishes to someone before individual payment."
+        "ORPHANS_WARNING": "Assign all dishes to someone before individual payment.",
+        "CONCURRENCY_ERROR": "Concurrency conflict! The table was updated by another waiter. Reloading...",
+        "ORPHAN": "Unassigned",
+        "PAY_ERROR_NO_SELECTION": "Select a table before charging",
+        "PAY_ERROR_VAT_CONFIG": "Configure VAT in settings before charging",
+        "CONFIRM_TOTAL": "Do you confirm the full payment?",
+        "CONFIRM_SPLIT": "Do you confirm splitting the bill into {{parts}} equal parts?",
+        "CONFIRM_USER": "Do you confirm the individual charge?",
+        "PAY_ERROR": "Error processing the payment",
+        "PAY_ERROR_ORPHAN": "You can't charge items without an assigned diner",
+        "DELETE_TICKET_CONFIRM": "Delete this receipt?",
+        "DELETE_TICKET_ERROR": "Could not delete the receipt",
+        "NO_PRINTER_CONFIGURED": "No printer assigned to this user",
+        "PRINT_THERMAL": "Thermal",
+        "PRINT_SYSTEM": "System",
+        "CASHIER_LABEL": "Cashier",
+        "REMOVE_ITEM_ERROR": "Could not remove the item",
+        "ASSOCIATE_ERROR": "Could not associate the dish",
+        "ADD_ITEM_ERROR": "Could not add the dish",
+        "CUSTOM_VALIDATION_ERROR": "Enter a valid concept and price",
+        "ADD_CUSTOM_LINE_ERROR": "Could not add the custom line",
+        "OPEN_TABLE_ERROR": "Could not open the table",
+        "DELETE_VIRTUAL_CONFIRM": "Delete this temporary table?",
+        "DELETE_VIRTUAL_ERROR": "Could not delete the temporary table",
+        "CLOSE_SHIFT_ERROR": "Could not close the shift",
+        "UNKNOWN_ERROR": "Unknown error",
+        "PRINT_THERMAL_MESSAGE": "🖨️ {{label}} {{printer}} — {{ticketId}} ({{amount}}€){{fiscalInfo}}",
+        "PRINT_SYSTEM_MESSAGE": "🖨️ {{label}} — {{ticketId}} ({{amount}}€){{fiscalInfo}}",
+        "PRINT_FISCAL_INFO": " (Base: {{base}}€ + VAT: {{vat}}€)"
     },
     "CHECKOUT": {
         "BACK": "← Back",
@@ -172,6 +208,7 @@
         "SELECT_OPTION": "Select an option",
         "EXTRAS_OPTIONAL": "Extras (Optional)",
         "ADD_TO_CART": "Add to cart",
+        "CUSTOMIZE": "Customize",
         "YOUR_ORDER": "Your Order",
         "IN_KITCHEN": "In Kitchen",
         "RECEIVED": "Received",
@@ -184,7 +221,17 @@
         "YOU": "You",
         "DISHES": "dishes",
         "TOTAL": "Total",
-        "ORDER_NOW": "Order Now"
+        "ORDER_NOW": "Order Now",
+        "ERROR_SESSION_LINK": "Could not connect to the table. Try scanning again.",
+        "ERROR_LOADING_SESSION": "Failed to load session information.",
+        "ERROR_INVALID_LINK": "Invalid link. Please scan the QR code again.",
+        "ERROR_OPENING_TABLE": "Could not open the table.",
+        "CONFLICT_WARNING": "This table was updated elsewhere. Reloading...",
+        "UNAVAILABLE_ITEM": "This dish is currently unavailable.",
+        "VARIANT_REQUIRED": "Select a variant before continuing.",
+        "MENU_SECTION_REQUIRED": "Choose an option in {{section}}.",
+        "ORDER_SENT": "Order sent to kitchen",
+        "ORDER_ERROR": "Could not send the order"
     },
     "LOGIN": {
         "ACCESS_TERMINAL": "Management Terminal Access",
@@ -234,7 +281,12 @@
         "DANGER_ZONE": "Danger Zone",
         "DANGER_DESC": "Once deleted, this product cannot be recovered.",
         "PRO_MANAGER": "Professional Menu Manager",
-        "SELECT_HINT": "Select a dish to edit its details or create a new one from scratch."
+        "SELECT_HINT": "Select a dish to edit its details or create a new one from scratch.",
+        "SAVE_ERROR": "Could not save the dish",
+        "DELETE_CONFIRM": "Delete this dish?",
+        "DELETE_ERROR": "Could not delete the dish",
+        "UPLOAD_ERROR": "Image upload failed",
+        "LOAD_ERROR": "Error loading the menu"
     },
     "STORE_CONFIG": {
         "TITLE": "Store Configuration",
@@ -277,7 +329,12 @@
         "DEVICE_SUB": "Specific configuration for this terminal.",
         "ASSIGNED_PRINTER": "Assigned Printer",
         "NO_PRINTER": "No Printer",
-        "AUTO_PRINT": "Auto Print"
+        "AUTO_PRINT": "Auto Print",
+        "LOAD_ERROR": "Could not load store configuration",
+        "SAVE_SUCCESS": "Configuration saved. Reloading...",
+        "SAVE_ERROR": "Could not save the configuration",
+        "LOGO_SUCCESS": "Logo updated",
+        "LOGO_ERROR": "Could not upload the logo"
     },
     "WAITER": {
         "PANEL": "Waiter Panel",
@@ -292,7 +349,17 @@
         "NEW_ORDER_FOR": "New order for...",
         "SELECT_NAME_OR_SKIP": "Select an existing diner or add a new one.",
         "NEW_NAME_OPTIONAL": "Name (Optional)",
-        "START_ORDERING": "Take order"
+        "START_ORDERING": "Take order",
+        "ACTIVE_BADGE": "Active tables",
+        "STATUS_OCCUPIED": "OCCUPIED",
+        "STATUS_FREE": "FREE",
+        "READY_HINT": "Ready to take orders",
+        "LOAD_ERROR": "Could not load waiter view",
+        "VIRTUAL_NAME_REQUIRED": "Enter a name for the temporary table",
+        "ADD_VIRTUAL_SUCCESS": "Temporary table {{name}} created",
+        "ADD_VIRTUAL_ERROR": "Could not create the temporary table",
+        "DELETE_VIRTUAL_SUCCESS": "Temporary table #{{id}} deleted",
+        "DELETE_VIRTUAL_ERROR": "Could not delete the temporary table"
     },
     "USER_MGMT": {
         "SYSTEM_ROLE": "System role:",
@@ -317,7 +384,15 @@
         "CREATE_USER": "Create User",
         "PRINTER_ASSIGNED": "🖨️ Printer Assigned",
         "EDIT": "Edit",
-        "SYSTEM": "System"
+        "SYSTEM": "System",
+        "LOAD_ERROR": "Could not load users",
+        "ADD_SUCCESS": "User {{username}} created",
+        "ADD_ERROR": "Could not create the user",
+        "DELETE_CONFIRM": "Delete this user?",
+        "DELETE_SUCCESS": "User deleted",
+        "DELETE_ERROR": "Could not delete the user",
+        "UPDATE_SUCCESS": "User {{username}} updated",
+        "UPDATE_ERROR": "Could not update the user"
     },
     "SIDEBAR": {
         "MAIN": "Main",

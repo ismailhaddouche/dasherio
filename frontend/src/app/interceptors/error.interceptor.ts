@@ -1,14 +1,16 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import { catchError, throwError } from 'rxjs';
 import { NotifyService } from '../services/notify.service';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     const notify = inject(NotifyService);
+    const translate = inject(TranslateService);
 
     return next(req).pipe(
         catchError((error: HttpErrorResponse) => {
-            let errorMessage = 'Ha ocurrido un error inesperado';
+            let errorMessage = translate.instant('COMMON.UNEXPECTED_ERROR');
 
             if (error.error instanceof ErrorEvent) {
                 // Client-side error

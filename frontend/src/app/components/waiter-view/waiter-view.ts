@@ -6,8 +6,9 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
 import { CommunicationService } from '../../services/communication.service';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { filter, Subscription, firstValueFrom } from 'rxjs';
+import { NotifyService } from '../../services/notify.service';
 
 interface TotemWithStatus {
   id: number;
@@ -35,7 +36,7 @@ interface TotemWithStatus {
         <div class="header-actions">
           <div class="badge-tonal">
             <span class="text-title-large">{{ occupiedCount() }}</span>
-            <span class="text-label-small opacity-60">ACTIVAS</span>
+            <span class="text-label-small opacity-60">{{ 'WAITER.ACTIVE_BADGE' | translate }}</span>
           </div>
           <button class="btn-primary" (click)="showAddModal.set(true)">
             <lucide-icon name="plus" [size]="18"></lucide-icon>
@@ -68,7 +69,7 @@ interface TotemWithStatus {
                     <span class="chip chip-outline primary">{{ 'WAITER.VIRTUAL_TAG' | translate }}</span>
                   }
                   <span class="chip-active" [class.free]="!totem.order">
-                    {{ totem.order ? 'ACTIVA' : 'LIBRE' }}
+                    {{ totem.order ? ('WAITER.STATUS_OCCUPIED' | translate) : ('WAITER.STATUS_FREE' | translate) }}
                   </span>
                 </div>
                 <div class="item-actions">
@@ -115,7 +116,7 @@ interface TotemWithStatus {
                       </div>
                     </div>
                   } @else {
-                    <div class="action-hint text-label-medium">LISTA PARA PEDIR</div>
+                    <div class="action-hint text-label-medium">{{ 'WAITER.READY_HINT' | translate }}</div>
                   }
                 </div>
               </div>
@@ -329,6 +330,8 @@ export class WaiterViewComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   private comms = inject(CommunicationService);
   private http = inject(HttpClient);
+  private translate = inject(TranslateService);
+  private notify = inject(NotifyService);
 
   public totems = signal<any[]>([]);
   public orders = signal<any[]>([]);
@@ -421,6 +424,7 @@ export class WaiterViewComponent implements OnInit, OnDestroy {
       this.orders.set((ordersRes || []).filter((o: any) => o.status === 'active'));
     } catch (e) {
       console.error('Error loading waiter data', e);
+      this.notify.errorKey('WAITER.LOAD_ERROR');
     } finally {
       this.loading.set(false);
     }
@@ -441,30 +445,38 @@ export class WaiterViewComponent implements OnInit, OnDestroy {
   }
 
   async addVirtualTotem(name: string) {
-    if (!name?.trim()) return;
+    const trimmed = name?.trim();
+    if (!trimmed) {
+      this.notify.warningKey('WAITER.VIRTUAL_NAME_REQUIRED');
+      return;
+    }
     try {
       await firstValueFrom(this.http.post(`${environment.apiUrl}/api/totems`, {
-        name: name.trim(),
+        name: trimmed,
         isVirtual: true
       }, { withCredentials: true }));
 
       this.showAddModal.set(false);
       await this.loadData();
+      this.notify.successKey('WAITER.ADD_VIRTUAL_SUCCESS', { name: trimmed });
     } catch (e) {
       console.error('Error adding virtual totem', e);
+      this.notify.errorKey('WAITER.ADD_VIRTUAL_ERROR');
     }
   }
 
   async deleteTotem(event: Event, id: number) {
     event.stopPropagation();
-    if (!confirm('¿Eliminar esta mesa temporal?')) return;
+    if (!confirm(this.translate.instant('WAITER.DELETE_CONFIRM'))) return;
     try {
       await firstValueFrom(this.http.delete(`${environment.apiUrl}/api/totems/${id}`, {
         withCredentials: true
       }));
       await this.loadData();
+      this.notify.successKey('WAITER.DELETE_VIRTUAL_SUCCESS', { id });
     } catch (e) {
       console.error('Error deleting totem', e);
+      this.notify.errorKey('WAITER.DELETE_VIRTUAL_ERROR');
     }
   }
 

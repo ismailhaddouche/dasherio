@@ -2,7 +2,10 @@ import 'dotenv/config';
 import http from 'http';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
+import cookie from 'cookie';
+import jwt from 'jsonwebtoken';
 import app from './app.js';
+import { COOKIE_NAME } from './middleware/auth.middleware.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -50,10 +53,56 @@ const io = new Server(server, {
 // Attach io to app for use in routes
 app.set('io', io);
 
+io.use((socket, next) => {
+    try {
+        const cookiesHeader = socket.request.headers.cookie;
+        const cookies = cookiesHeader ? cookie.parse(cookiesHeader) : {};
+        const token = cookies[COOKIE_NAME] || socket.handshake.auth?.token;
+
+        if (!token) {
+            return next(new Error('UNAUTHORIZED'));
+        }
+
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        socket.data.user = payload;
+        return next();
+    } catch (error) {
+        console.error('[SOCKET] Auth error:', error.message);
+        return next(new Error('UNAUTHORIZED'));
+    }
+});
+
+const ROOM_PERMISSIONS = {
+    admin: ['customer', 'kitchen', 'pos', 'waiter', 'config'],
+    kitchen: ['kitchen'],
+    pos: ['pos', 'orders'],
+    waiter: ['waiter', 'orders'],
+    customer: ['customer']
+};
+
+const canJoinRoom = (room, role) => {
+    if (!room || typeof room !== 'string') return false;
+    if (room.startsWith('table:')) {
+        return ['admin', 'waiter', 'pos'].includes(role);
+    }
+    const allowed = ROOM_PERMISSIONS[role] || [];
+    return allowed.includes(room);
+};
+
 io.on('connection', (socket) => {
-    console.log(`[SOCKET] User connected: ${socket.id}`);
+    const user = socket.data.user;
+    console.log(`[SOCKET] User connected: ${socket.id} (${user?.username || 'unknown'})`);
+
+    if (user?.role) {
+        socket.join(user.role);
+    }
 
     socket.on('join-room', (room) => {
+        if (!user?.role || !canJoinRoom(room, user.role)) {
+            console.warn(`[SOCKET] User ${socket.id} (role: ${user?.role}) attempted to join unauthorized room: ${room}`);
+            socket.emit('room-access-denied', { room });
+            return;
+        }
         socket.join(room);
         console.log(`[SOCKET] User ${socket.id} joined room: ${room}`);
     });
@@ -95,6 +144,33 @@ process.on('uncaughtException', function(err) {
     console.error('[CRITICAL] Uncaught Exception:', err);
     // Exit gracefully to avoid inconsistent state
     process.exit(1);
+});
+
+async function gracefulShutdown(signal) {
+    console.log(`[SHUTDOWN] Received ${signal}. Closing HTTP server...`);
+    server.close(() => {
+        console.log('[SHUTDOWN] HTTP server closed');
+    });
+
+    try {
+        await io.close();
+        console.log('[SHUTDOWN] Socket.io closed');
+    } catch (error) {
+        console.error('[SHUTDOWN] Socket.io close error:', error.message);
+    }
+
+    try {
+        await mongoose.connection.close();
+        console.log('[SHUTDOWN] MongoDB connection closed');
+    } catch (error) {
+        console.error('[SHUTDOWN] MongoDB close error:', error.message);
+    }
+
+    process.exit(0);
+}
+
+['SIGTERM', 'SIGINT'].forEach(signal => {
+    process.on(signal, () => gracefulShutdown(signal));
 });
 
 export { io };

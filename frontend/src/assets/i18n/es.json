@@ -13,7 +13,8 @@
         "CANCEL": "Cancelar",
         "EDIT": "Editar",
         "DELETE": "Eliminar",
-        "LOADING": "Cargando..."
+        "LOADING": "Cargando...",
+        "UNEXPECTED_ERROR": "Ha ocurrido un error inesperado"
     },
     "CONFIG": {
         "TITLE": "Configuración del Sistema",
@@ -45,7 +46,12 @@
         "ACTIVITY_LOG": "Registro de Actividad",
         "NO_ACTIVITY": "No hay actividad registrada.",
         "LIVE": "EN VIVO",
-        "TOTEM": "Tótem"
+        "TOTEM": "Tótem",
+        "TOTEM_ADD_ERROR": "No se pudo crear el tótem",
+        "TOTEM_UPDATE_ERROR": "No se pudo actualizar el tótem",
+        "TOTEM_DELETE_ERROR": "No se pudo eliminar el tótem",
+        "DELETE_TOTEM_CONFIRM": "¿Eliminar este tótem? Se invalidarán los QR actuales.",
+        "COMPLETE_ERROR": "No se pudo completar el pedido"
     },
     "ROLES": {
         "admin": "Administrador",
@@ -79,12 +85,14 @@
         "UPDATE_ERROR": "No se pudo actualizar el plato. Verifica la conexión.",
         "CANCEL_CONFIRM": "¿Seguro que quieres CANCELAR este plato?",
         "CANCEL_ERROR": "No se pudo cancelar el plato.",
+        "NO_PRINTER_CONFIGURED": "No hay impresora configurada para este terminal",
         "PRINTER_THERMAL": "Térmica",
         "PRINTER_SYSTEM": "Sistema",
         "TICKET_TITLE": "EXPENDIENDO VALE DE SERVICIO",
         "ITEM_LABEL": "PLATO",
         "QTY_LABEL": "CANT",
-        "ORIGIN_LABEL": "ORIGEN"
+        "ORIGIN_LABEL": "ORIGEN",
+        "PRINT_MESSAGE": " ({{printerLabel}} {{printer}})\n{{title}}\n----------------------\n{{item}} × {{quantity}}\n{{table}}{{details}}\n----------------------"
     },
     "POS": {
         "TITLE": "Caja Registradora",
@@ -137,7 +145,34 @@
         "CHARGE_ONLY_THIS": "Cobrar solo platos de esta persona",
         "ORPHANS_EXIST": "Faltan platos por asignar.",
         "ORPHANS_WARNING": "Asigna todos los platos a alguien antes de cobrar de forma individual.",
-        "CONCURRENCY_ERROR": "¡Conflicto de Concurrencia! La mesa ha sido actualizada por otro camarero. Recargando..."
+        "CONCURRENCY_ERROR": "¡Conflicto de Concurrencia! La mesa ha sido actualizada por otro camarero. Recargando...",
+        "ORPHAN": "Sin asignar",
+        "PAY_ERROR_NO_SELECTION": "Selecciona primero una mesa a cobrar",
+        "PAY_ERROR_VAT_CONFIG": "Configura el IVA en ajustes antes de cobrar",
+        "CONFIRM_TOTAL": "¿Confirmas el cobro total?",
+        "CONFIRM_SPLIT": "¿Confirmas dividir el cobro en {{parts}} partes iguales?",
+        "CONFIRM_USER": "¿Confirmas el cobro individual?",
+        "PAY_ERROR": "Error al realizar el cobro",
+        "PAY_ERROR_ORPHAN": "No puedes cobrar platos sin comensal asignado",
+        "DELETE_TICKET_CONFIRM": "¿Eliminar este ticket?",
+        "DELETE_TICKET_ERROR": "No se pudo eliminar el ticket",
+        "NO_PRINTER_CONFIGURED": "No hay impresora asignada para este usuario",
+        "PRINT_THERMAL": "Térmica",
+        "PRINT_SYSTEM": "Sistema",
+        "CASHIER_LABEL": "Caja",
+        "REMOVE_ITEM_ERROR": "No se pudo eliminar el artículo",
+        "ASSOCIATE_ERROR": "No se pudo asociar el plato",
+        "ADD_ITEM_ERROR": "No se pudo añadir el plato",
+        "CUSTOM_VALIDATION_ERROR": "Introduce un concepto y un precio válidos",
+        "ADD_CUSTOM_LINE_ERROR": "No se pudo añadir la línea personalizada",
+        "OPEN_TABLE_ERROR": "No se pudo abrir la mesa",
+        "DELETE_VIRTUAL_CONFIRM": "¿Eliminar esta mesa temporal?",
+        "DELETE_VIRTUAL_ERROR": "No se pudo eliminar la mesa temporal",
+        "CLOSE_SHIFT_ERROR": "No se pudo cerrar la caja",
+        "UNKNOWN_ERROR": "Error desconocido",
+        "PRINT_THERMAL_MESSAGE": " ({{label}} {{printer}}) — {{ticketId}} ({{amount}}€){{fiscalInfo}}",
+        "PRINT_SYSTEM_MESSAGE": " ({{label}}) — {{ticketId}} ({{amount}}€){{fiscalInfo}}",
+        "PRINT_FISCAL_INFO": " (Base: {{base}}€ + IVA: {{vat}}€)"
     },
     "CHECKOUT": {
         "BACK": "← Botón Volver",
@@ -165,7 +200,7 @@
         "TOTEM_ASSIGNED": "Tótem asignado:",
         "IN_SESSION": "En Sesión",
         "MY_ACCOUNT": "Mi Cuenta",
-        "TIME_TO_EAT": "¡Hora de comer! 👋",
+        "TIME_TO_EAT": "¡Hora de comer! ",
         "ADD_TO_CART_INFO": "Añade tus platos al carrito global. <br>Tus elecciones quedarán marcadas a tu nombre.",
         "FROM": "Desde",
         "SOLD_OUT": "AGOTADO",
@@ -173,6 +208,7 @@
         "SELECT_OPTION": "Selecciona una opción",
         "EXTRAS_OPTIONAL": "Extras (Opcional)",
         "ADD_TO_CART": "Añadir al carrito",
+        "CUSTOMIZE": "Personaliza",
         "YOUR_ORDER": "Vuestra Comanda",
         "IN_KITCHEN": "En Cocina",
         "RECEIVED": "Recibido",
@@ -185,7 +221,17 @@
         "YOU": "Tú",
         "DISHES": "platos",
         "TOTAL": "Total",
-        "ORDER_NOW": "Pedir Ahora"
+        "ORDER_NOW": "Pedir Ahora",
+        "ERROR_SESSION_LINK": "No se pudo conectar con la mesa. Intenta escanear de nuevo.",
+        "ERROR_LOADING_SESSION": "Error al cargar la información de la sesión.",
+        "ERROR_INVALID_LINK": "Enlace no válido. Vuelve a escanear el código QR.",
+        "ERROR_OPENING_TABLE": "Error al intentar abrir la mesa.",
+        "CONFLICT_WARNING": "La mesa se actualizó en otro dispositivo. Recargando datos...",
+        "UNAVAILABLE_ITEM": "Este plato no está disponible en este momento.",
+        "VARIANT_REQUIRED": "Selecciona una variante antes de continuar.",
+        "MENU_SECTION_REQUIRED": "Selecciona una opción en {{section}}.",
+        "ORDER_SENT": "Pedido enviado a cocina",
+        "ORDER_ERROR": "No se pudo enviar el pedido"
     },
     "LOGIN": {
         "ACCESS_TERMINAL": "Acceso a Terminal de Gestión",
@@ -235,7 +281,12 @@
         "DANGER_ZONE": "Zona de Peligro",
         "DANGER_DESC": "Una vez borrado el producto, no habrá forma de recuperarlo.",
         "PRO_MANAGER": "Gestor de Menú Profesional",
-        "SELECT_HINT": "Selecciona un plato para editar sus detalles o crea uno nuevo desde cero."
+        "SELECT_HINT": "Selecciona un plato para editar sus detalles o crea uno nuevo desde cero.",
+        "SAVE_ERROR": "No se pudo guardar el plato",
+        "DELETE_CONFIRM": "¿Eliminar este plato?",
+        "DELETE_ERROR": "No se pudo eliminar el plato",
+        "UPLOAD_ERROR": "No se pudo subir la imagen",
+        "LOAD_ERROR": "Error al cargar el menú"
     },
     "STORE_CONFIG": {
         "TITLE": "Configuración de Tienda",
@@ -259,7 +310,7 @@
         "BILLING": "Configuración de Facturación",
         "BILLING_SUB": "Configura cómo se calculan los tickets e impuestos.",
         "VAT": "IVA (%)",
-        "VAT_HINT": "⚠️ Obligatorio para generar tickets. Los precios se introducen con IVA incluido.",
+        "VAT_HINT": " Obligatorio para generar tickets. Los precios se introducen con IVA incluido.",
         "TIP_ENABLE": "Activar Propinas",
         "TIP_PCT": "Porcentaje de Propina (%)",
         "TIP_DESC": "Descripción de la Propina",
@@ -293,7 +344,17 @@
         "NEW_ORDER_FOR": "Nueva comanda para...",
         "SELECT_NAME_OR_SKIP": "Selecciona un comensal existente o añádelo.",
         "NEW_NAME_OPTIONAL": "Nombre (Opcional)",
-        "START_ORDERING": "Tomar nota"
+        "START_ORDERING": "Tomar nota",
+        "ACTIVE_BADGE": "Mesas activas",
+        "STATUS_OCCUPIED": "OCUPADA",
+        "STATUS_FREE": "LIBRE",
+        "READY_HINT": "Lista para tomar pedidos",
+        "LOAD_ERROR": "No se pudo cargar la vista de camarero",
+        "VIRTUAL_NAME_REQUIRED": "Ingresa un nombre para la mesa temporal",
+        "ADD_VIRTUAL_SUCCESS": "Mesa temporal {{name}} creada",
+        "ADD_VIRTUAL_ERROR": "No se pudo crear la mesa temporal",
+        "DELETE_VIRTUAL_SUCCESS": "Mesa temporal #{{id}} eliminada",
+        "DELETE_VIRTUAL_ERROR": "No se pudo eliminar la mesa temporal"
     },
     "USER_MGMT": {
         "SYSTEM_ROLE": "Rol del sistema:",

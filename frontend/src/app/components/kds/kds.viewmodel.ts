@@ -5,6 +5,7 @@ import { CommunicationService } from '../../services/communication.service';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
 import { TranslateService } from '@ngx-translate/core';
+import { NotifyService } from '../../services/notify.service';
 
 export interface KDSOrder {
     _id: string;
@@ -23,6 +24,7 @@ export class KDSViewModel {
     private comms = inject(CommunicationService);
     private auth = inject(AuthService);
     private translate = inject(TranslateService);
+    private notify = inject(NotifyService);
     private destroyRef = inject(DestroyRef);
 
     // State
@@ -149,7 +151,7 @@ export class KDSViewModel {
             this.auth.logActivity('ITEM_STATUS_CHANGED', { orderId, itemId, nextStatus });
         } catch (e) {
             console.error('Error updating status', e);
-            alert(this.translate.instant('KDS.UPDATE_ERROR'));
+            this.notify.errorKey('KDS.UPDATE_ERROR');
         }
     }
 
@@ -177,17 +179,25 @@ export class KDSViewModel {
             item.selectedAddons.forEach((a: any) => details += `\n + ${a.name}`);
         }
 
-        const msg = `🖨️ (${this.translate.instant('KDS.TICKET_TITLE')})\n----------------------\n${this.translate.instant('KDS.ITEM_LABEL')}: ${item.name}${details}\n${this.translate.instant('KDS.QTY_LABEL')}: ${item.quantity}\n${this.translate.instant('KDS.ORIGIN_LABEL')}: ${tableName}\n----------------------`;
-
         if (!p) {
-            alert(this.translate.instant('KDS.NO_PRINTER_CONFIGURED'));
+            this.notify.warningKey('KDS.NO_PRINTER_CONFIGURED');
+            return;
         }
 
-        if (p?.type === 'thermal') {
-            alert(`🖨️ (${this.translate.instant('KDS.PRINTER_THERMAL')} ${p.ip})\n${msg}`);
-        } else {
-            alert(`🖨️ (${this.translate.instant('KDS.PRINTER_SYSTEM')})\n${msg}`);
-        }
+        const printerLabel = p.type === 'thermal'
+            ? this.translate.instant('KDS.PRINTER_THERMAL')
+            : this.translate.instant('KDS.PRINTER_SYSTEM');
+
+        const detailsBlock = details ? `\n${details}` : '';
+        this.notify.successKey('KDS.PRINT_MESSAGE', {
+            printerLabel,
+            printer: p.ip || p.address || '',
+            title: this.translate.instant('KDS.TICKET_TITLE'),
+            item: item.name,
+            quantity: item.quantity,
+            table: tableName,
+            details: detailsBlock
+        });
     }
 
     public async cancelItem(orderId: string, itemId: string) {
@@ -198,7 +208,7 @@ export class KDSViewModel {
             this.auth.logActivity('ITEM_CANCELLED', { orderId, itemId });
         } catch (e) {
             console.error('Error cancelling item', e);
-            alert(this.translate.instant('KDS.CANCEL_ERROR'));
+            this.notify.errorKey('KDS.CANCEL_ERROR');
         }
     }
 

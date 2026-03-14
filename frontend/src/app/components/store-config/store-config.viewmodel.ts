@@ -3,11 +3,15 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
 import { firstValueFrom } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
+import { NotifyService } from '../../services/notify.service';
 
 @Injectable()
 export class StoreConfigViewModel {
     private auth = inject(AuthService);
     private http = inject(HttpClient);
+    private translate = inject(TranslateService);
+    private notify = inject(NotifyService);
 
     public config = signal<any>({
         name: '',
@@ -81,6 +85,7 @@ export class StoreConfigViewModel {
 
         } catch (e) {
             console.error('Error loading config', e);
+            this.notify.errorKey('STORE_CONFIG.LOAD_ERROR');
         } finally {
             this.loading.set(false);
         }
@@ -95,13 +100,15 @@ export class StoreConfigViewModel {
                 headers: this.auth.getHeaders()
             }));
 
-            this.message.set('✅ Configuración guardada correctamente. Recargando...');
+            this.message.set(this.translate.instant('STORE_CONFIG.SAVE_SUCCESS'));
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
 
         } catch (e) {
-            this.message.set('❌ Error al guardar');
+            console.error('Error saving config', e);
+            this.message.set(this.translate.instant('STORE_CONFIG.SAVE_ERROR'));
+            this.notify.errorKey('STORE_CONFIG.SAVE_ERROR');
         } finally {
             this.saving.set(false);
         }
@@ -119,9 +126,11 @@ export class StoreConfigViewModel {
             }));
 
             this.config.set({ ...this.config(), logo: res.url });
+            this.notify.successKey('STORE_CONFIG.LOGO_SUCCESS');
 
         } catch (e: any) {
-            alert(e.message || 'Error al subir el logo');
+            console.error('Error uploading logo', e);
+            this.notify.errorKey('STORE_CONFIG.LOGO_ERROR');
         } finally {
             this.saving.set(false);
         }

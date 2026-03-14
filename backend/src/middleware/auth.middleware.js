@@ -15,7 +15,9 @@ export function verifyToken(req, res, next) {
     const token = cookieToken || headerToken;
 
     if (!token) {
-        console.log('[AUTH] No token found in cookies or headers');
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('[AUTH] No token found in cookies or headers');
+        }
         return res.status(403).json({ error: req.t('ERRORS.NO_TOKEN_PROVIDED') });
     }
 
@@ -25,7 +27,9 @@ export function verifyToken(req, res, next) {
             return res.status(401).json({ error: req.t('ERRORS.FAILED_AUTH_TOKEN') });
         }
 
-        console.log('[AUTH] Token verified. Payload:', decoded);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('[AUTH] Token verified for user:', decoded?.username);
+        }
         req.user = decoded;
         next();
     });
@@ -46,5 +50,19 @@ export function getCookieOptions() {
         sameSite: isHttps ? 'none' : 'lax', // Use 'none' for cross-site if https, beneficial for some proxy setups
         maxAge: 24 * 60 * 60 * 1000,
         path: '/'
+    };
+}
+
+export function requireRole(...allowedRoles) {
+    return function(req, res, next) {
+        if (!req.user || !req.user.role) {
+            return res.error(req.t?.('ERRORS.UNAUTHORIZED') || 'Unauthorized', 401);
+        }
+
+        if (req.user.role === 'admin' || allowedRoles.includes(req.user.role)) {
+            return next();
+        }
+
+        return res.error(req.t?.('ERRORS.ACCESS_DENIED_ROLE') || 'Access denied for this role', 403);
     };
 }

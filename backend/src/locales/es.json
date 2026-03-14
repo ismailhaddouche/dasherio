@@ -23,7 +23,22 @@
         "INVALID_CREDENTIALS": "Credenciales inválidas o incorrectas",
         "LOGGED_OUT": "Sesión cerrada correctamente",
         "NO_TOKEN_PROVIDED": "No se proporcionó ningún token de acceso",
-        "FAILED_AUTH_TOKEN": "Fallo al autenticar el token"
+        "FAILED_AUTH_TOKEN": "Fallo al autenticar el token",
+        "VERSION_CONFLICT": "Conflicto de versión: los datos han cambiado, por favor actualiza la vista",
+        "INVALID_TOTEM_ID": "El identificador del tótem no es válido",
+        "SESSION_REQUIRED": "Es necesario iniciar una sesión para realizar pedidos",
+        "TOTEM_INACTIVE": "El tótem está desactivado",
+        "SESSION_INVALID": "La sesión ya no es válida para esta mesa",
+        "TABLE_SESSION_ENDED": "La mesa ya no tiene una sesión activa",
+        "TOTEM_SESSION_ACTIVE": "Otra sesión ya está activa en esta mesa",
+        "SHIFT_CLOSED": "Cierre de caja realizado. Todas las sesiones de clientes han sido liquidadas.",
+        "QR_GENERATION_FAILED": "No se pudo generar el código QR",
+        "ORDER_CONCURRENCY": "El pedido ha cambiado durante la operación. Por favor, actualiza la vista.",
+        "ITEM_CONCURRENCY": "El plato ha cambiado durante la operación. Por favor, sincroniza de nuevo.",
+        "TICKET_CALCULATION_ERROR": "Error en el cálculo del importe del ticket.",
+        "TOTEM_DELETED_SUCCESSFULLY": "Tótem eliminado correctamente",
+        "TICKET_DELETED_SUCCESSFULLY": "Ticket eliminado correctamente",
+        "ITEMS_WITHOUT_OWNER": "Existen platos sin comensal asignado. Asígnalos a un nombre antes de cobrar individualmente."
     },
     "AUTH": {
         "REQ_USERNAME": "El nombre de usuario es obligatorio",

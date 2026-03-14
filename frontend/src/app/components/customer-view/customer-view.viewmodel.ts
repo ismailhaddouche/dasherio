@@ -7,6 +7,8 @@ import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
 import { firstValueFrom } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TranslateService } from '@ngx-translate/core';
+import { NotifyService } from '../../services/notify.service';
 
 export interface TableSession {
     tableNumber: string;
@@ -24,6 +26,8 @@ export class CustomerViewModel {
     private theme = inject(ThemeService);
     public auth = inject(AuthService);
     private destroyRef = inject(DestroyRef);
+    private translate = inject(TranslateService);
+    private notify = inject(NotifyService);
 
     // State
     public session = signal<TableSession | null>(null);
@@ -81,7 +85,7 @@ export class CustomerViewModel {
                 }
             } catch (e) {
                 console.error('Session init error', e);
-                this.error.set('No se pudo establecer conexión con la mesa.');
+                this.error.set(this.translate.instant('CUSTOMER.ERROR_SESSION_LINK'));
                 this.loading.set(false);
                 return;
             }
@@ -104,10 +108,10 @@ export class CustomerViewModel {
                 localStorage.setItem('disher_current_session', JSON.stringify(this.session()));
             } catch (e) {
                 console.error('Error loading session data', e);
-                this.error.set('Error al cargar la información de la sesión.');
+                this.error.set(this.translate.instant('CUSTOMER.ERROR_LOADING_SESSION'));
             }
         } else {
-            this.error.set('Enlace no válido. Por favor, escanea el código QR de nuevo.');
+            this.error.set(this.translate.instant('CUSTOMER.ERROR_INVALID_LINK'));
         }
         this.loading.set(false);
     }
@@ -127,7 +131,7 @@ export class CustomerViewModel {
                 this.router.navigate(['/s', data.sessionId], { replaceUrl: true });
             } catch (error) {
                 console.error('Error starting new session', error);
-                this.error.set('Error al intentar abrir la mesa.');
+                this.error.set(this.translate.instant('CUSTOMER.ERROR_OPENING_TABLE'));
                 this.loading.set(false);
             }
         }
@@ -141,7 +145,7 @@ export class CustomerViewModel {
         });
 
         this.comms.conflictDetected$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-            alert('La mesa ha sido actualizada por otro usuario. Recargando datos...');
+            this.notify.warningKey('CUSTOMER.CONFLICT_WARNING');
             this.loadTableState();
         });
 
@@ -218,7 +222,10 @@ export class CustomerViewModel {
     }
 
     public handleItemClick(item: any) {
-        if (!item.available) return;
+        if (!item.available) {
+            this.notify.infoKey('CUSTOMER.UNAVAILABLE_ITEM');
+            return;
+        }
 
         // If product has variants, addons or is a menu, show config modal
         if (item.variants?.length > 0 || item.addons?.length > 0 || item.isMenu) {
@@ -253,7 +260,7 @@ export class CustomerViewModel {
 
         // Validation for variants
         if (item.variants?.length > 0 && !this.selectedVariant()) {
-            alert('Por favor, selecciona una opción.');
+            this.notify.warningKey('CUSTOMER.VARIANT_REQUIRED');
             return;
         }
 
@@ -261,7 +268,7 @@ export class CustomerViewModel {
         if (item.isMenu) {
             const missing = item.menuSections.find((s: any) => !this.selectedMenuChoices()[s.name]);
             if (missing) {
-                alert(`Por favor, elige tu ${missing.name}`);
+                this.notify.warning(this.translate.instant('CUSTOMER.MENU_SECTION_REQUIRED', { section: missing.name }));
                 return;
             }
         }
@@ -360,9 +367,10 @@ export class CustomerViewModel {
             this.cart.set([]);
             if (s && s.sessionId) localStorage.removeItem(`disher_cart_${s.sessionId}`);
             await this.loadTableState();
+            this.notify.successKey('CUSTOMER.ORDER_SENT');
         } catch (error) {
             console.error('Failed to place order', error);
-            alert('Error al enviar el pedido.');
+            this.notify.errorKey('CUSTOMER.ORDER_ERROR');
         }
     }
 }

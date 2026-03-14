@@ -4,6 +4,8 @@ import { firstValueFrom } from 'rxjs';
 import { CommunicationService } from '../../services/communication.service';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
+import { TranslateService } from '@ngx-translate/core';
+import { NotifyService } from '../../services/notify.service';
 
 export interface Order {
     _id: string;
@@ -20,6 +22,8 @@ export class DashboardViewModel {
     private comms = inject(CommunicationService);
     private auth = inject(AuthService);
     private http = inject(HttpClient);
+    private translate = inject(TranslateService);
+    private notify = inject(NotifyService);
 
     // State using Signals
     public orders = signal<Order[]>([]);
@@ -64,7 +68,7 @@ export class DashboardViewModel {
 
         } catch (error: any) {
             console.error('Error loading dashboard data', error);
-            this.error.set(error.message || 'Error al conectar con el servidor');
+            this.error.set(this.translate.instant('DASHBOARD.ERROR_CONN'));
         } finally {
             this.loading.set(false);
         }
@@ -93,7 +97,8 @@ export class DashboardViewModel {
             this.totems.update(curr => [...curr, data]);
             this.auth.logActivity('TOTEM_ADDED', { totemId: data.id, name });
         } catch (e: any) {
-            alert(e.error?.error || e.message);
+            console.error('Error adding totem', e);
+            this.notify.errorKey('DASHBOARD.TOTEM_ADD_ERROR');
         }
     }
 
@@ -106,19 +111,21 @@ export class DashboardViewModel {
             this.auth.logActivity('TOTEM_UPDATED', { totemId: id, name: newName });
             this.editingTotem.set(null);
         } catch (e: any) {
-            alert(e.error?.error || e.message);
+            console.error('Error updating totem', e);
+            this.notify.errorKey('DASHBOARD.TOTEM_UPDATE_ERROR');
         }
     }
 
     public async deleteTotem(id: number) {
-        if (!confirm('¿Estás seguro de eliminar este tótem? Se perderá el acceso por QR actual.')) return;
+        if (!confirm(this.translate.instant('DASHBOARD.DELETE_TOTEM_CONFIRM'))) return;
         try {
             await firstValueFrom(this.http.delete(`${environment.apiUrl}/api/totems/${id}`, { withCredentials: true }));
 
             this.totems.update(curr => curr.filter(t => t.id !== id));
             this.auth.logActivity('TOTEM_DELETED', { totemId: id });
         } catch (e: any) {
-            alert(e.error?.error || e.message);
+            console.error('Error deleting totem', e);
+            this.notify.errorKey('DASHBOARD.TOTEM_DELETE_ERROR');
         }
     }
 
@@ -128,7 +135,10 @@ export class DashboardViewModel {
             await firstValueFrom(this.http.post(`${environment.apiUrl}/api/orders/${orderId}/complete`, {}, { withCredentials: true }));
             // The real-time listener will update the list
         } catch (e) {
-            this.error.set('No se pudo completar el pedido.');
+            console.error('Error completing order', e);
+            const message = this.translate.instant('DASHBOARD.COMPLETE_ERROR');
+            this.error.set(message);
+            this.notify.error(message);
         }
     }
 }

@@ -12,7 +12,7 @@ const TotemSchema = new mongoose.Schema({
 
 const RestaurantSchema = new mongoose.Schema({
     name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
+    slug: { type: String, default: 'default' },
     address: String,
     phone: String,
     email: String,

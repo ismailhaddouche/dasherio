@@ -23,7 +23,22 @@
         "INVALID_CREDENTIALS": "Invalid credentials",
         "LOGGED_OUT": "Logged out successfully",
         "NO_TOKEN_PROVIDED": "No access token provided",
-        "FAILED_AUTH_TOKEN": "Failed to authenticate token"
+        "FAILED_AUTH_TOKEN": "Failed to authenticate token",
+        "VERSION_CONFLICT": "Version conflict: data changed on the server, please refresh",
+        "INVALID_TOTEM_ID": "Invalid totem identifier",
+        "SESSION_REQUIRED": "A session is required to place orders",
+        "TOTEM_INACTIVE": "Totem is inactive",
+        "SESSION_INVALID": "The session is no longer valid for this table",
+        "TABLE_SESSION_ENDED": "The table no longer has an active session",
+        "TOTEM_SESSION_ACTIVE": "Another session is already active on this table",
+        "SHIFT_CLOSED": "Shift closed. All customer sessions have been terminated.",
+        "QR_GENERATION_FAILED": "Unable to generate QR code",
+        "ORDER_CONCURRENCY": "The order changed during the operation. Please refresh.",
+        "ITEM_CONCURRENCY": "The item changed during the operation. Please sync again.",
+        "TICKET_CALCULATION_ERROR": "Error while calculating the ticket amount.",
+        "TOTEM_DELETED_SUCCESSFULLY": "Totem deleted successfully",
+        "TICKET_DELETED_SUCCESSFULLY": "Ticket deleted successfully",
+        "ITEMS_WITHOUT_OWNER": "There are items without an assigned guest. Please assign them before charging individually."
     },
     "AUTH": {
         "REQ_USERNAME": "Username is required",
