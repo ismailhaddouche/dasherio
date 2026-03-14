@@ -329,7 +329,12 @@
         "DEVICE_SUB": "Configuración específica para este terminal.",
         "ASSIGNED_PRINTER": "Impresora Asignada",
         "NO_PRINTER": "Sin Impresora",
-        "AUTO_PRINT": "Impresión Automática"
+        "AUTO_PRINT": "Impresión Automática",
+        "LOAD_ERROR": "No se pudo cargar la configuración",
+        "SAVE_SUCCESS": "Configuración guardada. Recargando...",
+        "SAVE_ERROR": "No se pudo guardar la configuración",
+        "LOGO_SUCCESS": "Logo actualizado",
+        "LOGO_ERROR": "No se pudo subir el logo"
     },
     "WAITER": {
         "PANEL": "Panel de Camarero",
@@ -379,7 +384,15 @@
         "CREATE_USER": "Crear Usuario",
         "PRINTER_ASSIGNED": "🖨️ Impresora Asignada",
         "EDIT": "Editar",
-        "SYSTEM": "Sistema"
+        "SYSTEM": "Sistema",
+        "LOAD_ERROR": "No se pudieron cargar los usuarios",
+        "ADD_SUCCESS": "Usuario {{username}} creado",
+        "ADD_ERROR": "No se pudo crear el usuario",
+        "DELETE_CONFIRM": "¿Eliminar este usuario?",
+        "DELETE_SUCCESS": "Usuario eliminado",
+        "DELETE_ERROR": "No se pudo eliminar el usuario",
+        "UPDATE_SUCCESS": "Usuario {{username}} actualizado",
+        "UPDATE_ERROR": "No se pudo actualizar el usuario"
     },
     "SIDEBAR": {
         "MAIN": "Principal",
