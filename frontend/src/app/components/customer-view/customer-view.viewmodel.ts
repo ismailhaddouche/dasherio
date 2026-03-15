@@ -66,7 +66,7 @@ export class CustomerViewModel {
         if (totemParam) {
             try {
                 const res: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/totems/${totemParam}/session`));
-                const data = res.data;
+                const data = res;
 
                 if (data.sessionId) {
                     localStorage.setItem('disher_current_session', JSON.stringify({
@@ -79,7 +79,7 @@ export class CustomerViewModel {
                         sessionId: undefined, totemId: data.totemId, tableNumber: data.tableNumber, activeOrder: null
                     });
                     const restRes: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/restaurant`));
-                    if (restRes?.data?.name) this.restaurantName.set(restRes.data.name);
+                    if (restRes?.name) this.restaurantName.set(restRes.name);
                     this.loading.set(false);
                     return;
                 }
@@ -103,7 +103,7 @@ export class CustomerViewModel {
 
             try {
                 const menuRes: any = await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/menu`));
-                this.menu.set(menuRes.data || []);
+                this.menu.set(menuRes || []);
                 await this.loadTableState();
                 localStorage.setItem('disher_current_session', JSON.stringify(this.session()));
             } catch (e) {
@@ -127,7 +127,7 @@ export class CustomerViewModel {
                 const res: any = await firstValueFrom(this.http.post(`${environment.apiUrl}/api/totems/${currentSession.totemId}/session`, {}, {
                     headers: this.auth.getHeaders()
                 }));
-                const data = res.data;
+                const data = res;
                 this.router.navigate(['/s', data.sessionId], { replaceUrl: true });
             } catch (error) {
                 console.error('Error starting new session', error);
@@ -196,13 +196,13 @@ export class CustomerViewModel {
 
         try {
             const restRes: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/restaurant`));
-            if (restRes?.data?.name) this.restaurantName.set(restRes.data.name);
+            if (restRes?.name) this.restaurantName.set(restRes.name);
 
             const savedCart = localStorage.getItem(`disher_cart_${s.sessionId}`);
             if (savedCart) this.cart.set(JSON.parse(savedCart));
 
             const orderRes: any = await firstValueFrom(this.http.get(`${environment.apiUrl}/api/orders/session/${s.sessionId}`));
-            const activeOrder = orderRes.data;
+            const activeOrder = orderRes;
 
             if (activeOrder) {
                 if (activeOrder.status === 'completed' || activeOrder.paymentStatus === 'paid') {
