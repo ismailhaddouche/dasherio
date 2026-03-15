@@ -59,7 +59,7 @@ describe('Optimistic Concurrency Control (OCC) Integration Tests', () => {
             });
 
         expect(res2.status).toBe(409);
-        expect(res2.body.message).toContain('concurrencia');
+        expect(res2.body.message).toContain('Conflicto de versión');
     });
 
     it('should fail checkout if order was modified by another user concurrently', async () => {
