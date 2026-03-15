@@ -37,6 +37,18 @@ export class AuthService {
         }
     }
 
+    private async waitForAuthenticatedBackend(maxRetries = 3, delayMs = 150): Promise<void> {
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                await firstValueFrom(this.http.get(`${environment.apiUrl}/api/orders`, { withCredentials: true }));
+                return;
+            } catch (e) {
+                if (attempt === maxRetries - 1) return;
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+        }
+    }
+
     public async login(username: string, password: string): Promise<boolean> {
         try {
             const session = await firstValueFrom(
@@ -51,12 +63,16 @@ export class AuthService {
                 localStorage.setItem('disher_session', JSON.stringify(session));
                 this.logActivity('LOGIN_SUCCESS', { username });
 
+                // Ensure protected endpoints are reachable before first route render.
+                // This avoids intermittent first-load blank states right after login.
+                await this.waitForAuthenticatedBackend();
+
                 const redirect = session.role === 'admin' ? '/admin/dashboard' :
                     session.role === 'kitchen' ? '/admin/kds' :
                         session.role === 'pos' ? '/admin/pos' :
                             session.role === 'waiter' ? '/admin/waiter' : '/';
 
-                this.router.navigate([redirect]);
+                await this.router.navigate([redirect]);
                 return true;
             }
             return false;
