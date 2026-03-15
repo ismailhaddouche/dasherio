@@ -32,7 +32,7 @@ Por debajo, el script `test` del `package.json` inyecta las banderas necesarias 
 `cross-env NODE_OPTIONS=--experimental-vm-modules npx jest --forceExit --detectOpenHandles`
 
 ### 1.3 Estructura de los Tests
-Los tests se encuentran en el directorio `backend/src/__tests__/`. Todas las rutas protegidas simulan primero un inicio de sesión (`/api/auth/login`) para obtener un token JWT válido (usando la cookie `disher_session`) e inyectarla con Supertest en las peticiones subsecuentes.
+Los tests se encuentran en el directorio `backend/src/__tests__/`. Todas las rutas protegidas simulan primero un inicio de sesión (`/api/auth/login`) para obtener un token JWT válido (usando la cookie `disher_token`) e inyectarla con Supertest en las peticiones subsecuentes.
 
 ---
 
@@ -46,12 +46,13 @@ Este pipeline se lanza automáticamente y se encarga de empaquetar el código fu
 
 - **Cuándo se ejecuta:** Al hacer `push` en las ramas `main` o `develop`, al pushear un tag (ej. `v2.6`), o en Pull Requests dirigidos a `main`.
 - **Qué hace:**
-  1. Clona el repositorio.
-  2. Usa QEMU para activar virtualización cruzada.
-  3. Compila `frontend` y `backend` simultáneamente en una matriz de arquitecturas:
-     - `linux/amd64` (Para servidores estándar de Intel/AMD y ordenadores normales).
-     - `linux/arm64` (Para Raspberry Pi 4/5, servidores base ARM y Macs M1/M2).
-  4. Sube (Push) las imágenes resultantes a `ghcr.io` (GitHub Container Registry) bajo el nombre de tu repositorio.
+  1. Clona el repositorio y prepara Buildx.
+  2. Ejecuta un job `build-amd64` (matriz `frontend`/`backend`) para construir imágenes `linux/amd64`.
+  3. Ejecuta un job `build-arm64` (matriz `frontend`/`backend`) para construir imágenes `linux/arm64` de forma aislada (con QEMU en este job).
+  4. Publica tags por arquitectura (`-amd64` y `-arm64`) y, en `push`, crea un manifiesto multi-arch final con `docker buildx imagetools`.
+  5. Ejecuta además jobs de `test`, `security-scan` y `notify` para validar calidad y estado global del pipeline.
+
+> **Nota para Pull Requests:** En PRs se compilan las imágenes para validar build, pero no se publica manifiesto multi-arquitectura ni push final al registro.
 
 > **Importante:** La alerta temporal de GitHub sobre que ciertas actions se ejecutan en "Node 20 vs Node 24" es una advertencia propia de las librerías oficiales de Docker (acciones de terceros), no un problema de seguridad en el código puro de Disher.io.
 
