@@ -87,13 +87,13 @@ import { TranslateModule } from '@ngx-translate/core';
 
           <!-- Menu Section -->
           <div class="menu-grid">
-            @for (item of vm.menu(); track item._id) {
+            @for (item of vm.menu(); track item._id || item.id || (item.name + '-' + $index)) {
               <div class="md-card menu-item clickable-card" 
                    [class.unavailable]="!item.available"
                    (click)="vm.handleItemClick(item)">
                 <div class="item-visual" [style.background]="item.image ? 'transparent' : (item.category === 'Bebidas' ? 'var(--md-sys-color-tertiary-container)' : 'var(--md-sys-color-secondary-container)')" [style.padding]="item.image ? '0' : 'inherit'">
                   <ng-container *ngIf="item.image">
-                    <img [src]="item.image" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">
+                    <img [src]="vm.resolveItemImage(item.image)" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">
                   </ng-container>
                   <ng-container *ngIf="!item.image">
                     <lucide-icon *ngIf="item.category === 'Bebidas'" name="glass-water" [size]="24" [color]="'var(--md-sys-color-on-tertiary-container)'"></lucide-icon>
@@ -169,7 +169,7 @@ import { TranslateModule } from '@ngx-translate/core';
                                         <button class="chip variant-chip" 
                                              [class.selected]="vm.selectedVariant()?.name === v.name"
                                              (click)="vm.selectedVariant.set(v)">
-                                            <img *ngIf="v.image" [src]="v.image" class="variant-img">
+                                            <img *ngIf="v.image" [src]="vm.resolveItemImage(v.image)" class="variant-img">
                                             <span>{{ v.name }} • {{ v.price }}€</span>
                                         </button>
                                     }

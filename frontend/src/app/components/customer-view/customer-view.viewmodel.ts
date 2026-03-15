@@ -54,6 +54,17 @@ export class CustomerViewModel {
         return [...new Set(names)] as string[];
     });
 
+    public resolveItemImage(image?: string): string {
+        if (!image) return '';
+        if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('data:')) {
+            return image;
+        }
+        if (image.startsWith('/')) {
+            return `${environment.apiUrl}${image}`;
+        }
+        return image;
+    }
+
     constructor() {
         this.initSession();
         this.setupTableListeners();
@@ -103,7 +114,11 @@ export class CustomerViewModel {
 
             try {
                 const menuRes: any = await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/api/menu`));
-                this.menu.set(menuRes || []);
+                const normalizedMenu = (menuRes || []).map((item: any) => ({
+                    ...item,
+                    image: this.resolveItemImage(item.image)
+                }));
+                this.menu.set(normalizedMenu);
                 await this.loadTableState();
                 localStorage.setItem('disher_current_session', JSON.stringify(this.session()));
             } catch (e) {
@@ -150,9 +165,25 @@ export class CustomerViewModel {
         });
 
         this.comms.subscribeToMenu((updatedItem: any) => {
-            this.menu.update(prev =>
-                prev.map(item => item._id === updatedItem._id ? updatedItem : item)
-            );
+            this.menu.update(prev => {
+                if (updatedItem?.deleted) {
+                    return prev.filter(item => item._id !== updatedItem.deleted);
+                }
+
+                const normalized = {
+                    ...updatedItem,
+                    image: this.resolveItemImage(updatedItem?.image)
+                };
+                const index = prev.findIndex(item => item._id === normalized._id);
+
+                if (index === -1) {
+                    return [normalized, ...prev];
+                }
+
+                const next = [...prev];
+                next[index] = normalized;
+                return next;
+            });
         });
 
         this.comms.subscribeToConfig((config: any) => {
