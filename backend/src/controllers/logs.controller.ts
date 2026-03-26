@@ -1,0 +1,184 @@
+import { Request, Response } from 'express';
+import { ItemOrder } from '../models/order.model';
+import { Types } from 'mongoose';
+
+interface LogEntry {
+  id: string;
+  type: 'KDS' | 'POS' | 'TAS';
+  timestamp: Date;
+  userId?: string;
+  userName?: string;
+  action: string;
+  details: Record<string, unknown>;
+  dishName?: string;
+  status?: string;
+}
+
+/**
+ * Get system logs from KDS, POS, and TAS
+ * Supports filtering by date range, user, and system type
+ */
+export async function getLogs(req: Request, res: Response): Promise<void> {
+  try {
+    const restaurantId = req.user?.restaurantId;
+    if (!restaurantId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    // Parse filters
+    const { from, to, userId, type } = req.query;
+    const filters: Record<string, unknown> = {};
+    
+    // Date range filter
+    const dateFilter: { $gte?: Date; $lte?: Date } = {};
+    if (from) dateFilter.$gte = new Date(from as string);
+    if (to) dateFilter.$lte = new Date(to as string);
+    
+    if (dateFilter.$gte || dateFilter.$lte) {
+      filters.createdAt = dateFilter;
+    }
+
+    // Get dishes for this restaurant
+    const { Dish } = await import('../models/dish.model');
+    const dishes = await Dish.find({ 
+      restaurant_id: new Types.ObjectId(restaurantId) 
+    }).select('_id disher_name');
+    
+    const dishIds = dishes.map(d => d._id.toString());
+    filters.item_dish_id = { $in: dishIds.map(id => new Types.ObjectId(id)) };
+
+    // User filter (applied to staff_id on items)
+    if (userId) {
+      filters.$or = [
+        { customer_id: new Types.ObjectId(userId as string) },
+        { 'created_by': new Types.ObjectId(userId as string) }
+      ];
+    }
+
+    // Fetch item orders as logs
+    const items = await ItemOrder.find(filters)
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+
+    // Transform to log format
+    const logs: LogEntry[] = items.map(item => {
+      const dish = dishes.find(d => d._id.equals(item.item_dish_id));
+      
+      // Determine log type based on dish type
+      let logType: 'KDS' | 'POS' | 'TAS' = 'POS';
+      if (item.item_disher_type === 'KITCHEN') {
+        logType = 'KDS';
+      } else if (item.session_id) {
+        // TAS items are typically ordered through totem
+        logType = 'TAS';
+      }
+
+      // Filter by type if specified
+      if (type && type !== 'ALL' && logType !== type) {
+        return null;
+      }
+
+      return {
+        id: item._id.toString(),
+        type: logType,
+        timestamp: item.createdAt || item.updatedAt || new Date(),
+        userId: item.customer_id?.toString(),
+        action: getActionFromState(item.item_state),
+        details: {
+          dishType: item.item_disher_type,
+          basePrice: item.item_base_price,
+          extras: item.item_disher_extras?.length || 0,
+          variant: item.item_disher_variant?.name?.es || null
+        },
+        dishName: dish?.disher_name || item.item_name_snapshot?.es || 'Unknown',
+        status: item.item_state
+      };
+    }).filter((log): log is LogEntry => log !== null);
+
+    // Get unique users for filter dropdown
+    const userIds = [...new Set(logs.map(l => l.userId).filter(Boolean))];
+    
+    res.json({
+      logs,
+      filters: {
+        users: userIds,
+        types: ['KDS', 'POS', 'TAS']
+      },
+      total: logs.length
+    });
+
+  } catch (error) {
+    console.error('[Logs] Error getting logs:', error);
+    res.status(500).json({ error: 'Failed to get logs' });
+  }
+}
+
+/**
+ * Get unique users who have activity in the system
+ */
+export async function getLogUsers(req: Request, res: Response): Promise<void> {
+  try {
+    const restaurantId = req.user?.restaurantId;
+    if (!restaurantId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    // Get staff from this restaurant
+    const { Staff } = await import('../models/staff.model');
+    const staff = await Staff.find({ 
+      restaurant_id: new Types.ObjectId(restaurantId) 
+    }).select('staff_name role').lean();
+
+    // Get customers who have orders
+    const { ItemOrder } = await import('../models/order.model');
+    const { Dish } = await import('../models/dish.model');
+    
+    const dishes = await Dish.find({ 
+      restaurant_id: new Types.ObjectId(restaurantId) 
+    }).select('_id');
+    
+    const dishIds = dishes.map(d => d._id);
+    
+    const customerIds = await ItemOrder.distinct('customer_id', {
+      item_dish_id: { $in: dishIds }
+    });
+
+    const { Customer } = await import('../models/customer.model');
+    const customers = await Customer.find({
+      _id: { $in: customerIds }
+    }).select('customer_name').lean();
+
+    const users = [
+      ...staff.map(s => ({
+        id: s._id.toString(),
+        name: s.staff_name,
+        type: 'STAFF',
+        role: s.role
+      })),
+      ...customers.map(c => ({
+        id: c._id.toString(),
+        name: c.customer_name,
+        type: 'CUSTOMER'
+      }))
+    ];
+
+    res.json({ users });
+
+  } catch (error) {
+    console.error('[Logs] Error getting users:', error);
+    res.status(500).json({ error: 'Failed to get users' });
+  }
+}
+
+function getActionFromState(state: string): string {
+  switch (state) {
+    case 'ORDERED': return 'Item Ordered';
+    case 'ON_PREPARE': return 'Preparation Started';
+    case 'SERVED': return 'Item Served';
+    case 'CANCELED': return 'Item Canceled';
+    default: return 'Unknown Action';
+  }
+}

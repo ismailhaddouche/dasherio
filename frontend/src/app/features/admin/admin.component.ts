@@ -16,6 +16,9 @@ import { RouterModule } from '@angular/router';
         </div>
 
         <nav class="flex flex-col gap-1">
+          <a routerLink="dashboard" routerLinkActive="bg-primary text-white" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <span class="material-symbols-outlined text-base">dashboard</span> Dashboard
+          </a>
           <a routerLink="dishes" routerLinkActive="bg-primary text-white" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <span class="material-symbols-outlined text-base">restaurant_menu</span> Platos
           </a>
@@ -27,6 +30,9 @@ import { RouterModule } from '@angular/router';
           </a>
           <a routerLink="staff" routerLinkActive="bg-primary text-white" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <span class="material-symbols-outlined text-base">badge</span> Personal
+          </a>
+          <a routerLink="logs" routerLinkActive="bg-primary text-white" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <span class="material-symbols-outlined text-base">receipt_long</span> Logs
           </a>
           <a routerLink="settings" routerLinkActive="bg-primary text-white" class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <span class="material-symbols-outlined text-base">settings</span> Configuración

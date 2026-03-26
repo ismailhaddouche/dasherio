@@ -6,8 +6,20 @@ export const ADMIN_ROUTES: Routes = [
     path: '',
     component: AdminComponent,
     children: [
-      { path: '', redirectTo: 'categories', pathMatch: 'full' },
-      
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+
+      // Dashboard
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent)
+      },
+
+      // Logs
+      {
+        path: 'logs',
+        loadComponent: () => import('./logs/logs-viewer.component').then(m => m.LogsViewerComponent)
+      },
+
       // Dishes
       { 
         path: 'dishes', 
