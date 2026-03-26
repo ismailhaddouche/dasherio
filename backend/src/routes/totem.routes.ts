@@ -1,15 +1,16 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middlewares/auth';
 import { requirePermission } from '../middlewares/rbac';
+import { qrLimiter, qrBruteForceLimiter } from '../middlewares/rateLimit';
 import * as TotemController from '../controllers/totem.controller';
 
 const router = Router();
 
-// Public routes: QR menu access (no auth required)
-router.get('/menu/:qr', TotemController.getMenuByQR);
-// BUG-04: totem component was calling GET /api/dishes (auth-protected) from a public QR page
-router.get('/menu/:qr/dishes', TotemController.getMenuDishes);
+// Public routes: QR menu access with rate limiting to prevent abuse
+router.get('/menu/:qr', qrBruteForceLimiter, TotemController.getMenuByQR);
+router.get('/menu/:qr/dishes', qrLimiter, TotemController.getMenuDishes);
 
+// Protected routes require authentication
 router.use(authMiddleware);
 
 router.get('/', requirePermission('read', 'Totem'), TotemController.listTotems);

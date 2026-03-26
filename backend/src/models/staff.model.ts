@@ -38,7 +38,10 @@ const StaffSchema = new Schema<IStaff>(
   { timestamps: true }
 );
 
-// Index for efficient PIN lookups by restaurant
+// Index for efficient lookups by restaurant
 StaffSchema.index({ restaurant_id: 1 });
+
+// Compound index for PIN authentication lookups
+StaffSchema.index({ restaurant_id: 1, pin_code_hash: 1 });
 
 export const Staff = model<IStaff>('Staff', StaffSchema);

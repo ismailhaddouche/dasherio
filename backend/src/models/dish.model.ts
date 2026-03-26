@@ -8,11 +8,11 @@ const LocalizedStringSchema = {
 };
 
 export interface IAllergen extends Document {
-  alergen_name: { es: string; en: string; fr: string; ar: string };
+  allergen_name: { es: string; en: string; fr: string; ar: string };
 }
 
 const AllergenSchema = new Schema<IAllergen>({
-  alergen_name: LocalizedStringSchema,
+  allergen_name: LocalizedStringSchema,
 });
 
 export const Allergen = model<IAllergen>('Allergen', AllergenSchema);

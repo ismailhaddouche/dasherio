@@ -4,21 +4,35 @@ import { logger } from '../config/logger';
 import { AuthenticatedSocket } from '../middlewares/socketAuth';
 
 export function registerKdsHandlers(io: Server, socket: AuthenticatedSocket): void {
-  // Verify user has kitchen permissions
+  // Verify user has kitchen permissions (KTS = Kitchen Table Service)
   const user = socket.user;
-  if (!user || !user.permissions.includes('KITCHEN')) {
+  if (!user || !user.permissions.includes('KTS')) {
     logger.warn({ socketId: socket.id }, 'Unauthorized KDS connection attempt');
+    socket.emit('kds:error', { message: 'INSUFFICIENT_PERMISSIONS', required: 'KTS' });
     socket.disconnect();
     return;
   }
 
   socket.on('kds:join', (sessionId: string) => {
+    // Validate sessionId format
+    if (!sessionId || typeof sessionId !== 'string') {
+      socket.emit('kds:error', { message: 'INVALID_SESSION_ID' });
+      return;
+    }
+    
     socket.join(`session:${sessionId}`);
     logger.info({ socketId: socket.id, userId: user.staffId, sessionId }, 'KDS joined session room');
+    socket.emit('kds:joined', { sessionId });
   });
 
   socket.on('kds:item_prepare', async ({ itemId }: { itemId: string }) => {
     try {
+      // Validate itemId
+      if (!itemId || typeof itemId !== 'string') {
+        socket.emit('kds:error', { message: 'INVALID_ITEM_ID', itemId });
+        return;
+      }
+
       // Atomic update to prevent race conditions
       const item = await ItemOrder.findOneAndUpdate(
         { _id: itemId, item_state: 'ORDERED' },
@@ -28,6 +42,11 @@ export function registerKdsHandlers(io: Server, socket: AuthenticatedSocket): vo
 
       if (!item) {
         logger.warn({ itemId, userId: user.staffId }, 'Item not found or not in ORDERED state');
+        socket.emit('kds:error', { 
+          message: 'ITEM_NOT_FOUND_OR_INVALID_STATE', 
+          itemId,
+          details: 'Item may not exist or is not in ORDERED state'
+        });
         return;
       }
 
@@ -36,14 +55,26 @@ export function registerKdsHandlers(io: Server, socket: AuthenticatedSocket): vo
         newState: 'ON_PREPARE',
       });
 
+      socket.emit('kds:item_prepared', { itemId, newState: 'ON_PREPARE' });
       logger.info({ itemId, userId: user.staffId }, 'Item marked as ON_PREPARE');
-    } catch (err) {
+    } catch (err: any) {
       logger.error({ err, itemId, userId: user.staffId }, 'kds:item_prepare error');
+      socket.emit('kds:error', { 
+        message: 'INTERNAL_ERROR', 
+        itemId,
+        details: err.message 
+      });
     }
   });
 
   socket.on('kds:item_serve', async ({ itemId }: { itemId: string }) => {
     try {
+      // Validate itemId
+      if (!itemId || typeof itemId !== 'string') {
+        socket.emit('kds:error', { message: 'INVALID_ITEM_ID', itemId });
+        return;
+      }
+
       // Atomic update to prevent race conditions
       const item = await ItemOrder.findOneAndUpdate(
         { _id: itemId, item_state: 'ON_PREPARE' },
@@ -53,6 +84,11 @@ export function registerKdsHandlers(io: Server, socket: AuthenticatedSocket): vo
 
       if (!item) {
         logger.warn({ itemId, userId: user.staffId }, 'Item not found or not in ON_PREPARE state');
+        socket.emit('kds:error', { 
+          message: 'ITEM_NOT_FOUND_OR_INVALID_STATE', 
+          itemId,
+          details: 'Item may not exist or is not in ON_PREPARE state'
+        });
         return;
       }
 
@@ -61,9 +97,15 @@ export function registerKdsHandlers(io: Server, socket: AuthenticatedSocket): vo
         newState: 'SERVED',
       });
 
+      socket.emit('kds:item_served', { itemId, newState: 'SERVED' });
       logger.info({ itemId, userId: user.staffId }, 'Item marked as SERVED');
-    } catch (err) {
+    } catch (err: any) {
       logger.error({ err, itemId, userId: user.staffId }, 'kds:item_serve error');
+      socket.emit('kds:error', { 
+        message: 'INTERNAL_ERROR', 
+        itemId,
+        details: err.message 
+      });
     }
   });
 }
