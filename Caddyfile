@@ -1,0 +1,35 @@
+{
+    admin off
+    auto_https off
+}
+
+:80 {
+    # WebSocket upgrade for Socket.io
+    @socketio {
+        path /socket.io/*
+    }
+    handle @socketio {
+        reverse_proxy backend:3000
+    }
+
+    # API routes to Node.js backend
+    handle /api/* {
+        reverse_proxy backend:3000
+    }
+
+    # Serve uploaded images statically
+    handle /uploads/* {
+        root * /srv/uploads
+        file_server
+    }
+
+    # Everything else goes to Angular frontend
+    handle {
+        reverse_proxy frontend:4200
+    }
+
+    log {
+        output stdout
+        format json
+    }
+}

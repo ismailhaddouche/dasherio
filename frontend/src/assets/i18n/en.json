@@ -1,0 +1,57 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "loading": "Loading...",
+    "confirm": "Confirm",
+    "back": "Back",
+    "search": "Search",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "pin": "PIN",
+    "error_invalid": "Invalid credentials"
+  },
+  "kds": {
+    "title": "Kitchen",
+    "new_orders": "New",
+    "in_preparation": "In preparation",
+    "served": "Served",
+    "prepare": "Prepare",
+    "serve": "Served"
+  },
+  "pos": {
+    "title": "POS",
+    "tables": "Tables",
+    "new_table": "New Table",
+    "cart": "Cart",
+    "total": "Total",
+    "charge": "Charge",
+    "payment_type": {
+      "all": "Full payment",
+      "by_user": "Per person",
+      "shared": "Split equally"
+    }
+  },
+  "totem": {
+    "my_order": "My order",
+    "add_to_cart": "Add",
+    "place_order": "Order",
+    "empty_cart": "Empty cart"
+  },
+  "admin": {
+    "dishes": "Dishes",
+    "categories": "Categories",
+    "totems": "Totems",
+    "staff": "Staff",
+    "settings": "Settings"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "loading": "Chargement...",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "search": "Rechercher",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "auth": {
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "email": "Email",
+    "password": "Mot de passe",
+    "pin": "PIN",
+    "error_invalid": "Identifiants incorrects"
+  },
+  "kds": {
+    "title": "Cuisine",
+    "new_orders": "Nouveau",
+    "in_preparation": "En préparation",
+    "served": "Servi",
+    "prepare": "Préparer",
+    "serve": "Servi"
+  },
+  "pos": {
+    "title": "Caisse",
+    "tables": "Tables",
+    "new_table": "Nouvelle Table",
+    "cart": "Panier",
+    "total": "Total",
+    "charge": "Encaisser",
+    "payment_type": {
+      "all": "Paiement complet",
+      "by_user": "Par personne",
+      "shared": "Parts égales"
+    }
+  },
+  "totem": {
+    "my_order": "Ma commande",
+    "add_to_cart": "Ajouter",
+    "place_order": "Commander",
+    "empty_cart": "Panier vide"
+  },
+  "admin": {
+    "dishes": "Plats",
+    "categories": "Catégories",
+    "totems": "Totems",
+    "staff": "Personnel",
+    "settings": "Paramètres"
+  }
+}

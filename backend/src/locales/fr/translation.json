@@ -1,0 +1,22 @@
+{
+  "errors": {
+    "INVALID_CREDENTIALS": "Identifiants incorrects",
+    "INVALID_PIN": "PIN incorrect",
+    "UNAUTHORIZED": "Non autorisé",
+    "FORBIDDEN": "Accès refusé",
+    "NOT_FOUND": "Ressource introuvable",
+    "DISH_NOT_FOUND": "Plat introuvable",
+    "DISH_NOT_AVAILABLE": "Plat indisponible",
+    "SESSION_NOT_ACTIVE": "La session n'est pas active",
+    "ITEM_NOT_FOUND": "Article introuvable",
+    "INVALID_STATE_TRANSITION": "Transition d'état invalide",
+    "REQUIRES_POS_AUTHORIZATION": "Autorisation de la caisse requise",
+    "PAYMENT_NOT_FOUND": "Paiement introuvable",
+    "TICKET_NOT_FOUND": "Ticket introuvable",
+    "SERVER_ERROR": "Erreur interne du serveur"
+  },
+  "mail": {
+    "welcome_subject": "Bienvenue sur DisherIo",
+    "welcome_body": "Bonjour {{name}}, votre compte a été créé avec succès."
+  }
+}

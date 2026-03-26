@@ -1,0 +1,94 @@
+import { Schema, model, Document, Types } from 'mongoose';
+
+const LocalizedStringSchema = {
+  es: { type: String, default: '' },
+  en: { type: String, default: '' },
+  fr: { type: String, default: '' },
+  ar: { type: String, default: '' },
+};
+
+export interface IAllergen extends Document {
+  alergen_name: { es: string; en: string; fr: string; ar: string };
+}
+
+const AllergenSchema = new Schema<IAllergen>({
+  alergen_name: LocalizedStringSchema,
+});
+
+export const Allergen = model<IAllergen>('Allergen', AllergenSchema);
+
+export interface ICategory extends Document {
+  restaurant_id: Types.ObjectId;
+  category_name: { es: string; en: string; fr: string; ar: string };
+  category_order: number;
+  category_description?: { es: string; en: string; fr: string; ar: string };
+  category_image_url?: string;
+}
+
+const CategorySchema = new Schema<ICategory>(
+  {
+    restaurant_id: { type: Schema.Types.ObjectId, ref: 'Restaurant', required: true },
+    category_name: LocalizedStringSchema,
+    category_order: { type: Number, default: 0 },
+    category_description: LocalizedStringSchema,
+    category_image_url: String,
+  },
+  { timestamps: true }
+);
+
+export const Category = model<ICategory>('Category', CategorySchema);
+
+const VariantSubSchema = new Schema(
+  {
+    variant_name: LocalizedStringSchema,
+    variant_description: LocalizedStringSchema,
+    variant_url_image: String,
+    variant_price: { type: Number, required: true, min: 0 },
+  },
+  { _id: true }
+);
+
+const ExtraSubSchema = new Schema(
+  {
+    extra_name: LocalizedStringSchema,
+    extra_description: LocalizedStringSchema,
+    extra_price: { type: Number, required: true, min: 0 },
+    extra_url_image: String,
+  },
+  { _id: true }
+);
+
+export interface IDish extends Document {
+  restaurant_id: Types.ObjectId;
+  category_id: Types.ObjectId;
+  disher_name: { es: string; en: string; fr: string; ar: string };
+  disher_description?: { es: string; en: string; fr: string; ar: string };
+  disher_url_image?: string;
+  disher_status: 'ACTIVATED' | 'DESACTIVATED';
+  disher_price: number;
+  disher_type: 'KITCHEN' | 'SERVICE';
+  disher_alergens: Types.ObjectId[];
+  disher_variant: boolean;
+  variants: any[];
+  extras: any[];
+}
+
+const DishSchema = new Schema<IDish>(
+  {
+    restaurant_id: { type: Schema.Types.ObjectId, ref: 'Restaurant', required: true },
+    category_id: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
+    disher_name: LocalizedStringSchema,
+    disher_description: LocalizedStringSchema,
+    disher_url_image: String,
+    disher_status: { type: String, enum: ['ACTIVATED', 'DESACTIVATED'], default: 'ACTIVATED' },
+    disher_price: { type: Number, required: true, min: 0 },
+    disher_type: { type: String, enum: ['KITCHEN', 'SERVICE'], required: true },
+    disher_alergens: [{ type: Schema.Types.ObjectId, ref: 'Allergen' }],
+    disher_variant: { type: Boolean, default: false },
+    variants: [VariantSubSchema],
+    extras: [ExtraSubSchema],
+  },
+  { timestamps: true }
+);
+
+export const Dish = model<IDish>('Dish', DishSchema);

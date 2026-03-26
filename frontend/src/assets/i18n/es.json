@@ -1,0 +1,57 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "loading": "Cargando...",
+    "confirm": "Confirmar",
+    "back": "Volver",
+    "search": "Buscar",
+    "yes": "Sí",
+    "no": "No"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "pin": "PIN",
+    "error_invalid": "Credenciales incorrectas"
+  },
+  "kds": {
+    "title": "Cocina",
+    "new_orders": "Nuevos",
+    "in_preparation": "En preparación",
+    "served": "Servidos",
+    "prepare": "Preparar",
+    "serve": "Servido"
+  },
+  "pos": {
+    "title": "Caja",
+    "tables": "Mesas",
+    "new_table": "Nueva Mesa",
+    "cart": "Carrito",
+    "total": "Total",
+    "charge": "Cobrar",
+    "payment_type": {
+      "all": "Pago completo",
+      "by_user": "Por persona",
+      "shared": "A partes iguales"
+    }
+  },
+  "totem": {
+    "my_order": "Mi pedido",
+    "add_to_cart": "Añadir",
+    "place_order": "Pedir",
+    "empty_cart": "Carrito vacío"
+  },
+  "admin": {
+    "dishes": "Platos",
+    "categories": "Categorías",
+    "totems": "Tótems",
+    "staff": "Personal",
+    "settings": "Configuración"
+  }
+}
