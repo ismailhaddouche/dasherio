@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
