@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../utils/async-handler';
 import { loginWithEmail, loginWithPin } from '../services/auth.service';
-import { createError } from '../utils/async-handler';
 
 export const loginEmail = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { email, password } = req.body;
