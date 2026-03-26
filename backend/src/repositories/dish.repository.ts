@@ -93,6 +93,15 @@ export class DishRepository extends BaseRepository<IDish> {
       .lean()
       .exec();
   }
+
+  async countByCategory(categoryId: string): Promise<number> {
+    validateObjectId(categoryId, 'category_id');
+    return this.model
+      .countDocuments({
+        category_id: new Types.ObjectId(categoryId),
+      })
+      .exec();
+  }
 }
 
 export class CategoryRepository extends BaseRepository<ICategory> {

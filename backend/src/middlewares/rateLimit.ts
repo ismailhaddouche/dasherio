@@ -23,7 +23,7 @@ export const qrLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many QR scans, please try again later.' },
-  skip: (req) => {
+  skip: (_req) => {
     // Opcional: skip rate limiting para IPs internas/development
     return process.env.NODE_ENV === 'development';
   },
@@ -36,7 +36,7 @@ export const qrBruteForceLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many attempts, QR code may be invalid.' },
-  handler: (req, res, next, options) => {
+  handler: (req, res, _next, options) => {
     // Loggear intentos sospechosos
     console.warn(`[RateLimit] QR brute force detected from IP: ${req.ip}`);
     res.status(429).json(options.message);

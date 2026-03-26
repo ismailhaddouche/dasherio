@@ -86,7 +86,7 @@ export async function getDishById(dishId: string): Promise<IDish | null> {
 }
 
 export async function createDish(data: CreateDishData): Promise<IDish> {
-  const dish = await dishRepo.createDish(data);
+  const dish = await dishRepo.createDish(data as any);
   // Invalidar cache
   cache.delete(CacheKeys.dishByRestaurant(data.restaurant_id));
   return dish;
@@ -96,7 +96,7 @@ export async function updateDish(dishId: string, data: UpdateDishData): Promise<
   const existing = await dishRepo.findById(dishId);
   if (!existing) return null;
   
-  const updated = await dishRepo.updateDish(dishId, data);
+  const updated = await dishRepo.updateDish(dishId, data as any);
   
   // Invalidar caches
   cache.delete(CacheKeys.dishById(dishId));
@@ -164,7 +164,7 @@ export async function getCategoryById(id: string): Promise<ICategory | null> {
 }
 
 export async function createCategory(data: CreateCategoryData): Promise<ICategory> {
-  const category = await categoryRepo.createCategory(data);
+  const category = await categoryRepo.createCategory(data as any);
   cache.delete(CacheKeys.categoriesByRestaurant(data.restaurant_id));
   return category;
 }
@@ -173,7 +173,7 @@ export async function updateCategory(id: string, data: UpdateCategoryData): Prom
   const existing = await categoryRepo.findById(id);
   if (!existing) return null;
   
-  const updated = await categoryRepo.updateCategory(id, data);
+  const updated = await categoryRepo.updateCategory(id, data as any);
   
   // Invalidar caches
   cache.delete(CacheKeys.categoryById(id));
