@@ -200,7 +200,7 @@ EOF
     handle /socket.io/* {
         reverse_proxy backend:3000 {
             transport http {
-                versions h1
+                versions 1.1
             }
         }
     }
