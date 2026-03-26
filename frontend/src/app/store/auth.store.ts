@@ -1,4 +1,4 @@
-import { signal, computed } from '@angular/core';
+import { signal, computed, Signal, ComputedSignal } from '@angular/core';
 
 export interface AuthUser {
   staffId: string;
@@ -8,7 +8,15 @@ export interface AuthUser {
   name: string;
 }
 
-// BUG-06: decode JWT payload so _user is populated on page refresh
+export interface AuthStore {
+  user: Signal<AuthUser | null>;
+  token: Signal<string | null>;
+  isAuthenticated: Signal<boolean>;
+  hasPermission: (perm: string) => ComputedSignal<boolean>;
+  setAuth: (token: string, user: AuthUser) => void;
+  clearAuth: () => void;
+}
+
 export function decodeJwt(token: string): AuthUser | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
@@ -27,10 +35,9 @@ export function decodeJwt(token: string): AuthUser | null {
 
 const storedToken = localStorage.getItem('token');
 const _token = signal<string | null>(storedToken);
-// BUG-06: restore user from stored JWT so guards work after page refresh
 const _user = signal<AuthUser | null>(storedToken ? decodeJwt(storedToken) : null);
 
-export const authStore = {
+export const authStore: AuthStore = {
   user: _user.asReadonly(),
   token: _token.asReadonly(),
   isAuthenticated: computed(() => _token() !== null && _user() !== null),

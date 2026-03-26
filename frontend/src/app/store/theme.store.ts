@@ -1,8 +1,14 @@
-import { signal } from '@angular/core';
+import { signal, Signal } from '@angular/core';
+
+export interface ThemeStore {
+  isDark: Signal<boolean>;
+  toggle: () => void;
+  init: () => void;
+}
 
 const _dark = signal<boolean>(localStorage.getItem('theme') === 'dark');
 
-export const themeStore = {
+export const themeStore: ThemeStore = {
   isDark: _dark.asReadonly(),
 
   toggle() {
