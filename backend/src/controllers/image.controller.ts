@@ -24,7 +24,7 @@ export const uploadMiddleware = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // Max 10MB
 });
 
-export const uploadDishImage = asyncHandler(async (req: Request, res: Response): Promise<void => {
+export const uploadDishImage = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   if (!req.file) {
     throw createError.badRequest('NO_FILE_UPLOADED');
   }
@@ -32,7 +32,7 @@ export const uploadDishImage = asyncHandler(async (req: Request, res: Response):
   res.status(201).json({ url: publicUrl });
 });
 
-export const uploadCategoryImage = asyncHandler(async (req: Request, res: Response): Promise<void => {
+export const uploadCategoryImage = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   if (!req.file) {
     throw createError.badRequest('NO_FILE_UPLOADED');
   }
@@ -40,7 +40,7 @@ export const uploadCategoryImage = asyncHandler(async (req: Request, res: Respon
   res.status(201).json({ url: publicUrl });
 });
 
-export const uploadRestaurantLogo = asyncHandler(async (req: Request, res: Response): Promise<void => {
+export const uploadRestaurantLogo = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   if (!req.file) {
     throw createError.badRequest('NO_FILE_UPLOADED');
   }
