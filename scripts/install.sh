@@ -28,6 +28,8 @@ ADMIN_USER="admin"
 ADMIN_PASS=""
 ADMIN_PIN=""
 IS_DOMAIN=false
+DEFAULT_LANGUAGE="es"    # es | en
+DEFAULT_THEME="light"    # light | dark | system
 
 # ── Utilidades ───────────────────────────────────────────────────────────────
 [[ $EUID -eq 0 ]] || { echo -e "${RED}Ejecuta como root: sudo ./scripts/install.sh${NC}"; exit 1; }
@@ -204,6 +206,46 @@ configure_access() {
     fi
   done
   
+  # Configurar preferencias de localización
+  echo ""
+  log "Configuración de idioma y tema:"
+  
+  # Selección de idioma
+  echo ""
+  echo "  Selecciona el idioma por defecto:"
+  echo "    1) Español (ES)"
+  echo "    2) English (EN)"
+  echo ""
+  while true; do
+    read -rp "  Opción [1]: " lang_choice
+    lang_choice="${lang_choice:-1}"
+    case "$lang_choice" in
+      1) DEFAULT_LANGUAGE="es"; break;;
+      2) DEFAULT_LANGUAGE="en"; break;;
+      *) echo "Opción inválida";;
+    esac
+  done
+  ok "Idioma seleccionado: $DEFAULT_LANGUAGE"
+  
+  # Selección de tema
+  echo ""
+  echo "  Selecciona el tema por defecto:"
+  echo "    1) Claro (Light)"
+  echo "    2) Oscuro (Dark)"
+  echo "    3) Sistema (System - usa preferencia del navegador)"
+  echo ""
+  while true; do
+    read -rp "  Opción [1]: " theme_choice
+    theme_choice="${theme_choice:-1}"
+    case "$theme_choice" in
+      1) DEFAULT_THEME="light"; break;;
+      2) DEFAULT_THEME="dark"; break;;
+      3) DEFAULT_THEME="system"; break;;
+      *) echo "Opción inválida";;
+    esac
+  done
+  ok "Tema seleccionado: $DEFAULT_THEME"
+  
   # Verificar que los puertos no estén en uso
   for port in "$HTTP_PORT" "$HTTPS_PORT"; do
     if ss -tuln | grep -q ":$port "; then
@@ -319,6 +361,8 @@ JWT_SECRET=${JWT_SECRET}
 JWT_EXPIRES=8h
 FRONTEND_URL=${ACCESS_URL}
 LOG_LEVEL=info
+DEFAULT_LANGUAGE=${DEFAULT_LANGUAGE}
+DEFAULT_THEME=${DEFAULT_THEME}
 EOF
   chmod 600 "$ENV_FILE"
   chown root:root "$ENV_FILE" 2>/dev/null || true
@@ -516,6 +560,8 @@ async function seed() {
   
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
   const adminPin = process.env.SEED_ADMIN_PIN;
+  const defaultLanguage = process.env.DEFAULT_LANGUAGE || 'es';
+  const defaultTheme = process.env.DEFAULT_THEME || 'light';
   
   // Crear restaurante
   let restaurant = await mongoose.connection.collection('restaurants').findOne({ restaurant_name: 'DisherIO Restaurant' });
@@ -524,13 +570,14 @@ async function seed() {
       restaurant_name: 'DisherIO Restaurant',
       tax_rate: 10,
       currency: 'EUR',
-      default_language: 'es',
-      default_theme: 'light',
+      default_language: defaultLanguage,
+      default_theme: defaultTheme,
       tips_state: false,
       tips_type: 'VOLUNTARY',
       createdAt: new Date(),
       updatedAt: new Date()
     });
+    console.log('Restaurante creado con idioma:', defaultLanguage, 'y tema:', defaultTheme);
     restaurant = await mongoose.connection.collection('restaurants').findOne({ _id: result.insertedId });
     console.log('Restaurante creado');
   }
@@ -591,6 +638,8 @@ NODE_SCRIPT
     -e MONGODB_URI="mongodb://mongo:27017/disherio" \
     -e SEED_ADMIN_PASSWORD="$ADMIN_PASS" \
     -e SEED_ADMIN_PIN="$ADMIN_PIN" \
+    -e DEFAULT_LANGUAGE="$DEFAULT_LANGUAGE" \
+    -e DEFAULT_THEME="$DEFAULT_THEME" \
     node:20-alpine sh -c "npm install --silent && node seed.js" >> "$LOG_FILE" 2>&1; then
     ok "Usuario administrador creado"
     rm -rf "$seed_dir"
