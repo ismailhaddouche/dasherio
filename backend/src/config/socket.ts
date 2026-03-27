@@ -7,11 +7,37 @@ import { socketAuthMiddleware, AuthenticatedSocket } from '../middlewares/socket
 
 let io: SocketServer;
 
+// Build allowed origins for Socket.IO
+function getAllowedOrigins(): string[] {
+  const origins: string[] = [];
+  
+  if (process.env.FRONTEND_URL) {
+    const frontendUrl = process.env.FRONTEND_URL;
+    origins.push(frontendUrl);
+    
+    // Also add variant without :80 port
+    if (frontendUrl.includes(':80')) {
+      origins.push(frontendUrl.replace(':80', ''));
+    }
+    // Also add variant with :80 port
+    const urlWithoutPort = frontendUrl.replace(/:\d+$/, '');
+    origins.push(`${urlWithoutPort}:80`);
+  } else {
+    origins.push('http://localhost:4200');
+  }
+  
+  return origins;
+}
+
 export function initSocket(httpServer: HttpServer): SocketServer {
+  const allowedOrigins = getAllowedOrigins();
+  logger.info({ allowedOrigins }, 'Socket.IO CORS origins');
+  
   io = new SocketServer(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+      origin: allowedOrigins,
       methods: ['GET', 'POST'],
+      credentials: true,
     },
   });
 

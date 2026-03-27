@@ -6,21 +6,50 @@ import compression from 'compression';
 export function applySecurityMiddleware(app: Express): void {
   app.use(helmet());
 
-  // Strict CORS configuration
-  const allowedOrigins = process.env.FRONTEND_URL
-    ? [process.env.FRONTEND_URL]
-    : process.env.NODE_ENV === 'production'
-      ? []
-      : ['http://localhost:4200', 'http://localhost:3000'];
+  // Build allowed origins list
+  const allowedOrigins: string[] = [];
+  
+  if (process.env.FRONTEND_URL) {
+    const frontendUrl = process.env.FRONTEND_URL;
+    allowedOrigins.push(frontendUrl);
+    
+    // Also add variant without :80 port (browser may send it differently)
+    if (frontendUrl.includes(':80')) {
+      allowedOrigins.push(frontendUrl.replace(':80', ''));
+    }
+    // Also add variant with :80 port (if not present)
+    if (!frontendUrl.includes(':') || frontendUrl.match(/:\d+$/)) {
+      // Already has port or no port - add :80 variant
+      const urlWithoutPort = frontendUrl.replace(/:\d+$/, '');
+      allowedOrigins.push(`${urlWithoutPort}:80`);
+    }
+  }
+  
+  // Development origins
+  if (process.env.NODE_ENV !== 'production') {
+    allowedOrigins.push('http://localhost:4200', 'http://localhost:3000');
+  }
 
   if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
     console.error('ERROR: FRONTEND_URL must be set in production');
     process.exit(1);
   }
 
+  console.log('CORS allowed origins:', allowedOrigins);
+
   app.use(
     cors({
-      origin: allowedOrigins,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (e.g., mobile apps, Postman)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        
+        console.warn(`CORS rejected origin: ${origin}`);
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
