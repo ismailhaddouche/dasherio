@@ -1,7 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { authStore } from '../../../store/auth.store';
 
@@ -75,8 +77,9 @@ import { authStore } from '../../../store/auth.store';
     </div>
   `
 })
-export class DishListComponent implements OnInit {
+export class DishListComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
+  private destroy$ = new Subject<void>();
   dishes = signal<any[]>([]);
   error = signal<string>('');
 
@@ -90,20 +93,33 @@ export class DishListComponent implements OnInit {
 
   loadDishes() {
     this.error.set('');
-    this.http.get<any[]>(`${environment.apiUrl}/dishes`).subscribe({
-      next: (res) => {
-        this.dishes.set(res);
-      },
-      error: (err) => {
-        console.error('[DishList] Error loading dishes:', err);
-        this.error.set('Error loading dishes. Please try again.');
-      }
-    });
+    this.http.get<any[]>(`${environment.apiUrl}/dishes`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.dishes.set(res);
+        },
+        error: (err) => {
+          console.error('[DishList] Error loading dishes:', err);
+          this.error.set('Error loading dishes. Please try again.');
+        }
+      });
   }
 
   toggleStatus(id: string) {
-    this.http.patch(`${environment.apiUrl}/dishes/${id}/toggle`, {}).subscribe(() => {
-      this.loadDishes();
-    });
+    this.http.patch(`${environment.apiUrl}/dishes/${id}/toggle`, {})
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => this.loadDishes(),
+        error: (err) => {
+          console.error('[DishList] Error toggling status:', err);
+          alert('Error al cambiar el estado del plato');
+        }
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

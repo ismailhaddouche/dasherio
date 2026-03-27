@@ -1,8 +1,10 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { ImageUploaderComponent } from '../../../shared/components/image-uploader/image-uploader.component';
 
@@ -111,10 +113,11 @@ import { ImageUploaderComponent } from '../../../shared/components/image-uploade
     .input-style-sm { @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-2 py-1 text-sm outline-none; }
   `]
 })
-export class DishFormComponent implements OnInit {
+export class DishFormComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private destroy$ = new Subject<void>();
 
   isEdit = false;
   dish = signal<any>({
@@ -136,11 +139,25 @@ export class DishFormComponent implements OnInit {
   }
 
   loadCategories() {
-    this.http.get<any[]>(`${environment.apiUrl}/dishes/categories`).subscribe(res => this.categories.set(res));
+    this.http.get<any[]>(`${environment.apiUrl}/dishes/categories`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => this.categories.set(res),
+        error: (err) => console.error('[DishForm] Error loading categories:', err)
+      });
   }
 
   loadDish(id: string) {
-    this.http.get(`${environment.apiUrl}/dishes/${id}`).subscribe(res => this.dish.set(res));
+    this.http.get(`${environment.apiUrl}/dishes/${id}`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => this.dish.set(res),
+        error: (err) => {
+          console.error('[DishForm] Error loading dish:', err);
+          alert('Error al cargar el plato');
+          this.router.navigate(['/admin/dishes']);
+        }
+      });
   }
 
   onImageUploaded(url: string) {
@@ -180,10 +197,22 @@ export class DishFormComponent implements OnInit {
       ? this.http.patch(`${environment.apiUrl}/dishes/${this.dish()._id}`, this.dish())
       : this.http.post(`${environment.apiUrl}/dishes`, this.dish());
     
-    obs.subscribe(() => this.router.navigate(['/admin/dishes']));
+    obs.pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => this.router.navigate(['/admin/dishes']),
+        error: (err) => {
+          console.error('[DishForm] Error saving dish:', err);
+          alert('Error al guardar el plato: ' + (err.error?.message || 'Error desconocido'));
+        }
+      });
   }
 
   cancel() {
     this.router.navigate(['/admin/dishes']);
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

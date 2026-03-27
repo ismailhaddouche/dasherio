@@ -53,7 +53,7 @@ const ItemOrderSchema = new Schema<IItemOrder>(
     },
     item_disher_type: { type: String, enum: ['KITCHEN', 'SERVICE'], required: true, index: true },
     item_name_snapshot: LocalizedStringSchema,
-    item_base_price: { type: Number, required: true, min: 0 },
+    item_base_price: { type: Number, required: true, min: 0.01 }, // Must be greater than 0
     item_disher_variant: {
       variant_id: String,
       name: LocalizedStringSchema,

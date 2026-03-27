@@ -48,7 +48,9 @@ StaffSchema.index({ restaurant_id: 1 });
 // Unique username per restaurant
 StaffSchema.index({ restaurant_id: 1, username: 1 }, { unique: true });
 
-// Compound index for PIN authentication lookups
-StaffSchema.index({ restaurant_id: 1, pin_code_hash: 1 });
+// Note: Index on pin_code_hash is intentionally NOT created
+// because bcrypt generates different hashes for the same PIN due to salting.
+// PIN authentication requires iterating through staff members of the restaurant.
+// For restaurants with many staff, consider adding a PIN salt field for faster lookup.
 
 export const Staff = model<IStaff>('Staff', StaffSchema);
