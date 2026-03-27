@@ -69,11 +69,11 @@ export const ADMIN_ROUTES: Routes = [
       },
       { 
         path: 'staff/new', 
-        loadComponent: () => import('./staff/staff-list.component').then(m => m.StaffFormComponent) 
+        loadComponent: () => import('./staff/staff-form.component').then(m => m.StaffFormComponent) 
       },
       { 
         path: 'staff/:id', 
-        loadComponent: () => import('./staff/staff-list.component').then(m => m.StaffFormComponent) 
+        loadComponent: () => import('./staff/staff-form.component').then(m => m.StaffFormComponent) 
       },
 
       // Settings

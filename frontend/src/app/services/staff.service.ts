@@ -1,0 +1,72 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+export interface Role {
+  _id: string;
+  role_name: string;
+  permissions: string[];
+}
+
+export interface Staff {
+  _id: string;
+  restaurant_id: string;
+  role_id: string;
+  role_id_populated?: Role;
+  staff_name: string;
+  email: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateStaffRequest {
+  staff_name: string;
+  email: string;
+  password: string;
+  pin_code: string;
+  role_id: string;
+}
+
+export interface UpdateStaffRequest {
+  staff_name?: string;
+  email?: string;
+  role_id?: string;
+  password?: string;
+  pin_code?: string;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class StaffService {
+  private http = inject(HttpClient);
+  private apiUrl = '/api/staff';
+
+  getStaff(): Observable<Staff[]> {
+    return this.http.get<Staff[]>(this.apiUrl);
+  }
+
+  getStaffMember(id: string): Observable<Staff> {
+    return this.http.get<Staff>(`${this.apiUrl}/${id}`);
+  }
+
+  createStaff(data: CreateStaffRequest): Observable<Staff> {
+    return this.http.post<Staff>(this.apiUrl, data);
+  }
+
+  updateStaff(id: string, data: UpdateStaffRequest): Observable<Staff> {
+    return this.http.patch<Staff>(`${this.apiUrl}/${id}`, data);
+  }
+
+  deleteStaff(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  getRoles(): Observable<Role[]> {
+    return this.http.get<Role[]>(`${this.apiUrl}/roles/all`);
+  }
+
+  createRole(role_name: string, permissions: string[]): Observable<Role> {
+    return this.http.post<Role>(`${this.apiUrl}/roles`, { role_name, permissions });
+  }
+}
