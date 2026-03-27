@@ -1,7 +1,8 @@
 import { Component, inject, computed, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { I18nService, Language } from '../../core/services/i18n.service';
+import { I18nService } from '../../core/services/i18n.service';
+import type { Language } from '../../core/services/i18n.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { RestaurantService } from '../../core/services/restaurant.service';
 import { authStore } from '../../store/auth.store';

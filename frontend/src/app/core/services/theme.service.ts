@@ -1,7 +1,9 @@
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { Platform } from '@angular/cdk/platform';
 import { HttpClient } from '@angular/common/http';
-import { authStore, Theme } from '../../store/auth.store';
+import { authStore, type Theme } from '../../store/auth.store';
+
+export type { Theme };
 import { environment } from '../../../environments/environment';
 
 @Injectable({

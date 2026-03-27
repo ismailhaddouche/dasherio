@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
-import { I18nService, Language } from '../../../core/services/i18n.service';
-import { ThemeService, Theme } from '../../../core/services/theme.service';
+import { I18nService, type Language } from '../../../core/services/i18n.service';
+import { ThemeService, type Theme } from '../../../core/services/theme.service';
 import { authStore } from '../../../store/auth.store';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
@@ -58,7 +58,7 @@ interface RestaurantSettings {
                 </label>
                 <input
                   type="text"
-                  [(ngModel)]="settings.restaurant_name"
+                  [(ngModel)]="settings().restaurant_name"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
@@ -68,7 +68,7 @@ interface RestaurantSettings {
                   {{ 'settings.currency' | translate }}
                 </label>
                 <select
-                  [(ngModel)]="settings.currency"
+                  [(ngModel)]="settings().currency"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="EUR">EUR (€)</option>
@@ -83,7 +83,7 @@ interface RestaurantSettings {
                 </label>
                 <input
                   type="number"
-                  [(ngModel)]="settings.tax_rate"
+                  [(ngModel)]="settings().tax_rate"
                   min="0"
                   max="100"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -108,7 +108,7 @@ interface RestaurantSettings {
                   {{ 'common.language' | translate }} ({{ 'common.default' | translate }})
                 </label>
                 <select
-                  [(ngModel)]="settings.default_language"
+                  [(ngModel)]="settings().default_language"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   @for (lang of availableLanguages; track lang.code) {
@@ -123,7 +123,7 @@ interface RestaurantSettings {
                   {{ 'common.theme' | translate }} ({{ 'common.default' | translate }})
                 </label>
                 <select
-                  [(ngModel)]="settings.default_theme"
+                  [(ngModel)]="settings().default_theme"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="light">☀️ {{ 'common.light' | translate }}</option>
@@ -154,7 +154,7 @@ interface RestaurantSettings {
                   (ngModelChange)="setUserLanguage($event)"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  <option [value]="null">Use restaurant default ({{ settings.default_language }})</option>
+                  <option [value]="null">Use restaurant default ({{ settings().default_language }})</option>
                   @for (lang of availableLanguages; track lang.code) {
                     <option [value]="lang.code">{{ lang.flag }} {{ lang.name }}</option>
                   }
@@ -171,7 +171,7 @@ interface RestaurantSettings {
                   (ngModelChange)="setUserTheme($event)"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  <option [value]="null">Use restaurant default ({{ settings.default_theme }})</option>
+                  <option [value]="null">Use restaurant default ({{ settings().default_theme }})</option>
                   <option value="light">☀️ {{ 'common.light' | translate }}</option>
                   <option value="dark">🌙 {{ 'common.dark' | translate }}</option>
                   <option value="system">💻 {{ 'common.system' | translate }}</option>

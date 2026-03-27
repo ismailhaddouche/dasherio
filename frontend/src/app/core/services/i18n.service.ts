@@ -1,7 +1,9 @@
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { Platform } from '@angular/cdk/platform';
 import { HttpClient } from '@angular/common/http';
-import { authStore, Language } from '../../store/auth.store';
+import { authStore, type Language } from '../../store/auth.store';
+
+export type { Language };
 import { environment } from '../../../environments/environment';
 
 interface Translations {
