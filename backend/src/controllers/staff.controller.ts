@@ -59,7 +59,7 @@ export const createStaff = asyncHandler(async (req: Request, res: Response): Pro
 
   const staff = await Staff.create({
     restaurant_id: new Types.ObjectId(restaurantId),
-    role_id: new Types.ObjectId(role_id),
+    role_id: new Types.ObjectId(role_id as string),
     staff_name,
     username: normalizedUsername,
     password_hash,
@@ -104,7 +104,7 @@ export const updateStaff = asyncHandler(async (req: Request, res: Response): Pro
 
   // Update fields
   if (staff_name) staff.staff_name = staff_name;
-  if (role_id) staff.role_id = new Types.ObjectId(role_id);
+  if (role_id) staff.role_id = new Types.ObjectId(role_id as string);
   
   // Update passwords if provided
   if (password) {
