@@ -41,7 +41,7 @@ interface DashboardData {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, DatePipe, CurrencyPipe],
+  imports: [CommonModule, CurrencyPipe],
   template: `
     <div class="flex flex-col gap-6">
       <header class="flex items-center justify-between flex-wrap gap-4">
@@ -198,8 +198,8 @@ export class DashboardComponent implements OnInit {
     this.error.set('');
     
     const params: Record<string, string> = {};
-    if (this.dateFrom()) params.from = this.dateFrom();
-    if (this.dateTo()) params.to = this.dateTo();
+    if (this.dateFrom()) params['from'] = this.dateFrom();
+    if (this.dateTo()) params['to'] = this.dateTo();
     
     const queryString = new URLSearchParams(params).toString();
     const url = `${environment.apiUrl}/dashboard/stats${queryString ? '?' + queryString : ''}`;
