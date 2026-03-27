@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { TasService } from '../../services/tas.service';
 import { SocketService } from '../../services/socket/socket.service';
 import { tasStore, TotemSession, ItemOrder, Customer } from '../../store/tas.store';
@@ -564,6 +566,7 @@ export class TasComponent implements OnInit, OnDestroy {
   private tasService = inject(TasService);
   private socketService = inject(SocketService);
   themeService = inject(ThemeService);
+  private destroy$ = new Subject<void>();
 
   // Local state signals
   newTotemName = signal('');
@@ -633,6 +636,12 @@ export class TasComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.socketService.off('kds:new_item');
+    this.socketService.off('item:state_changed');
+    this.socketService.off('item:deleted');
+    this.socketService.off('item:customer_assigned');
     this.socketService.disconnect();
   }
 
@@ -640,25 +649,33 @@ export class TasComponent implements OnInit, OnDestroy {
     tasStore.setLoading(true);
     
     // Load active sessions
-    this.tasService.getActiveSessions().subscribe({
-      next: (sessions) => {
-        tasStore.setSessions(sessions);
-        tasStore.setLoading(false);
-      },
-      error: () => tasStore.setLoading(false),
-    });
+    this.tasService.getActiveSessions()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (sessions) => {
+          tasStore.setSessions(sessions);
+          tasStore.setLoading(false);
+        },
+        error: () => tasStore.setLoading(false),
+      });
 
     // Load all totems
-    this.tasService.getTotems().subscribe({
-      next: (totems) => this.allTotems.set(totems),
-    });
+    this.tasService.getTotems()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (totems) => this.allTotems.set(totems),
+        error: (err) => console.error('[TAS] Error loading totems:', err),
+      });
 
     // Load dishes
-    this.tasService.getDishes().subscribe({
-      next: ({ dishes, categories }) => {
-        tasStore.setDishes(dishes, categories);
-      },
-    });
+    this.tasService.getDishes()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ dishes, categories }) => {
+          tasStore.setDishes(dishes, categories);
+        },
+        error: (err) => console.error('[TAS] Error loading dishes:', err),
+      });
 
     // Connect socket
     this.socketService.connect();
@@ -692,14 +709,20 @@ export class TasComponent implements OnInit, OnDestroy {
     tasStore.selectSession(session);
     
     // Load session items
-    this.tasService.getSessionItems(session._id).subscribe({
-      next: (items) => tasStore.setSessionItems(items),
-    });
+    this.tasService.getSessionItems(session._id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (items) => tasStore.setSessionItems(items),
+        error: (err) => console.error('[TAS] Error loading session items:', err),
+      });
 
     // Load customers for this session
-    this.tasService.getCustomers(session._id).subscribe({
-      next: (customers) => tasStore.setCustomers(customers),
-    });
+    this.tasService.getCustomers(session._id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (customers) => tasStore.setCustomers(customers),
+        error: (err) => console.error('[TAS] Error loading customers:', err),
+      });
 
     // Join socket room
     this.socketService.joinSession(session._id);
@@ -713,7 +736,9 @@ export class TasComponent implements OnInit, OnDestroy {
     this.tasService.createTotem({
       totem_name: name,
       totem_type: 'TEMPORARY',
-    }).subscribe({
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
       next: (totem) => {
         this.allTotems.update(current => [...current, { ...totem, totem_type: 'TEMPORARY' }]);
         this.newTotemName.set('');
@@ -722,46 +747,68 @@ export class TasComponent implements OnInit, OnDestroy {
         // Auto-start session
         this.startSession(totem._id);
       },
-      error: () => this.isCreatingTotem.set(false),
+      error: (err) => {
+        console.error('[TAS] Error creating totem:', err);
+        this.isCreatingTotem.set(false);
+        alert('Error al crear mesa temporal');
+      },
     });
   }
 
   startSession(totemId: string) {
-    this.tasService.startSession(totemId).subscribe({
-      next: (session) => {
-        tasStore.setSessions([...this.sessions(), session]);
-        this.selectSession(session);
-      },
-    });
+    this.tasService.startSession(totemId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (session) => {
+          tasStore.setSessions([...this.sessions(), session]);
+          this.selectSession(session);
+        },
+        error: (err) => {
+          console.error('[TAS] Error starting session:', err);
+          alert('Error al iniciar sesión');
+        },
+      });
   }
 
   closeTemporaryTotem(totemId: string) {
     if (!confirm('¿Cerrar esta mesa temporal? Se marcará la sesión como completada.')) return;
 
-    this.tasService.deleteTotem(totemId).subscribe({
-      next: () => {
-        // Remove from sessions if active
-        tasStore.setSessions(this.sessions().filter(s => s.totem_id !== totemId));
-        this.allTotems.update(current => current.filter(t => t._id !== totemId));
-        
-        if (this.selectedSession()?.totem_id === totemId) {
-          tasStore.selectSession(null);
-        }
-      },
-    });
+    this.tasService.deleteTotem(totemId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          // Remove from sessions if active
+          tasStore.setSessions(this.sessions().filter(s => s.totem_id !== totemId));
+          this.allTotems.update(current => current.filter(t => t._id !== totemId));
+          
+          if (this.selectedSession()?.totem_id === totemId) {
+            tasStore.selectSession(null);
+          }
+        },
+        error: (err) => {
+          console.error('[TAS] Error closing totem:', err);
+          alert('Error al cerrar mesa temporal');
+        },
+      });
   }
 
   addCustomer() {
     const name = this.newCustomerName().trim();
     if (!name || !this.selectedSession()) return;
 
-    this.tasService.createCustomer(this.selectedSession()!._id, name).subscribe({
-      next: (customer) => {
-        tasStore.addCustomer(customer);
-        this.newCustomerName.set('');
-        this.showAddCustomer.set(false);
-      },
-    });
+    this.tasService.createCustomer(this.selectedSession()!._id, name)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (customer) => {
+          tasStore.addCustomer(customer);
+          this.newCustomerName.set('');
+          this.showAddCustomer.set(false);
+        },
+        error: (err) => {
+          console.error('[TAS] Error creating customer:', err);
+          alert('Error al crear cliente');
+        },
+      });
   }
 
   selectDish(dish: any) {
@@ -816,14 +863,20 @@ export class TasComponent implements OnInit, OnDestroy {
         customer_id: this.assignToCustomerId() || undefined,
         variant_id: this.selectedVariantId() || undefined,
         extras: this.selectedExtras(),
-      }).subscribe({
+      })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
         next: (item) => {
           tasStore.addItem(item);
           this.isAddingItem.set(false);
           this.selectedDish.set(null);
           this.showMenu.set(false);
         },
-        error: () => this.isAddingItem.set(false),
+        error: (err) => {
+          console.error('[TAS] Error adding item:', err);
+          this.isAddingItem.set(false);
+          alert('Error al añadir item');
+        },
       });
     };
 
@@ -831,34 +884,58 @@ export class TasComponent implements OnInit, OnDestroy {
       createItem();
     } else {
       // Create order first
-      this.tasService.createOrder({ session_id: session._id }).subscribe({
-        next: (order) => {
-          orderId = order._id;
-          createItem();
-        },
-        error: () => this.isAddingItem.set(false),
-      });
+      this.tasService.createOrder({ session_id: session._id })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (order) => {
+            orderId = order._id;
+            createItem();
+          },
+          error: (err) => {
+            console.error('[TAS] Error creating order:', err);
+            this.isAddingItem.set(false);
+            alert('Error al crear orden');
+          },
+        });
     }
   }
 
   deleteItem(itemId: string) {
     if (!confirm('¿Eliminar este item?')) return;
 
-    this.tasService.deleteItem(itemId).subscribe({
-      next: () => tasStore.removeItem(itemId),
-    });
+    this.tasService.deleteItem(itemId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => tasStore.removeItem(itemId),
+        error: (err) => {
+          console.error('[TAS] Error deleting item:', err);
+          alert('Error al eliminar item');
+        },
+      });
   }
 
   markServiceItemServed(itemId: string) {
-    this.tasService.updateItemState(itemId, 'SERVED').subscribe({
-      next: () => tasStore.updateItemState(itemId, 'SERVED'),
-    });
+    this.tasService.updateItemState(itemId, 'SERVED')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => tasStore.updateItemState(itemId, 'SERVED'),
+        error: (err) => {
+          console.error('[TAS] Error marking item served:', err);
+          alert('Error al marcar item como servido');
+        },
+      });
   }
 
   assignItemToCustomer(itemId: string, customerId: string | null) {
-    this.tasService.assignItemToCustomer(itemId, customerId).subscribe({
-      next: () => tasStore.assignItemToCustomer(itemId, customerId),
-    });
+    this.tasService.assignItemToCustomer(itemId, customerId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => tasStore.assignItemToCustomer(itemId, customerId),
+        error: (err) => {
+          console.error('[TAS] Error assigning item:', err);
+          alert('Error al asignar item');
+        },
+      });
   }
 
   getItemTotal(item: ItemOrder): number {

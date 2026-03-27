@@ -43,7 +43,7 @@ const VariantSubSchema = new Schema(
     variant_name: LocalizedStringSchema,
     variant_description: LocalizedStringSchema,
     variant_url_image: String,
-    variant_price: { type: Number, required: true, min: 0 },
+    variant_price: { type: Number, required: true, min: 0.01 },
   },
   { _id: true }
 );
@@ -52,7 +52,7 @@ const ExtraSubSchema = new Schema(
   {
     extra_name: LocalizedStringSchema,
     extra_description: LocalizedStringSchema,
-    extra_price: { type: Number, required: true, min: 0 },
+    extra_price: { type: Number, required: true, min: 0.01 },
     extra_url_image: String,
   },
   { _id: true }
@@ -97,7 +97,7 @@ const DishSchema = new Schema<IDish>(
     disher_description: LocalizedStringSchema,
     disher_url_image: String,
     disher_status: { type: String, enum: ['ACTIVATED', 'DESACTIVATED'], default: 'ACTIVATED' },
-    disher_price: { type: Number, required: true, min: 0 },
+    disher_price: { type: Number, required: true, min: 0.01 },
     disher_type: { type: String, enum: ['KITCHEN', 'SERVICE'], required: true },
     disher_alergens: [{ type: Schema.Types.ObjectId, ref: 'Allergen' }],
     disher_variant: { type: Boolean, default: false },
