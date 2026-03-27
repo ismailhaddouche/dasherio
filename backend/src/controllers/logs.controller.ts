@@ -22,7 +22,7 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
   try {
     const restaurantId = req.user?.restaurantId;
     if (!restaurantId) {
-      res.status(401).json({ error: 'Unauthorized' });
+      res.status(401).json({ error: 'No autorizado' });
       return;
     }
 
@@ -87,7 +87,7 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
       const dishName = dish?.disher_name || 
         (item.item_name_snapshot && typeof item.item_name_snapshot === 'object' && 'es' in item.item_name_snapshot) 
           ? (item.item_name_snapshot as { es: string }).es 
-          : 'Unknown';
+          : 'Desconocido';
 
       return {
         id: item._id.toString(),
@@ -125,7 +125,7 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
 
   } catch (error) {
     console.error('[Logs] Error getting logs:', error);
-    res.status(500).json({ error: 'Failed to get logs' });
+    res.status(500).json({ error: 'Error al obtener logs' });
   }
 }
 
@@ -136,7 +136,7 @@ export async function getLogUsers(req: Request, res: Response): Promise<void> {
   try {
     const restaurantId = req.user?.restaurantId;
     if (!restaurantId) {
-      res.status(401).json({ error: 'Unauthorized' });
+      res.status(401).json({ error: 'No autorizado' });
       return;
     }
 
@@ -182,16 +182,16 @@ export async function getLogUsers(req: Request, res: Response): Promise<void> {
 
   } catch (error) {
     console.error('[Logs] Error getting users:', error);
-    res.status(500).json({ error: 'Failed to get users' });
+    res.status(500).json({ error: 'Error al obtener usuarios' });
   }
 }
 
 function getActionFromState(state: string): string {
   switch (state) {
-    case 'ORDERED': return 'Item Ordered';
-    case 'ON_PREPARE': return 'Preparation Started';
-    case 'SERVED': return 'Item Served';
-    case 'CANCELED': return 'Item Canceled';
-    default: return 'Unknown Action';
+    case 'ORDERED': return 'Plato Pedido';
+    case 'ON_PREPARE': return 'Preparación Iniciada';
+    case 'SERVED': return 'Plato Servido';
+    case 'CANCELED': return 'Plato Cancelado';
+    default: return 'Acción Desconocida';
   }
 }

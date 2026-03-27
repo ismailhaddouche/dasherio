@@ -11,11 +11,11 @@ export const listTotems = asyncHandler(async (req: Request, res: Response): Prom
 export const getTotem = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const totem = await TotemService.getTotemById(String(req.params.id));
   if (!totem) {
-    throw createError.notFound('Totem not found');
+    throw createError.notFound('Tótem no encontrado');
   }
   // Verify totem belongs to user's restaurant
   if ((totem as any).restaurant_id.toString() !== req.user!.restaurantId) {
-    throw createError.forbidden('Access denied');
+    throw createError.forbidden('Acceso denegado');
   }
   res.json(totem);
 });
@@ -48,7 +48,7 @@ export const startSession = asyncHandler(async (req: Request, res: Response): Pr
 export const getMenuByQR = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const totem = await TotemService.getTotemByQR(String(req.params.qr));
   if (!totem) {
-    throw createError.notFound('Totem not found');
+    throw createError.notFound('Tótem no encontrado');
   }
   res.json(totem);
 });
@@ -57,7 +57,7 @@ export const getMenuByQR = asyncHandler(async (req: Request, res: Response): Pro
 export const getMenuDishes = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const totem = await TotemService.getTotemByQR(String(req.params.qr));
   if (!totem) {
-    throw createError.notFound('Totem not found');
+    throw createError.notFound('Tótem no encontrado');
   }
   const restaurantId = (totem as any).restaurant_id.toString();
   const [categories, dishes] = await Promise.all([

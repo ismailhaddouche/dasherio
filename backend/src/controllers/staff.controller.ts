@@ -30,7 +30,7 @@ export const getStaff = asyncHandler(async (req: Request, res: Response): Promis
     .lean();
 
   if (!staff) {
-    throw createError.notFound('Staff member not found');
+    throw createError.notFound('Miembro del personal no encontrado');
   }
 
   res.json(staff);
@@ -50,7 +50,7 @@ export const createStaff = asyncHandler(async (req: Request, res: Response): Pro
     restaurant_id: new Types.ObjectId(restaurantId)
   });
   if (existingStaff) {
-    throw createError.conflict('Username already exists in this restaurant');
+    throw createError.conflict('El usuario ya existe en este restaurante');
   }
 
   // Hash password and PIN
@@ -86,7 +86,7 @@ export const updateStaff = asyncHandler(async (req: Request, res: Response): Pro
   });
 
   if (!staff) {
-    throw createError.notFound('Staff member not found');
+    throw createError.notFound('Miembro del personal no encontrado');
   }
 
   // Check username uniqueness if changing
@@ -97,7 +97,7 @@ export const updateStaff = asyncHandler(async (req: Request, res: Response): Pro
       restaurant_id: new Types.ObjectId(restaurantId)
     });
     if (existing) {
-      throw createError.conflict('Username already exists in this restaurant');
+      throw createError.conflict('El usuario ya existe en este restaurante');
     }
     staff.username = normalizedUsername;
   }
@@ -135,7 +135,7 @@ export const deleteStaff = asyncHandler(async (req: Request, res: Response): Pro
   });
 
   if (!staff) {
-    throw createError.notFound('Staff member not found');
+    throw createError.notFound('Miembro del personal no encontrado');
   }
 
   res.status(204).end();

@@ -36,9 +36,9 @@ export class AppError extends Error {
  */
 export const createError = {
   badRequest: (message: string) => new AppError(message, 400),
-  unauthorized: (message: string = 'Unauthorized') => new AppError(message, 401),
-  forbidden: (message: string = 'Forbidden') => new AppError(message, 403),
-  notFound: (message: string = 'Not found') => new AppError(message, 404),
+  unauthorized: (message: string = 'No autorizado') => new AppError(message, 401),
+  forbidden: (message: string = 'Acceso denegado') => new AppError(message, 403),
+  notFound: (message: string = 'Recurso no encontrado') => new AppError(message, 404),
   conflict: (message: string) => new AppError(message, 409),
-  internal: (message: string = 'Internal server error') => new AppError(message, 500),
+  internal: (message: string = 'Error interno del servidor') => new AppError(message, 500),
 };

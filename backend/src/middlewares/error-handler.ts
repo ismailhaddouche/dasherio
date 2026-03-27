@@ -15,7 +15,7 @@ export function errorHandler(
 ): void {
   // Determinar status code
   let statusCode = 500;
-  let errorMessage = 'Internal server error';
+  let errorMessage = 'Error interno del servidor';
 
   if (err instanceof AppError && err.isOperational) {
     // Errores operacionales conocidos
@@ -28,7 +28,7 @@ export function errorHandler(
   } else if (err.name === 'MongoServerError' && (err as any).code === 11000) {
     // Error de duplicado en MongoDB
     statusCode = 409;
-    errorMessage = 'Resource already exists';
+    errorMessage = 'El recurso ya existe';
   }
 
   // Logging con pino
@@ -40,7 +40,7 @@ export function errorHandler(
       statusCode,
     },
     type: 'error_handler',
-  }, 'Error caught by global handler');
+  }, 'Error capturado por el manejador global');
 
   // Responder con JSON consistente (nunca HTML)
   res.status(statusCode).json({
@@ -56,7 +56,7 @@ export function errorHandler(
  */
 export function notFoundHandler(_req: Request, res: Response): void {
   res.status(404).json({
-    error: 'Route not found',
+    error: 'Ruta no encontrada',
     status: 404,
   });
 }
