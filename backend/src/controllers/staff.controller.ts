@@ -22,7 +22,7 @@ export const getStaff = asyncHandler(async (req: Request, res: Response): Promis
   const restaurantId = req.user!.restaurantId;
 
   const staff = await Staff.findOne({
-    _id: new Types.ObjectId(id),
+    _id: new Types.ObjectId(id as string),
     restaurant_id: new Types.ObjectId(restaurantId)
   })
     .populate('role_id', 'role_name permissions')
@@ -81,7 +81,7 @@ export const updateStaff = asyncHandler(async (req: Request, res: Response): Pro
   const { staff_name, username, role_id, password, pin_code } = req.body;
 
   const staff = await Staff.findOne({
-    _id: new Types.ObjectId(id),
+    _id: new Types.ObjectId(id as string),
     restaurant_id: new Types.ObjectId(restaurantId)
   });
 
@@ -130,7 +130,7 @@ export const deleteStaff = asyncHandler(async (req: Request, res: Response): Pro
   const restaurantId = req.user!.restaurantId;
 
   const staff = await Staff.findOneAndDelete({
-    _id: new Types.ObjectId(id),
+    _id: new Types.ObjectId(id as string),
     restaurant_id: new Types.ObjectId(restaurantId)
   });
 
