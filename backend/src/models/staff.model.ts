@@ -24,6 +24,8 @@ export interface IStaff extends Document {
   username: string;
   password_hash: string;
   pin_code_hash: string;
+  language?: 'es' | 'en';
+  theme?: 'light' | 'dark' | 'system';
 }
 
 const StaffSchema = new Schema<IStaff>(
@@ -34,6 +36,8 @@ const StaffSchema = new Schema<IStaff>(
     username: { type: String, required: true, lowercase: true },
     password_hash: { type: String, required: true },
     pin_code_hash: { type: String, required: true },
+    language: { type: String, enum: ['es', 'en'], default: null },
+    theme: { type: String, enum: ['light', 'dark', 'system'], default: null },
   },
   { timestamps: true }
 );

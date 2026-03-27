@@ -1,13 +1,15 @@
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { Platform } from '@angular/cdk/platform';
-
-export type Theme = 'light' | 'dark' | 'system';
+import { HttpClient } from '@angular/common/http';
+import { authStore, Theme } from '../../store/auth.store';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ThemeService {
   private readonly platform = inject(Platform);
+  private readonly http = inject(HttpClient);
   
   // Signals
   private readonly _currentTheme = signal<Theme>('system');
@@ -24,8 +26,16 @@ export class ThemeService {
   readonly isLight = computed(() => !this.isDark());
   
   constructor() {
-    // Load saved theme preference
-    this.loadSavedTheme();
+    // Load theme from user preferences or localStorage
+    this.loadTheme();
+    
+    // Watch for changes in auth store preferences
+    effect(() => {
+      const prefs = authStore.preferences();
+      if (prefs?.theme) {
+        this._currentTheme.set(prefs.theme);
+      }
+    });
     
     // Apply theme when it changes
     effect(() => {
@@ -52,27 +62,52 @@ export class ThemeService {
     }
   }
   
-  private loadSavedTheme(): void {
+  private loadTheme(): void {
+    // Priority: 1. Auth store preferences, 2. localStorage, 3. Default 'system'
+    const userPrefs = authStore.preferences();
+    if (userPrefs?.theme) {
+      this._currentTheme.set(userPrefs.theme);
+      return;
+    }
+    
     if (this.platform.isBrowser) {
       const saved = localStorage.getItem('disherio-theme') as Theme;
       if (saved && ['light', 'dark', 'system'].includes(saved)) {
         this._currentTheme.set(saved);
+        return;
       }
     }
+    
+    this._currentTheme.set('system');
   }
   
   setTheme(theme: Theme): void {
     this._currentTheme.set(theme);
+    
+    // Save to backend
+    this.savePreference('theme', theme);
+    
+    // Update local auth store
+    authStore.updatePreferences({ theme });
+  }
+  
+  private savePreference(key: 'language' | 'theme', value: string): void {
+    if (!authStore.isAuthenticated()) return;
+    
+    this.http.patch(`${environment.apiUrl}/staff/me/preferences`, { [key]: value })
+      .subscribe({
+        error: (err) => console.error('Failed to save preference:', err)
+      });
   }
   
   toggleTheme(): void {
     const current = this._currentTheme();
     if (current === 'light') {
-      this._currentTheme.set('dark');
+      this.setTheme('dark');
     } else if (current === 'dark') {
-      this._currentTheme.set('system');
+      this.setTheme('system');
     } else {
-      this._currentTheme.set('light');
+      this.setTheme('light');
     }
   }
   

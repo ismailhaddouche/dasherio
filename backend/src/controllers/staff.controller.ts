@@ -168,3 +168,49 @@ export const createRole = asyncHandler(async (req: Request, res: Response): Prom
 
   res.status(201).json(role);
 });
+
+// Update own preferences (language/theme) - any authenticated user
+export const updateMyPreferences = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const staffId = req.user!.staffId;
+  const { language, theme } = req.body;
+
+  const staff = await Staff.findById(staffId);
+  
+  if (!staff) {
+    throw createError.notFound('Usuario no encontrado');
+  }
+
+  // Update only allowed preference fields
+  if (language && ['es', 'en'].includes(language)) {
+    staff.language = language;
+  }
+  if (theme && ['light', 'dark', 'system'].includes(theme)) {
+    staff.theme = theme;
+  }
+
+  await staff.save();
+
+  res.json({
+    message: 'Preferencias actualizadas',
+    preferences: {
+      language: staff.language,
+      theme: staff.theme
+    }
+  });
+});
+
+// Get own profile with preferences
+export const getMyProfile = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const staffId = req.user!.staffId;
+
+  const staff = await Staff.findById(staffId)
+    .populate('role_id', 'role_name permissions')
+    .select('-password_hash -pin_code_hash')
+    .lean();
+
+  if (!staff) {
+    throw createError.notFound('Usuario no encontrado');
+  }
+
+  res.json(staff);
+});

@@ -7,6 +7,10 @@ const router = Router();
 
 router.use(authMiddleware);
 
+// Current user endpoints (no special permissions required)
+router.get('/me/profile', StaffController.getMyProfile);
+router.patch('/me/preferences', StaffController.updateMyPreferences);
+
 // Staff members
 router.get('/', requirePermission('read', 'Staff'), StaffController.listStaff);
 router.get('/:id', requirePermission('read', 'Staff'), StaffController.getStaff);

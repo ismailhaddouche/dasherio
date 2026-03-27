@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserRepository, RoleRepository } from '../repositories/user.repository';
+import { Restaurant } from '../models/restaurant.model';
 
 // Repository instances
 const userRepo = new UserRepository();
@@ -24,6 +25,9 @@ export async function loginWithUsername(username: string, password: string) {
   const role = await roleRepo.findById(staff.role_id.toString());
   const permissions = role?.permissions || [];
 
+  // Get restaurant defaults
+  const restaurant = await Restaurant.findById(staff.restaurant_id);
+
   const payload = {
     staffId: staff._id.toString(),
     restaurantId: staff.restaurant_id.toString(),
@@ -32,13 +36,22 @@ export async function loginWithUsername(username: string, password: string) {
     name: staff.staff_name,
   };
 
+  // User preferences (if set) or restaurant defaults
+  const preferences = {
+    language: staff.language || restaurant?.default_language || 'es',
+    theme: staff.theme || restaurant?.default_theme || 'light',
+  };
+
   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES } as jwt.SignOptions);
-  return { token, user: payload };
+  return { token, user: { ...payload, preferences } };
 }
 
 export async function loginWithPin(pin: string, restaurantId: string) {
   // Find staff by restaurant only - PIN is hashed, can't query directly
   const staffMembers = await userRepo.findByRestaurantId(restaurantId);
+
+  // Get restaurant defaults
+  const restaurant = await Restaurant.findById(restaurantId);
 
   // Compare PIN with bcrypt for each staff member
   for (const staff of staffMembers) {
@@ -55,8 +68,14 @@ export async function loginWithPin(pin: string, restaurantId: string) {
         name: staff.staff_name,
       };
 
+      // User preferences (if set) or restaurant defaults
+      const preferences = {
+        language: staff.language || restaurant?.default_language || 'es',
+        theme: staff.theme || restaurant?.default_theme || 'light',
+      };
+
       const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES } as jwt.SignOptions);
-      return { token, user: payload };
+      return { token, user: { ...payload, preferences } };
     }
   }
 

@@ -1,7 +1,8 @@
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { Platform } from '@angular/cdk/platform';
-
-export type Language = 'es' | 'en';
+import { HttpClient } from '@angular/common/http';
+import { authStore, Language } from '../../store/auth.store';
+import { environment } from '../../../environments/environment';
 
 interface Translations {
   [key: string]: string | Translations;
@@ -38,6 +39,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'common.dark': 'Oscuro',
     'common.light': 'Claro',
     'common.system': 'Sistema',
+    'common.from': 'Desde',
+    'common.to': 'Hasta',
     
     // Auth
     'auth.login': 'Iniciar sesión',
@@ -121,6 +124,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'settings.currency': 'Moneda',
     'settings.language': 'Idioma',
     'settings.theme': 'Tema',
+    'settings.preferences.saved': 'Preferencias guardadas correctamente',
+    'settings.preferences.error': 'Error al guardar preferencias',
   },
   en: {
     // Common
@@ -152,6 +157,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'common.dark': 'Dark',
     'common.light': 'Light',
     'common.system': 'System',
+    'common.from': 'From',
+    'common.to': 'To',
     
     // Auth
     'auth.login': 'Login',
@@ -235,6 +242,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'settings.currency': 'Currency',
     'settings.language': 'Language',
     'settings.theme': 'Theme',
+    'settings.preferences.saved': 'Preferences saved successfully',
+    'settings.preferences.error': 'Error saving preferences',
   }
 };
 
@@ -243,6 +252,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
 })
 export class I18nService {
   private readonly platform = inject(Platform);
+  private readonly http = inject(HttpClient);
   
   // Signals
   private readonly _currentLang = signal<Language>('es');
@@ -252,8 +262,16 @@ export class I18nService {
   readonly isEnglish = computed(() => this._currentLang() === 'en');
   
   constructor() {
-    // Load saved language preference
-    this.loadSavedLanguage();
+    // Load language from user preferences or localStorage
+    this.loadLanguage();
+    
+    // Watch for changes in auth store preferences
+    effect(() => {
+      const prefs = authStore.preferences();
+      if (prefs?.language) {
+        this._currentLang.set(prefs.language);
+      }
+    });
     
     // Save language when it changes
     effect(() => {
@@ -265,25 +283,51 @@ export class I18nService {
     });
   }
   
-  private loadSavedLanguage(): void {
+  private loadLanguage(): void {
+    // Priority: 1. Auth store preferences, 2. localStorage, 3. Browser language, 4. Default 'es'
+    const userPrefs = authStore.preferences();
+    if (userPrefs?.language) {
+      this._currentLang.set(userPrefs.language);
+      return;
+    }
+    
     if (this.platform.isBrowser) {
       const saved = localStorage.getItem('disherio-language') as Language;
       if (saved && TRANSLATIONS[saved]) {
         this._currentLang.set(saved);
-      } else {
-        // Detect browser language
-        const browserLang = navigator.language.split('-')[0] as Language;
-        if (TRANSLATIONS[browserLang]) {
-          this._currentLang.set(browserLang);
-        }
+        return;
+      }
+      
+      // Detect browser language
+      const browserLang = navigator.language.split('-')[0] as Language;
+      if (TRANSLATIONS[browserLang]) {
+        this._currentLang.set(browserLang);
+        return;
       }
     }
+    
+    this._currentLang.set('es');
   }
   
   setLanguage(lang: Language): void {
-    if (TRANSLATIONS[lang]) {
-      this._currentLang.set(lang);
-    }
+    if (!TRANSLATIONS[lang]) return;
+    
+    this._currentLang.set(lang);
+    
+    // Save to backend
+    this.savePreference('language', lang);
+    
+    // Update local auth store
+    authStore.updatePreferences({ language: lang });
+  }
+  
+  private savePreference(key: 'language' | 'theme', value: string): void {
+    if (!authStore.isAuthenticated()) return;
+    
+    this.http.patch(`${environment.apiUrl}/staff/me/preferences`, { [key]: value })
+      .subscribe({
+        error: (err) => console.error('Failed to save preference:', err)
+      });
   }
   
   translate(key: string): string {
