@@ -146,9 +146,9 @@ interface LogUser {
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                   <div *ngIf="log.details">
-                    <div *ngIf="log.details.basePrice">Price: {{ log.details.basePrice | currency:'EUR' }}</div>
-                    <div *ngIf="log.details.extras">Extras: {{ log.details.extras }}</div>
-                    <div *ngIf="log.details.variant">Variant: {{ log.details.variant }}</div>
+                    <div *ngIf="log.details['basePrice']">Price: {{ log.details['basePrice'] | currency:'EUR' }}</div>
+                    <div *ngIf="log.details['extras']">Extras: {{ log.details['extras'] }}</div>
+                    <div *ngIf="log.details['variant']">Variant: {{ log.details['variant'] }}</div>
                   </div>
                 </td>
               </tr>
