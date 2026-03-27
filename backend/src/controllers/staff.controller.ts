@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler, createError } from '../utils/async-handler';
 import { Types } from 'mongoose';
-import { Staff, Role, IStaff } from '../models/staff.model';
+import { Staff, Role } from '../models/staff.model';
 import bcrypt from 'bcryptjs';
 
 // Get all staff for the restaurant
