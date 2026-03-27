@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TotemService, Totem } from '../../../services/totem.service';
@@ -7,7 +7,7 @@ import { TotemService, Totem } from '../../../services/totem.service';
 @Component({
   selector: 'app-totem-form',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, DatePipe],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule],
   template: `
     <div class="p-6 max-w-2xl mx-auto">
       <header class="mb-6">
@@ -69,22 +69,6 @@ import { TotemService, Totem } from '../../../services/totem.service';
             {{ totemForm.get('totem_type')?.value === 'STANDARD' 
               ? 'Los tótems estándar son permanentes y no tienen fecha de expiración.' 
               : 'Los tótems temporales están pensados para eventos especiales.' }}
-          </p>
-        </div>
-
-        <!-- Start Date Field -->
-        <div class="mb-6">
-          <label for="totem_start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Fecha de inicio
-          </label>
-          <input
-            id="totem_start_date"
-            type="date"
-            formControlName="totem_start_date"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Fecha desde la que el tótem estará activo. Por defecto es hoy.
           </p>
         </div>
 
@@ -177,12 +161,10 @@ export class TotemFormComponent implements OnInit {
   }
 
   initForm(): void {
-    const today = new Date().toISOString().split('T')[0];
-    
     this.totemForm = this.fb.group({
       totem_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-      totem_type: ['STANDARD', Validators.required],
-      totem_start_date: [today]
+      totem_type: ['STANDARD', Validators.required]
+      // totem_start_date se asigna automáticamente en el servidor
     });
   }
 
@@ -192,8 +174,8 @@ export class TotemFormComponent implements OnInit {
         this.totem.set(totem);
         this.totemForm.patchValue({
           totem_name: totem.totem_name,
-          totem_type: totem.totem_type,
-          totem_start_date: totem.totem_start_date ? totem.totem_start_date.split('T')[0] : ''
+          totem_type: totem.totem_type
+          // totem_start_date es asignado por el servidor
         });
       },
       error: (err) => {
