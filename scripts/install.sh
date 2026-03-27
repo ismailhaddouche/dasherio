@@ -51,37 +51,58 @@ banner() {
 }
 
 # ── Paso 0: Detección de IPs ─────────────────────────────────────────────────
+validate_ip() {
+  local ip="$1"
+  # Validar formato IPv4
+  [[ "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] && return 0 || return 1
+}
+
 detect_ips() {
   # IP Local
   LOCAL_IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7; exit}' || hostname -I 2>/dev/null | awk '{print $1}' || echo "127.0.0.1")
   
   # IP Pública (cloud metadata o servicios externos)
   PUBLIC_IP=""
+  local detected_ip=""
   
   # AWS EC2
   local aws_token=$(curl -s --max-time 2 -X PUT "http://169.254.169.254/latest/api/token" \
     -H "X-aws-ec2-metadata-token-ttl-seconds: 10" 2>/dev/null || true)
   if [[ -n "$aws_token" ]]; then
-    PUBLIC_IP=$(curl -s --max-time 2 -H "X-aws-ec2-metadata-token: $aws_token" \
+    detected_ip=$(curl -s --max-time 2 -H "X-aws-ec2-metadata-token: $aws_token" \
       http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || true)
+    validate_ip "$detected_ip" && PUBLIC_IP="$detected_ip"
   fi
   
   # Azure
   if [[ -z "$PUBLIC_IP" ]]; then
-    PUBLIC_IP=$(curl -s --max-time 2 -H "Metadata:true" \
+    detected_ip=$(curl -s --max-time 2 -H "Metadata:true" \
       "http://169.254.169.254/metadata/instance/network/interface/0/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text" 2>/dev/null || true)
+    validate_ip "$detected_ip" && PUBLIC_IP="$detected_ip"
   fi
   
   # GCP
   if [[ -z "$PUBLIC_IP" ]]; then
-    PUBLIC_IP=$(curl -s --max-time 2 -H "Metadata-Flavor: Google" \
+    detected_ip=$(curl -s --max-time 2 -H "Metadata-Flavor: Google" \
       "http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip" 2>/dev/null || true)
+    validate_ip "$detected_ip" && PUBLIC_IP="$detected_ip"
   fi
   
   # Fallback a servicios externos
   if [[ -z "$PUBLIC_IP" ]]; then
-    PUBLIC_IP=$(curl -s --max-time 5 https://api.ipify.org 2>/dev/null || \
-      curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "")
+    detected_ip=$(curl -s --max-time 5 https://api.ipify.org 2>/dev/null)
+    validate_ip "$detected_ip" && PUBLIC_IP="$detected_ip"
+  fi
+  
+  if [[ -z "$PUBLIC_IP" ]]; then
+    detected_ip=$(curl -s --max-time 5 https://ifconfig.me 2>/dev/null)
+    validate_ip "$detected_ip" && PUBLIC_IP="$detected_ip"
+  fi
+  
+  # Último fallback
+  if [[ -z "$PUBLIC_IP" ]]; then
+    detected_ip=$(curl -s --max-time 5 https://icanhazip.com 2>/dev/null)
+    validate_ip "$detected_ip" && PUBLIC_IP="$detected_ip"
   fi
 }
 
@@ -102,10 +123,15 @@ configure_access() {
   echo "     Ejemplo: disherio.local / restaurante.lan"
   echo "     • Para red local con DNS local"
   echo ""
-  echo "  3) IP Pública"
-  echo "     ${PUBLIC_IP:+Detectada: $PUBLIC_IP}"
-  echo "     • Acceso directo por IP"
-  echo "     • Sin dominio"
+  if [[ -n "$PUBLIC_IP" ]]; then
+    echo "  3) IP Pública"
+    echo "     Detectada: $PUBLIC_IP"
+    echo "     • Acceso directo por IP"
+    echo "     • Sin dominio"
+  else
+    echo "  3) IP Pública (no detectada)"
+    echo "     • Se te pedirá introducirla manualmente"
+  fi
   echo ""
   echo "  4) IP Local (recomendado para pruebas)"
   echo "     Detectada: $LOCAL_IP"
@@ -140,7 +166,15 @@ configure_access() {
       done
       ;;
     ip-public)
-      [[ -z "$PUBLIC_IP" ]] && err "No se pudo detectar la IP pública. Usa opción 4 (IP local) o configura un dominio."
+      if [[ -z "$PUBLIC_IP" ]]; then
+        warn "No se pudo detectar la IP pública automáticamente."
+        read -rp "  Introduce tu IP pública manualmente: " manual_ip
+        if validate_ip "$manual_ip"; then
+          PUBLIC_IP="$manual_ip"
+        else
+          err "IP inválida. Usa formato: xxx.xxx.xxx.xxx"
+        fi
+      fi
       CADDY_DOMAIN="$PUBLIC_IP"
       ;;
     ip-local)
@@ -271,6 +305,9 @@ write_config() {
   echo ""
   echo -e "${CYAN}[4/7] Configurando archivos${NC}"
   
+  # Limpiar archivos previos
+  rm -f "$ENV_FILE" "$CADDYFILE"
+  
   # Crear .env (sin credenciales de admin, solo configuración del sistema)
   cat > "$ENV_FILE" <<EOF
 NODE_ENV=production
@@ -284,6 +321,7 @@ FRONTEND_URL=${ACCESS_URL}
 LOG_LEVEL=info
 EOF
   chmod 600 "$ENV_FILE"
+  chown root:root "$ENV_FILE" 2>/dev/null || true
   
   # Crear Caddyfile según el modo
   if [[ "$INSTALL_MODE" == "domain-public" ]]; then
@@ -594,6 +632,21 @@ main() {
   # Verificar que estamos en el directorio correcto
   if [[ ! -f "docker-compose.yml" ]] && [[ ! -f "$ROOT_DIR/docker-compose.yml" ]]; then
     err "No se encontró docker-compose.yml. Ejecuta desde la raíz del proyecto."
+  fi
+  
+  # Limpiar archivos corruptos de instalaciones anteriores fallidas
+  if [[ -f "$ENV_FILE" ]]; then
+    # Verificar si el archivo contiene HTML (corrupto)
+    if head -1 "$ENV_FILE" | grep -q "<html\|<!DOCTYPE"; then
+      warn "Archivo .env corrupto detectado, limpiando..."
+      rm -f "$ENV_FILE"
+    fi
+  fi
+  
+  # Detener y limpiar contenedores previos si existen
+  if docker compose ps 2>/dev/null | grep -q "disherio"; then
+    log "Deteniendo instalación anterior..."
+    docker compose down --remove-orphans >> "$LOG_FILE" 2>&1 || true
   fi
   
   configure_access
