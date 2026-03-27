@@ -39,6 +39,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'common.dark': 'Oscuro',
     'common.light': 'Claro',
     'common.system': 'Sistema',
+    'common.default': 'Por defecto',
     'common.from': 'Desde',
     'common.to': 'Hasta',
     
@@ -157,6 +158,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'common.dark': 'Dark',
     'common.light': 'Light',
     'common.system': 'System',
+    'common.default': 'Default',
     'common.from': 'From',
     'common.to': 'To',
     

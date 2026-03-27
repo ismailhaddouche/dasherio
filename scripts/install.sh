@@ -524,7 +524,8 @@ async function seed() {
       restaurant_name: 'DisherIO Restaurant',
       tax_rate: 10,
       currency: 'EUR',
-      language: 'es',
+      default_language: 'es',
+      default_theme: 'light',
       tips_state: false,
       tips_type: 'VOLUNTARY',
       createdAt: new Date(),
@@ -561,6 +562,8 @@ async function seed() {
       username: 'admin',
       password_hash: passwordHash,
       pin_code_hash: pinHash,
+      language: null,  // Uses restaurant default
+      theme: null,     // Uses restaurant default
       createdAt: new Date(),
       updatedAt: new Date()
     });
