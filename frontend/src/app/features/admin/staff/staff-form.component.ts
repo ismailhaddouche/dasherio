@@ -1,7 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { StaffService, Staff, Role } from '../../../services/staff.service';
 import type { Role as RoleType } from '../../../services/staff.service';
 
@@ -157,11 +159,13 @@ import type { Role as RoleType } from '../../../services/staff.service';
     </div>
   `
 })
-export class StaffFormComponent implements OnInit {
+export class StaffFormComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private staffService = inject(StaffService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private destroy$ = new Subject<void>();
+  private navigationTimeout: any = null;
 
   staffForm!: FormGroup;
   isEditMode = false;
@@ -203,48 +207,52 @@ export class StaffFormComponent implements OnInit {
   loadRoles(): Promise<void> {
     return new Promise((resolve) => {
       this.loadingRoles.set(true);
-      this.staffService.getRoles().subscribe({
-        next: (roles) => {
-          this.roles.set(roles);
-          this.loadingRoles.set(false);
-          resolve();
-        },
-        error: () => {
-          this.error.set('Error al cargar roles');
-          this.loadingRoles.set(false);
-          resolve(); // Resolvemos igual para no bloquear el flujo
-        }
-      });
+      this.staffService.getRoles()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (roles) => {
+            this.roles.set(roles);
+            this.loadingRoles.set(false);
+            resolve();
+          },
+          error: () => {
+            this.error.set('Error al cargar roles');
+            this.loadingRoles.set(false);
+            resolve(); // Resolvemos igual para no bloquear el flujo
+          }
+        });
     });
   }
 
   loadStaff(id: string): void {
-    this.staffService.getStaffMember(id).subscribe({
-      next: (staff) => {
-        // role_id puede ser string o objeto poblado (Role)
-        // Asegurar que siempre sea string para el formulario
-        let roleId = '';
-        if (typeof staff.role_id === 'string') {
-          roleId = staff.role_id;
-        } else if (staff.role_id && typeof staff.role_id === 'object') {
-          roleId = (staff.role_id as RoleType)._id?.toString() || '';
+    this.staffService.getStaffMember(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (staff) => {
+          // role_id puede ser string o objeto poblado (Role)
+          // Asegurar que siempre sea string para el formulario
+          let roleId = '';
+          if (typeof staff.role_id === 'string') {
+            roleId = staff.role_id;
+          } else if (staff.role_id && typeof staff.role_id === 'object') {
+            roleId = (staff.role_id as RoleType)._id?.toString() || '';
+          }
+          
+          this.staffForm.patchValue({
+            staff_name: staff.staff_name,
+            username: staff.username,
+            role_id: roleId
+          });
+          // Clear password validators in edit mode
+          this.staffForm.get('password')?.setValidators([]);
+          this.staffForm.get('password')?.updateValueAndValidity();
+          this.staffForm.get('pin_code')?.setValidators([]);
+          this.staffForm.get('pin_code')?.updateValueAndValidity();
+        },
+        error: (err) => {
+          this.error.set(err.error?.message || 'Error al cargar el personal');
         }
-        
-        this.staffForm.patchValue({
-          staff_name: staff.staff_name,
-          username: staff.username,
-          role_id: roleId
-        });
-        // Clear password validators in edit mode
-        this.staffForm.get('password')?.setValidators([]);
-        this.staffForm.get('password')?.updateValueAndValidity();
-        this.staffForm.get('pin_code')?.setValidators([]);
-        this.staffForm.get('pin_code')?.updateValueAndValidity();
-      },
-      error: (err) => {
-        this.error.set(err.error?.message || 'Error al cargar el personal');
-      }
-    });
+      });
   }
 
   onSubmit(): void {
@@ -266,29 +274,41 @@ export class StaffFormComponent implements OnInit {
     }
 
     if (this.isEditMode && this.staffId) {
-      this.staffService.updateStaff(this.staffId, formData).subscribe({
-        next: () => {
-          this.submitting.set(false);
-          this.success.set('Personal actualizado correctamente');
-          setTimeout(() => this.router.navigate(['/admin/staff']), 1500);
-        },
-        error: (err) => {
-          this.error.set(err.error?.message || 'Error al actualizar');
-          this.submitting.set(false);
-        }
-      });
+      this.staffService.updateStaff(this.staffId, formData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.submitting.set(false);
+            this.success.set('Personal actualizado correctamente');
+            this.navigationTimeout = setTimeout(() => this.router.navigate(['/admin/staff']), 1500);
+          },
+          error: (err) => {
+            this.error.set(err.error?.message || 'Error al actualizar');
+            this.submitting.set(false);
+          }
+        });
     } else {
-      this.staffService.createStaff(formData).subscribe({
-        next: () => {
-          this.submitting.set(false);
-          this.success.set('Personal creado correctamente');
-          setTimeout(() => this.router.navigate(['/admin/staff']), 1500);
-        },
-        error: (err) => {
-          this.error.set(err.error?.message || 'Error al crear');
-          this.submitting.set(false);
-        }
-      });
+      this.staffService.createStaff(formData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.submitting.set(false);
+            this.success.set('Personal creado correctamente');
+            this.navigationTimeout = setTimeout(() => this.router.navigate(['/admin/staff']), 1500);
+          },
+          error: (err) => {
+            this.error.set(err.error?.message || 'Error al crear');
+            this.submitting.set(false);
+          }
+        });
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    if (this.navigationTimeout) {
+      clearTimeout(this.navigationTimeout);
     }
   }
 }

@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { kdsStore } from '../../store/kds.store';
 import { SocketService } from '../../services/socket/socket.service';
 import { LocalizePipe } from '../../shared/pipes/localize.pipe';
@@ -85,6 +87,7 @@ export class KdsComponent implements OnInit, OnDestroy {
   private socketService = inject(SocketService);
   private http = inject(HttpClient);
   themeService = inject(ThemeService);
+  private destroy$ = new Subject<void>();
 
   ordered = kdsStore.ordered;
   onPrepare = kdsStore.onPrepare;
@@ -92,13 +95,19 @@ export class KdsComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.socketService.connect();
     // BUG-12: was only listening to WS — existing items were invisible on page load
-    this.http.get<any[]>(`${environment.apiUrl}/orders/kitchen`).subscribe({
-      next: (items) => kdsStore.setItems(items),
-      error: () => { /* already connected, silently skip if token expired */ },
-    });
+    this.http.get<any[]>(`${environment.apiUrl}/orders/kitchen`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (items) => kdsStore.setItems(items),
+        error: (err) => { 
+          console.error('[KDS] Error loading kitchen items:', err);
+        },
+      });
   }
 
   ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.socketService.disconnect();
   }
 

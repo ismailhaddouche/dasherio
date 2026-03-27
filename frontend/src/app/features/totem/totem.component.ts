@@ -1,7 +1,9 @@
-import { Component, OnInit, computed, signal, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { cartStore } from '../../store/cart.store';
 import { LocalizePipe } from '../../shared/pipes/localize.pipe';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
@@ -164,10 +166,11 @@ interface Dish {
     </div>
   `,
 })
-export class TotemComponent implements OnInit {
+export class TotemComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
   themeService = inject(ThemeService);
+  private destroy$ = new Subject<void>();
 
   restaurantName = signal('Cargando...');
   categories = signal<Category[]>([]);
@@ -195,12 +198,24 @@ export class TotemComponent implements OnInit {
       // BUG-10: was calling GET /api/dishes which requires auth — totem is a public QR page.
       // Now calls the dedicated public endpoint GET /api/totems/menu/:qr/dishes
       this.http.get<{ categories: Category[]; dishes: Dish[] }>(`${environment.apiUrl}/totems/menu/${qr}/dishes`)
-        .subscribe(({ categories, dishes }) => {
-          if (categories.length) this.restaurantName.set('Menú');
-          this.categories.set(categories);
-          this.dishes.set(dishes);
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: ({ categories, dishes }) => {
+            if (categories.length) this.restaurantName.set('Menú');
+            this.categories.set(categories);
+            this.dishes.set(dishes);
+          },
+          error: (err) => {
+            console.error('[Totem] Error loading menu:', err);
+            this.restaurantName.set('Error al cargar menú');
+          },
         });
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   selectCategory(catId: string) {
