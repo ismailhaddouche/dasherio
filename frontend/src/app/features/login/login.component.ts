@@ -20,9 +20,9 @@ import { environment } from '../../../environments/environment';
 
         <form (ngSubmit)="login()" class="flex flex-col gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Usuario</label>
             <input
-              [(ngModel)]="email" name="email" type="email" required autocomplete="username"
+              [(ngModel)]="username" name="username" type="text" required autocomplete="username"
               class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -54,7 +54,7 @@ export class LoginComponent {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  email = '';
+  username = '';
   password = '';
   error = signal('');
   loading = signal(false);
@@ -65,7 +65,7 @@ export class LoginComponent {
     this.http
       .post<{ token: string; staff: { id: string; name: string; role: string } }>(
         `${environment.apiUrl}/auth/login`,
-        { email: this.email, password: this.password }
+        { username: this.username.toLowerCase().trim(), password: this.password }
       )
       .subscribe({
         next: (res) => {

@@ -14,8 +14,8 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
-export async function loginWithEmail(email: string, password: string) {
-  const staff = await userRepo.findByEmail(email);
+export async function loginWithUsername(username: string, password: string) {
+  const staff = await userRepo.findByUsername(username.toLowerCase());
   if (!staff) throw new Error('INVALID_CREDENTIALS');
 
   const match = await bcrypt.compare(password, staff.password_hash);

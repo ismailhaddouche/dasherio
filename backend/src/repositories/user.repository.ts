@@ -9,8 +9,16 @@ export class UserRepository extends BaseRepository<IStaff> {
     super(Staff);
   }
 
-  async findByEmail(email: string): Promise<IStaff | null> {
-    return this.model.findOne({ email: email.toLowerCase() }).exec();
+  async findByUsername(username: string): Promise<IStaff | null> {
+    return this.model.findOne({ username: username.toLowerCase() }).exec();
+  }
+
+  async findByUsernameAndRestaurant(username: string, restaurantId: string): Promise<IStaff | null> {
+    validateObjectId(restaurantId, 'restaurant_id');
+    return this.model.findOne({ 
+      username: username.toLowerCase(),
+      restaurant_id: new Types.ObjectId(restaurantId)
+    }).exec();
   }
 
   async findByRestaurantId(restaurantId: string): Promise<IStaff[]> {
@@ -39,7 +47,7 @@ export class UserRepository extends BaseRepository<IStaff> {
     data: Partial<IStaff> & {
       restaurant_id: string;
       role_id: string;
-      email: string;
+      username: string;
       password_hash: string;
       pin_code_hash: string;
     }
@@ -51,14 +59,14 @@ export class UserRepository extends BaseRepository<IStaff> {
       ...data,
       restaurant_id: new Types.ObjectId(data.restaurant_id),
       role_id: new Types.ObjectId(data.role_id),
-      email: data.email.toLowerCase(),
+      username: data.username.toLowerCase(),
     });
   }
 
   async updateUser(id: string, data: Partial<IStaff>): Promise<IStaff | null> {
     validateObjectId(id, 'staff_id');
-    if (data.email) {
-      data.email = data.email.toLowerCase();
+    if (data.username) {
+      data.username = data.username.toLowerCase();
     }
     return this.model.findByIdAndUpdate(id, data, { new: true }).exec();
   }
@@ -68,8 +76,13 @@ export class UserRepository extends BaseRepository<IStaff> {
     return this.model.findByIdAndDelete(id).exec();
   }
 
-  async existsByEmail(email: string): Promise<boolean> {
-    const count = await this.model.countDocuments({ email: email.toLowerCase() }).exec();
+  async existsByUsername(username: string, restaurantId?: string): Promise<boolean> {
+    const query: any = { username: username.toLowerCase() };
+    if (restaurantId) {
+      validateObjectId(restaurantId, 'restaurant_id');
+      query.restaurant_id = new Types.ObjectId(restaurantId);
+    }
+    const count = await this.model.countDocuments(query).exec();
     return count > 0;
   }
 

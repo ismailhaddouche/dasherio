@@ -21,7 +21,7 @@ export interface IStaff extends Document {
   restaurant_id: Types.ObjectId;
   role_id: Types.ObjectId;
   staff_name: string;
-  email: string;
+  username: string;
   password_hash: string;
   pin_code_hash: string;
 }
@@ -31,7 +31,7 @@ const StaffSchema = new Schema<IStaff>(
     restaurant_id: { type: Schema.Types.ObjectId, ref: 'Restaurant', required: true },
     role_id: { type: Schema.Types.ObjectId, ref: 'Role', required: true },
     staff_name: { type: String, required: true },
-    email: { type: String, required: true, unique: true, lowercase: true },
+    username: { type: String, required: true, lowercase: true },
     password_hash: { type: String, required: true },
     pin_code_hash: { type: String, required: true },
   },
@@ -40,6 +40,9 @@ const StaffSchema = new Schema<IStaff>(
 
 // Index for efficient lookups by restaurant
 StaffSchema.index({ restaurant_id: 1 });
+
+// Unique username per restaurant
+StaffSchema.index({ restaurant_id: 1, username: 1 }, { unique: true });
 
 // Compound index for PIN authentication lookups
 StaffSchema.index({ restaurant_id: 1, pin_code_hash: 1 });

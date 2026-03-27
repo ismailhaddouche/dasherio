@@ -53,22 +53,25 @@ import { StaffService, Staff, Role } from '../../../services/staff.service';
           </div>
         </div>
 
-        <!-- Email Field -->
+        <!-- Username Field -->
         <div class="mb-6">
-          <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Correo electrónico *
+          <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Nombre de usuario *
           </label>
           <input
-            id="email"
-            type="email"
-            formControlName="email"
-            placeholder="juan@restaurante.com"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-            [class.border-red-500]="staffForm.get('email')?.invalid && staffForm.get('email')?.touched"
+            id="username"
+            type="text"
+            formControlName="username"
+            placeholder="juan.perez"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent lowercase"
+            [class.border-red-500]="staffForm.get('username')?.invalid && staffForm.get('username')?.touched"
           />
-          <div *ngIf="staffForm.get('email')?.invalid && staffForm.get('email')?.touched" class="text-red-500 text-sm mt-1">
-            Ingresa un correo válido
+          <div *ngIf="staffForm.get('username')?.invalid && staffForm.get('username')?.touched" class="text-red-500 text-sm mt-1">
+            El usuario es obligatorio (mín. 3 caracteres)
           </div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Usado para iniciar sesión. Solo letras, números y puntos.
+          </p>
         </div>
 
         <!-- Role Field -->
@@ -189,7 +192,7 @@ export class StaffFormComponent implements OnInit {
 
     this.staffForm = this.fb.group({
       staff_name: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
+      username: ['', [Validators.required, Validators.minLength(3), Validators.pattern('^[a-z0-9.]+$')]],
       role_id: ['', Validators.required],
       password: ['', passwordValidators],
       pin_code: ['', pinValidators]
@@ -215,7 +218,7 @@ export class StaffFormComponent implements OnInit {
       next: (staff) => {
         this.staffForm.patchValue({
           staff_name: staff.staff_name,
-          email: staff.email,
+          username: staff.username,
           role_id: staff.role_id
         });
         // Clear password validators in edit mode

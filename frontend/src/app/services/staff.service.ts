@@ -14,14 +14,14 @@ export interface Staff {
   role_id: string;
   role_id_populated?: Role;
   staff_name: string;
-  email: string;
+  username: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface CreateStaffRequest {
   staff_name: string;
-  email: string;
+  username: string;
   password: string;
   pin_code: string;
   role_id: string;
@@ -29,7 +29,7 @@ export interface CreateStaffRequest {
 
 export interface UpdateStaffRequest {
   staff_name?: string;
-  email?: string;
+  username?: string;
   role_id?: string;
   password?: string;
   pin_code?: string;

@@ -39,12 +39,18 @@ export const getStaff = asyncHandler(async (req: Request, res: Response): Promis
 // Create new staff member
 export const createStaff = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const restaurantId = req.user!.restaurantId;
-  const { staff_name, email, password, pin_code, role_id } = req.body;
+  const { staff_name, username, password, pin_code, role_id } = req.body;
 
-  // Check if email already exists
-  const existingStaff = await Staff.findOne({ email: email.toLowerCase() });
+  // Normalize username
+  const normalizedUsername = username.toLowerCase().trim();
+
+  // Check if username already exists in this restaurant
+  const existingStaff = await Staff.findOne({ 
+    username: normalizedUsername,
+    restaurant_id: new Types.ObjectId(restaurantId)
+  });
   if (existingStaff) {
-    throw createError.conflict('Email already registered');
+    throw createError.conflict('Username already exists in this restaurant');
   }
 
   // Hash password and PIN
@@ -55,7 +61,7 @@ export const createStaff = asyncHandler(async (req: Request, res: Response): Pro
     restaurant_id: new Types.ObjectId(restaurantId),
     role_id: new Types.ObjectId(role_id),
     staff_name,
-    email: email.toLowerCase(),
+    username: normalizedUsername,
     password_hash,
     pin_code_hash
   });
@@ -72,7 +78,7 @@ export const createStaff = asyncHandler(async (req: Request, res: Response): Pro
 export const updateStaff = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const restaurantId = req.user!.restaurantId;
-  const { staff_name, email, role_id, password, pin_code } = req.body;
+  const { staff_name, username, role_id, password, pin_code } = req.body;
 
   const staff = await Staff.findOne({
     _id: new Types.ObjectId(id),
@@ -83,13 +89,17 @@ export const updateStaff = asyncHandler(async (req: Request, res: Response): Pro
     throw createError.notFound('Staff member not found');
   }
 
-  // Check email uniqueness if changing
-  if (email && email.toLowerCase() !== staff.email) {
-    const existing = await Staff.findOne({ email: email.toLowerCase() });
+  // Check username uniqueness if changing
+  if (username && username.toLowerCase().trim() !== staff.username) {
+    const normalizedUsername = username.toLowerCase().trim();
+    const existing = await Staff.findOne({ 
+      username: normalizedUsername,
+      restaurant_id: new Types.ObjectId(restaurantId)
+    });
     if (existing) {
-      throw createError.conflict('Email already registered');
+      throw createError.conflict('Username already exists in this restaurant');
     }
-    staff.email = email.toLowerCase();
+    staff.username = normalizedUsername;
   }
 
   // Update fields

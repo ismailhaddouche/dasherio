@@ -34,7 +34,7 @@ async function seed() {
   }
 
   // Create admin user
-  const existing = await Staff.findOne({ email: 'admin@disherio.com' });
+  const existing = await Staff.findOne({ username: 'admin', restaurant_id: restaurant._id });
   if (!existing) {
     const password = 'admin1234';
     const password_hash = await bcrypt.hash(password, 12);
@@ -43,8 +43,8 @@ async function seed() {
     await Staff.create({
       restaurant_id: restaurant._id,
       role_id: adminRole._id,
-      staff_name: 'Admin',
-      email: 'admin@disherio.com',
+      staff_name: 'Administrador',
+      username: 'admin',
       password_hash,
       pin_code_hash,
     });
@@ -52,12 +52,13 @@ async function seed() {
     // IMPORTANT: Log credentials for first login
     logger.info('========================================');
     logger.info('ADMIN USER CREATED');
-    logger.info('Email: admin@disherio.com');
+    logger.info('Usuario: admin');
     logger.info('Password: ' + password);
+    logger.info('PIN: 0000');
     logger.info('========================================');
   } else {
     logger.info('Admin user already exists');
-    logger.info('Email: admin@disherio.com');
+    logger.info('Usuario: admin');
     logger.info('If you forgot the password, run: npm run seed:reset');
   }
 
