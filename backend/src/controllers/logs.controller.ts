@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ItemOrder } from '../models/order.model';
+import { ItemOrder, IItemOrder } from '../models/order.model';
 import { Types } from 'mongoose';
 
 interface LogEntry {
@@ -52,7 +52,7 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
     if (userId) {
       filters.$or = [
         { customer_id: new Types.ObjectId(userId as string) },
-        { 'created_by': new Types.ObjectId(userId as string) }
+        { created_by: new Types.ObjectId(userId as string) }
       ];
     }
 
@@ -63,7 +63,7 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
       .lean();
 
     // Transform to log format
-    const logs: LogEntry[] = items.map(item => {
+    const rawLogs = items.map((item: IItemOrder & { createdAt?: Date; updatedAt?: Date }) => {
       const dish = dishes.find(d => d._id.equals(item.item_dish_id));
       
       // Determine log type based on dish type
@@ -80,22 +80,36 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
         return null;
       }
 
+      // Get timestamp from mongoose timestamps
+      const timestamp = item.createdAt || item.updatedAt || new Date();
+      
+      // Safely get dish name
+      const dishName = dish?.disher_name || 
+        (item.item_name_snapshot && typeof item.item_name_snapshot === 'object' && 'es' in item.item_name_snapshot) 
+          ? (item.item_name_snapshot as { es: string }).es 
+          : 'Unknown';
+
       return {
         id: item._id.toString(),
         type: logType,
-        timestamp: item.createdAt || item.updatedAt || new Date(),
+        timestamp: timestamp,
         userId: item.customer_id?.toString(),
         action: getActionFromState(item.item_state),
         details: {
           dishType: item.item_disher_type,
           basePrice: item.item_base_price,
           extras: item.item_disher_extras?.length || 0,
-          variant: item.item_disher_variant?.name?.es || null
+          variant: item.item_disher_variant?.name && typeof item.item_disher_variant.name === 'object' && 'es' in item.item_disher_variant.name
+            ? (item.item_disher_variant.name as { es: string }).es 
+            : null
         },
-        dishName: dish?.disher_name || item.item_name_snapshot?.es || 'Unknown',
+        dishName: dishName,
         status: item.item_state
       };
-    }).filter((log): log is LogEntry => log !== null);
+    });
+
+    // Filter out null values
+    const logs: LogEntry[] = rawLogs.filter((log): log is NonNullable<typeof log> => log !== null);
 
     // Get unique users for filter dropdown
     const userIds = [...new Set(logs.map(l => l.userId).filter(Boolean))];
@@ -130,7 +144,7 @@ export async function getLogUsers(req: Request, res: Response): Promise<void> {
     const { Staff } = await import('../models/staff.model');
     const staff = await Staff.find({ 
       restaurant_id: new Types.ObjectId(restaurantId) 
-    }).select('staff_name role').lean();
+    }).select('staff_name').lean();
 
     // Get customers who have orders
     const { ItemOrder } = await import('../models/order.model');
@@ -155,8 +169,7 @@ export async function getLogUsers(req: Request, res: Response): Promise<void> {
       ...staff.map(s => ({
         id: s._id.toString(),
         name: s.staff_name,
-        type: 'STAFF',
-        role: s.role
+        type: 'STAFF'
       })),
       ...customers.map(c => ({
         id: c._id.toString(),
