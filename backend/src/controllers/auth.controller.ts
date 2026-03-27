@@ -3,7 +3,6 @@ import { asyncHandler } from '../utils/async-handler';
 import { loginWithUsername, loginWithPin } from '../services/auth.service';
 
 const COOKIE_NAME = 'auth_token';
-const isProduction = process.env.NODE_ENV === 'production';
 
 function setAuthCookie(res: Response, token: string, isSecure: boolean): void {
   const jwtExpires = process.env.JWT_EXPIRES || '8h';
