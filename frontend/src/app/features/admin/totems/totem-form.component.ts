@@ -96,7 +96,7 @@ import { TotemService, Totem } from '../../../services/totem.service';
           <div class="flex items-center gap-4">
             <div class="bg-white p-4 rounded-lg">
               <img 
-                [src]="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(totem()!.totem_qr!)" 
+                [src]="getQrImageUrl(totem()!.totem_qr!)" 
                 alt="QR Code"
                 class="w-32 h-32"
               />
@@ -268,5 +268,9 @@ export class TotemFormComponent implements OnInit {
         setTimeout(() => this.success.set(null), 2000);
       });
     }
+  }
+
+  getQrImageUrl(qrData: string): string {
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(qrData);
   }
 }
