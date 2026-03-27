@@ -11,8 +11,7 @@ export interface Role {
 export interface Staff {
   _id: string;
   restaurant_id: string;
-  role_id: string;
-  role_id_populated?: Role;
+  role_id: string | Role;  // Puede ser string (ID) o Role poblado
   staff_name: string;
   username: string;
   createdAt?: string;

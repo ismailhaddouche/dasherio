@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { StaffService, Staff, Role } from '../../../services/staff.service';
+import type { Role as RoleType } from '../../../services/staff.service';
 
 @Component({
   selector: 'app-staff-form',
@@ -216,10 +217,15 @@ export class StaffFormComponent implements OnInit {
   loadStaff(id: string): void {
     this.staffService.getStaffMember(id).subscribe({
       next: (staff) => {
+        // role_id puede ser string o objeto poblado (Role)
+        const roleId = typeof staff.role_id === 'string' 
+          ? staff.role_id 
+          : (staff.role_id as RoleType)._id;
+        
         this.staffForm.patchValue({
           staff_name: staff.staff_name,
           username: staff.username,
-          role_id: staff.role_id
+          role_id: roleId
         });
         // Clear password validators in edit mode
         this.staffForm.get('password')?.setValidators([]);

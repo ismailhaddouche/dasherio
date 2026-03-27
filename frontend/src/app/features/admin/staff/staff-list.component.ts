@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { StaffService, Staff } from '../../../services/staff.service';
+import { StaffService, Staff, Role } from '../../../services/staff.service';
 
 @Component({
   selector: 'app-staff-list',
@@ -71,7 +71,7 @@ import { StaffService, Staff } from '../../../services/staff.service';
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                    {{ member.role_id_populated?.role_name || 'Sin rol' }}
+                    {{ getRoleName(member) }}
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -148,5 +148,13 @@ export class StaffListComponent implements OnInit {
 
   getInitials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  }
+
+  getRoleName(member: Staff): string {
+    // role_id puede ser string (solo ID) o objeto Role poblado
+    if (typeof member.role_id === 'string') {
+      return 'Cargando...';
+    }
+    return (member.role_id as Role)?.role_name || 'Sin rol';
   }
 }
