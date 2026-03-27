@@ -62,6 +62,13 @@ async function seed() {
   const password_hash  = await bcrypt.hash(adminPassword, 12);
   const pin_code_hash  = await bcrypt.hash(adminPin, 12);
 
+  // Get Admin role
+  const adminRole = await Role.findOne({ restaurant_id: restaurant._id, role_name: 'Admin' });
+  if (!adminRole) {
+    logger.error('Admin role not found');
+    process.exit(1);
+  }
+
   if (!existing) {
     await Staff.create({
       restaurant_id: restaurant._id,
