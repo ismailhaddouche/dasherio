@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { I18nService, Language } from '../../core/services/i18n.service';
 import { ThemeService } from '../../core/services/theme.service';
-import { AuthService } from '../../services/auth.service';
+import { authStore } from '../../store/auth.store';
 import { TranslatePipe } from '../pipes/translate.pipe';
 
 @Component({
@@ -112,7 +112,6 @@ import { TranslatePipe } from '../pipes/translate.pipe';
 export class HeaderComponent {
   protected readonly i18n = inject(I18nService);
   protected readonly themeService = inject(ThemeService);
-  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
   showLanguageMenu = false;
@@ -153,7 +152,7 @@ export class HeaderComponent {
   }
 
   logout(): void {
-    this.authService.logout();
+    authStore.clearAuth();
     this.router.navigate(['/login']);
   }
 }
