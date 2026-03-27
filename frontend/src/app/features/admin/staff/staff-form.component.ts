@@ -11,17 +11,30 @@ import type { Role as RoleType } from '../../../services/staff.service';
   imports: [CommonModule, RouterModule, ReactiveFormsModule],
   template: `
     <div class="p-6 max-w-2xl mx-auto">
-      <header class="mb-6">
-        <a routerLink="/admin/staff" class="text-gray-600 dark:text-gray-400 hover:text-primary flex items-center gap-1 mb-4">
-          <span class="material-symbols-outlined text-sm">arrow_back</span>
-          Volver al personal
-        </a>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ isEditMode ? 'Editar' : 'Nuevo' }} Personal
-        </h1>
-        <p class="text-gray-600 dark:text-gray-400">
-          {{ isEditMode ? 'Actualiza los datos del empleado' : 'Registra un nuevo miembro del equipo' }}
-        </p>
+      <header class="flex items-center justify-between mb-6">
+        <div>
+          <a routerLink="/admin/staff" class="text-gray-600 dark:text-gray-400 hover:text-primary flex items-center gap-1 mb-2">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+            Volver al personal
+          </a>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            {{ isEditMode ? 'Editar' : 'Nuevo' }} Personal
+          </h1>
+        </div>
+        <div class="flex gap-2">
+          <a routerLink="/admin/staff" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium">
+            Cancelar
+          </a>
+          <button
+            type="button"
+            (click)="onSubmit()"
+            [disabled]="staffForm.invalid || submitting()"
+            class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
+          >
+            <span *ngIf="!submitting()">{{ isEditMode ? 'Guardar Cambios' : 'Crear Personal' }}</span>
+            <span *ngIf="submitting()">Guardando...</span>
+          </button>
+        </div>
       </header>
 
       <!-- Error Alert -->
@@ -34,7 +47,7 @@ import type { Role as RoleType } from '../../../services/staff.service';
         {{ success() }}
       </div>
 
-      <form [formGroup]="staffForm" (ngSubmit)="onSubmit()" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <form [formGroup]="staffForm" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         
         <!-- Name Field -->
         <div class="mb-6">
@@ -135,25 +148,6 @@ import type { Role as RoleType } from '../../../services/staff.service';
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
             PIN de 4 dígitos para acceso rápido en el POS
           </p>
-        </div>
-
-        <!-- Form Actions -->
-        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-          <a 
-            routerLink="/admin/staff" 
-            class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-          >
-            Cancelar
-          </a>
-          
-          <button
-            type="submit"
-            [disabled]="staffForm.invalid || submitting()"
-            class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            <span *ngIf="!submitting()">{{ isEditMode ? 'Guardar Cambios' : 'Crear Personal' }}</span>
-            <span *ngIf="submitting()">Guardando...</span>
-          </button>
         </div>
       </form>
     </div>

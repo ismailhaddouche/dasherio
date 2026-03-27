@@ -24,9 +24,28 @@ interface RestaurantSettings {
   imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="p-4 lg:p-6 max-w-4xl mx-auto">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-        {{ 'settings.title' | translate }}
-      </h1>
+      <header class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          {{ 'settings.title' | translate }}
+        </h1>
+        <div class="flex items-center gap-3">
+          @if (saveSuccess()) {
+            <span class="text-green-600 dark:text-green-400 flex items-center">
+              <svg class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              {{ 'settings.preferences.saved' | translate }}
+            </span>
+          }
+          <button
+            (click)="saveSettings()"
+            [disabled]="saving()"
+            class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {{ saving() ? ('common.loading' | translate) : ('common.save' | translate) }}
+          </button>
+        </div>
+      </header>
 
       @if (loading()) {
         <div class="flex justify-center py-10">
@@ -127,29 +146,9 @@ interface RestaurantSettings {
                 >
                   <option value="light">☀️ {{ 'common.light' | translate }}</option>
                   <option value="dark">🌙 {{ 'common.dark' | translate }}</option>
-                  <option value="system">💻 {{ 'common.system' | translate }}</option>
                 </select>
               </div>
             </div>
-          </div>
-
-          <!-- Save Button -->
-          <div class="flex justify-end gap-3">
-            @if (saveSuccess()) {
-              <span class="text-green-600 dark:text-green-400 flex items-center">
-                <svg class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
-                {{ 'settings.preferences.saved' | translate }}
-              </span>
-            }
-            <button
-              (click)="saveSettings()"
-              [disabled]="saving()"
-              class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {{ saving() ? ('common.loading' | translate) : ('common.save' | translate) }}
-            </button>
           </div>
         </div>
       }

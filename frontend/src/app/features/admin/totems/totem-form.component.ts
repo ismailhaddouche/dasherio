@@ -10,17 +10,30 @@ import { TotemService, Totem } from '../../../services/totem.service';
   imports: [CommonModule, RouterModule, ReactiveFormsModule],
   template: `
     <div class="p-6 max-w-2xl mx-auto">
-      <header class="mb-6">
-        <a routerLink="/admin/totems" class="text-gray-600 dark:text-gray-400 hover:text-primary flex items-center gap-1 mb-4">
-          <span class="material-symbols-outlined text-sm">arrow_back</span>
-          Volver a tótems
-        </a>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ isEditMode ? 'Editar' : 'Nuevo' }} Tótem
-        </h1>
-        <p class="text-gray-600 dark:text-gray-400">
-          {{ isEditMode ? 'Actualiza los datos del tótem' : 'Crea un nuevo tótem para generar su código QR' }}
-        </p>
+      <header class="flex items-center justify-between mb-6">
+        <div>
+          <a routerLink="/admin/totems" class="text-gray-600 dark:text-gray-400 hover:text-primary flex items-center gap-1 mb-2">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+            Volver a tótems
+          </a>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            {{ isEditMode ? 'Editar' : 'Nuevo' }} Tótem
+          </h1>
+        </div>
+        <div class="flex gap-2">
+          <a routerLink="/admin/totems" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium">
+            Cancelar
+          </a>
+          <button
+            type="button"
+            (click)="onSubmit()"
+            [disabled]="totemForm.invalid || submitting()"
+            class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium"
+          >
+            <span *ngIf="!submitting()">{{ isEditMode ? 'Guardar Cambios' : 'Crear Tótem' }}</span>
+            <span *ngIf="submitting()">Guardando...</span>
+          </button>
+        </div>
       </header>
 
       <!-- Error Alert -->
@@ -33,7 +46,7 @@ import { TotemService, Totem } from '../../../services/totem.service';
         {{ success() }}
       </div>
 
-      <form [formGroup]="totemForm" (ngSubmit)="onSubmit()" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <form [formGroup]="totemForm" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <!-- Name Field -->
         <div class="mb-6">
           <label for="totem_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -98,36 +111,17 @@ import { TotemService, Totem } from '../../../services/totem.service';
           </div>
         </div>
 
-        <!-- Form Actions -->
-        <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-          <a 
-            routerLink="/admin/totems" 
-            class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+        <!-- Regenerate QR Button (Edit Mode Only) -->
+        <div *ngIf="isEditMode && totem()?._id" class="pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            type="button"
+            (click)="regenerateQr()"
+            [disabled]="regenerating()"
+            class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
           >
-            Cancelar
-          </a>
-          
-          <div class="flex gap-3">
-            <button
-              *ngIf="isEditMode && totem()?._id"
-              type="button"
-              (click)="regenerateQr()"
-              [disabled]="regenerating()"
-              class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
-            >
-              <span *ngIf="!regenerating()">Regenerar QR</span>
-              <span *ngIf="regenerating()">Regenerando...</span>
-            </button>
-
-            <button
-              type="submit"
-              [disabled]="totemForm.invalid || submitting()"
-              class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              <span *ngIf="!submitting()">{{ isEditMode ? 'Guardar Cambios' : 'Crear Tótem' }}</span>
-              <span *ngIf="submitting()">Guardando...</span>
-            </button>
-          </div>
+            <span *ngIf="!regenerating()">Regenerar QR</span>
+            <span *ngIf="regenerating()">Regenerando...</span>
+          </button>
         </div>
       </form>
     </div>
