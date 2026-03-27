@@ -165,7 +165,7 @@ export class StaffFormComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private destroy$ = new Subject<void>();
-  private navigationTimeout: any = null;
+  private navigationTimeout: ReturnType<typeof setTimeout> | null = null;
 
   staffForm!: FormGroup;
   isEditMode = false;

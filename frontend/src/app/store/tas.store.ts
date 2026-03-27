@@ -1,75 +1,12 @@
 import { signal, computed, Signal } from '@angular/core';
-
-export interface Totem {
-  _id: string;
-  totem_name: string;
-  totem_type: 'STANDARD' | 'TEMPORARY';
-  totem_qr: string;
-}
-
-export interface TotemSession {
-  _id: string;
-  totem_id: string;
-  session_date_start: string;
-  totem_state: 'STARTED' | 'COMPLETE' | 'PAID';
-  createdAt: string;
-  totem?: Totem;
-}
-
-export interface LocalizedString {
-  es: string;
-  en: string;
-  fr: string;
-  ar: string;
-}
-
-export interface ItemOrder {
-  _id: string;
-  order_id: string;
-  session_id: string;
-  item_dish_id: string;
-  customer_id?: string;
-  item_state: 'ORDERED' | 'ON_PREPARE' | 'SERVED' | 'CANCELED';
-  item_disher_type: 'KITCHEN' | 'SERVICE';
-  item_name_snapshot: LocalizedString;
-  item_base_price: number;
-  item_disher_variant?: {
-    variant_id: string;
-    name: LocalizedString;
-    price: number;
-  } | null;
-  item_disher_extras: Array<{
-    extra_id: string;
-    name: LocalizedString;
-    price: number;
-  }>;
-  createdAt: string;
-  customer_name?: string;
-}
-
-export interface Customer {
-  _id: string;
-  customer_name: string;
-  session_id: string;
-}
-
-export interface Dish {
-  _id: string;
-  disher_name: LocalizedString;
-  disher_price: number;
-  disher_type: 'KITCHEN' | 'SERVICE';
-  disher_url_image?: string;
-  variants: Array<{
-    _id: string;
-    variant_name: LocalizedString;
-    variant_price: number;
-  }>;
-  extras: Array<{
-    _id: string;
-    extra_name: LocalizedString;
-    extra_price: number;
-  }>;
-}
+import {
+  Totem,
+  TotemSession,
+  ItemOrder,
+  Customer,
+  Dish,
+  LocalizedString,
+} from '../types';
 
 export interface TasStore {
   // State
@@ -145,7 +82,6 @@ export const tasStore: TasStore = {
     const items = _sessionItems().filter(i => i.item_state !== 'CANCELED');
     const grouped: Record<string, ItemOrder[]> = {};
     
-    // Group by customer
     items.forEach(item => {
       const key = item.customer_id || 'unassigned';
       if (!grouped[key]) grouped[key] = [];
@@ -195,7 +131,6 @@ export const tasStore: TasStore = {
       current.map(i => (i._id === itemId ? { ...i, item_state: newState } : i))
     );
     
-    // Also update in service items if present
     _serviceItems.update(current =>
       current.map(i => (i._id === itemId ? { ...i, item_state: newState } : i))
     );

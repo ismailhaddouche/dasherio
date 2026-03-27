@@ -4,12 +4,29 @@ import { environment } from '../../../environments/environment';
 import { kdsStore } from '../../store/kds.store';
 import { authStore } from '../../store/auth.store';
 
+// Socket event payload types
+interface ItemStateChangedPayload {
+  itemId: string;
+  newState: string;
+}
+
+interface ItemDeletedPayload {
+  itemId: string;
+}
+
+interface KdsNewItem {
+  _id: string;
+  [key: string]: unknown;
+}
+
+type SocketEventCallback<T> = (data: T) => void;
+
 @Injectable({ providedIn: 'root' })
 export class SocketService implements OnDestroy {
   private socket: Socket | null = null;
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 5;
-  private reconnectTimer: any = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   connect(): void {
     if (this.socket?.connected) return;
@@ -29,7 +46,7 @@ export class SocketService implements OnDestroy {
         this.reconnectAttempts = 0;
       });
 
-      this.socket.on('connect_error', (err) => {
+      this.socket.on('connect_error', (err: Error) => {
         console.error('Socket connection error:', err.message);
         this.reconnectAttempts++;
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
@@ -38,7 +55,7 @@ export class SocketService implements OnDestroy {
         }
       });
 
-      this.socket.on('disconnect', (reason) => {
+      this.socket.on('disconnect', (reason: Socket.DisconnectReason) => {
         console.log('Socket disconnected:', reason);
         if (reason === 'io server disconnect') {
           // Server initiated disconnect, try to reconnect
@@ -46,20 +63,20 @@ export class SocketService implements OnDestroy {
         }
       });
 
-      this.socket.on('error', (err) => {
+      this.socket.on('error', (err: Error) => {
         console.error('Socket error:', err);
       });
 
       // Application events
-      this.socket.on('item:state_changed', ({ itemId, newState }: { itemId: string; newState: any }) => {
-        kdsStore.updateItemState(itemId, newState);
+      this.socket.on('item:state_changed', ({ itemId, newState }: ItemStateChangedPayload) => {
+        kdsStore.updateItemState(itemId, newState as 'ORDERED' | 'ON_PREPARE' | 'SERVED' | 'CANCELED');
       });
       
-      this.socket.on('kds:new_item', (item: any) => {
-        kdsStore.addItem(item);
+      this.socket.on('kds:new_item', (item: KdsNewItem) => {
+        kdsStore.addItem(item as unknown as Parameters<typeof kdsStore.addItem>[0]);
       });
 
-      this.socket.on('item:deleted', ({ itemId }: { itemId: string }) => {
+      this.socket.on('item:deleted', ({ itemId }: ItemDeletedPayload) => {
         kdsStore.removeItem(itemId);
       });
 
@@ -82,7 +99,7 @@ export class SocketService implements OnDestroy {
     this.socket.emit('pos:leave', sessionId);
   }
 
-  emit(event: string, data: any): boolean {
+  emit<T = unknown>(event: string, data: T): boolean {
     if (!this.socket?.connected) {
       console.warn(`Cannot emit ${event}: socket not connected`);
       return false;
@@ -91,13 +108,13 @@ export class SocketService implements OnDestroy {
     return true;
   }
 
-  on(event: string, callback: (data: any) => void): void {
-    this.socket?.on(event, callback);
+  on<T = unknown>(event: string, callback: SocketEventCallback<T>): void {
+    this.socket?.on(event, callback as (data: unknown) => void);
   }
 
-  off(event: string, callback?: (data: any) => void): void {
+  off<T = unknown>(event: string, callback?: SocketEventCallback<T>): void {
     if (callback) {
-      this.socket?.off(event, callback);
+      this.socket?.off(event, callback as (data: unknown) => void);
     } else {
       this.socket?.off(event);
     }

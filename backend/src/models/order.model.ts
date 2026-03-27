@@ -31,6 +31,7 @@ export interface IItemOrder extends Document {
   session_id: Types.ObjectId;
   item_dish_id: Types.ObjectId;
   customer_id?: Types.ObjectId;
+  customer_name?: string;
   item_state: 'ORDERED' | 'ON_PREPARE' | 'SERVED' | 'CANCELED';
   item_disher_type: 'KITCHEN' | 'SERVICE';
   item_name_snapshot: { es: string; en: string; fr: string; ar: string };
@@ -45,6 +46,7 @@ const ItemOrderSchema = new Schema<IItemOrder>(
     session_id: { type: Schema.Types.ObjectId, ref: 'TotemSession', required: true, index: true },
     item_dish_id: { type: Schema.Types.ObjectId, ref: 'Dish', required: true },
     customer_id: { type: Schema.Types.ObjectId, ref: 'Customer' },
+    customer_name: String,
     item_state: {
       type: String,
       enum: ['ORDERED', 'ON_PREPARE', 'SERVED', 'CANCELED'],
@@ -53,7 +55,7 @@ const ItemOrderSchema = new Schema<IItemOrder>(
     },
     item_disher_type: { type: String, enum: ['KITCHEN', 'SERVICE'], required: true, index: true },
     item_name_snapshot: LocalizedStringSchema,
-    item_base_price: { type: Number, required: true, min: 0.01 }, // Must be greater than 0
+    item_base_price: { type: Number, required: true, min: 0 },
     item_disher_variant: {
       variant_id: String,
       name: LocalizedStringSchema,

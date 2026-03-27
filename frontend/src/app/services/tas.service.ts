@@ -2,12 +2,12 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { 
+import type { 
   TotemSession, 
   ItemOrder, 
   Customer, 
   Dish 
-} from '../store/tas.store';
+} from '../types';
 
 export interface CreateTotemData {
   totem_name: string;

@@ -60,7 +60,7 @@ export class TotemSessionRepository extends BaseRepository<ITotemSession> {
     super(TotemSession);
   }
 
-  async findActiveByRestaurantId(restaurantId: string): Promise<Array<any>> {
+  async findActiveByRestaurantId(restaurantId: string): Promise<Array<Record<string, unknown>>> {
     validateObjectId(restaurantId, 'restaurant_id');
     // First get all totems for this restaurant
     const totems = await Totem.find({ restaurant_id: new Types.ObjectId(restaurantId) }).lean().exec();

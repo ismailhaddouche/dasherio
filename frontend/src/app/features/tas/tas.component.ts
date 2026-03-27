@@ -5,7 +5,8 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TasService } from '../../services/tas.service';
 import { SocketService } from '../../services/socket/socket.service';
-import { tasStore, TotemSession, ItemOrder, Customer } from '../../store/tas.store';
+import { tasStore } from '../../store/tas.store';
+import type { TotemSession, ItemOrder, Customer, Dish } from '../../types';
 import { LocalizePipe } from '../../shared/pipes/localize.pipe';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { ThemeService } from '../../core/services/theme.service';
@@ -69,16 +70,16 @@ import { ThemeService } from '../../core/services/theme.service';
             <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No hay sesiones activas</p>
           }
           
-          @for (session of activeSessions(); track session._id) {
+          @for (session of activeSessions(); track session._id!) {
             <div
               (click)="selectSession(session)"
               class="p-3 rounded-lg border cursor-pointer transition-colors mb-2"
-              [class.bg-primary-50]="selectedSession()?._id === session._id"
-              [class.border-primary]="selectedSession()?._id === session._id"
-              [class.bg-white]="selectedSession()?._id !== session._id"
-              [class.dark:bg-gray-700]="selectedSession()?._id !== session._id"
-              [class.border-gray-200]="selectedSession()?._id !== session._id"
-              [class.dark:border-gray-600]="selectedSession()?._id !== session._id"
+              [class.bg-primary-50]="selectedSession()?._id === session._id!"
+              [class.border-primary]="selectedSession()?._id === session._id!"
+              [class.bg-white]="selectedSession()?._id !== session._id!"
+              [class.dark:bg-gray-700]="selectedSession()?._id !== session._id!"
+              [class.border-gray-200]="selectedSession()?._id !== session._id!"
+              [class.dark:border-gray-600]="selectedSession()?._id !== session._id!"
             >
               <div class="flex items-center justify-between">
                 <span class="font-medium text-gray-900 dark:text-white">{{ session.totem?.totem_name || 'Mesa' }}</span>
@@ -93,7 +94,7 @@ import { ThemeService } from '../../core/services/theme.service';
                 </span>
               </div>
               <p class="text-xs text-gray-500 mt-1">
-                {{ getSessionItemCount(session._id) }} items • {{ getSessionTotal(session._id) | currencyFormat }}
+                {{ getSessionItemCount(session._id!) }} items • {{ getSessionTotal(session._id!) | currencyFormat }}
               </p>
             </div>
           }
@@ -163,23 +164,23 @@ import { ThemeService } from '../../core/services/theme.service';
                 Todos
               </button>
               
-              @for (customer of customers(); track customer._id) {
+              @for (customer of customers(); track customer._id!) {
                 <button
-                  (click)="selectedCustomerId.set(customer._id)"
+                  (click)="selectedCustomerId.set(customer._id!)"
                   class="px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors flex items-center gap-1"
-                  [class.bg-primary]="selectedCustomerId() === customer._id"
-                  [class.text-white]="selectedCustomerId() === customer._id"
-                  [class.bg-gray-200]="selectedCustomerId() !== customer._id"
-                  [class.dark:bg-gray-700]="selectedCustomerId() !== customer._id"
+                  [class.bg-primary]="selectedCustomerId() === customer._id!"
+                  [class.text-white]="selectedCustomerId() === customer._id!"
+                  [class.bg-gray-200]="selectedCustomerId() !== customer._id!"
+                  [class.dark:bg-gray-700]="selectedCustomerId() !== customer._id!"
                 >
                   {{ customer.customer_name }}
                   <span 
                     class="text-xs px-1.5 rounded-full"
-                    [class.bg-white]="selectedCustomerId() === customer._id"
-                    [class.bg-gray-300]="selectedCustomerId() !== customer._id"
-                    [class.text-primary]="selectedCustomerId() === customer._id"
+                    [class.bg-white]="selectedCustomerId() === customer._id!"
+                    [class.bg-gray-300]="selectedCustomerId() !== customer._id!"
+                    [class.text-primary]="selectedCustomerId() === customer._id!"
                   >
-                    {{ getCustomerItemCount(customer._id) }}
+                    {{ getCustomerItemCount(customer._id!) }}
                   </span>
                 </button>
               }
@@ -227,7 +228,7 @@ import { ThemeService } from '../../core/services/theme.service';
                   Cocina
                 </h3>
                 
-                @for (item of filteredItems(); track item._id) {
+                @for (item of filteredItems(); track item._id!) {
                   @if (item.item_disher_type === 'KITCHEN') {
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-3 mb-2 border-l-4"
                          [class.border-yellow-400]="item.item_state === 'ORDERED'"
@@ -267,12 +268,12 @@ import { ThemeService } from '../../core/services/theme.service';
                             <!-- Customer Assignment -->
                             <select
                               [(ngModel)]="item.customer_id"
-                              (change)="assignItemToCustomer(item._id, $any($event.target).value || null)"
+                              (change)="assignItemToCustomer(item._id!, $any($event.target).value || null)"
                               class="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
                             >
                               <option value="">Sin asignar</option>
-                              @for (customer of customers(); track customer._id) {
-                                <option [value]="customer._id">{{ customer.customer_name }}</option>
+                              @for (customer of customers(); track customer._id!) {
+                                <option [value]="customer._id!">{{ customer.customer_name }}</option>
                               }
                             </select>
                           </div>
@@ -283,7 +284,7 @@ import { ThemeService } from '../../core/services/theme.service';
                           
                           @if (item.item_state === 'ORDERED') {
                             <button
-                              (click)="deleteItem(item._id)"
+                              (click)="deleteItem(item._id!)"
                               class="text-red-500 hover:text-red-700"
                               title="Eliminar item"
                             >
@@ -306,7 +307,7 @@ import { ThemeService } from '../../core/services/theme.service';
                   Barra / Servicio
                 </h3>
                 
-                @for (item of serviceItemsSession(); track item._id) {
+                @for (item of serviceItemsSession(); track item._id!) {
                   <div class="bg-white dark:bg-gray-800 rounded-lg p-3 mb-2 border-l-4"
                        [class.border-yellow-400]="item.item_state === 'ORDERED'"
                        [class.border-green-400]="item.item_state === 'SERVED'"
@@ -332,12 +333,12 @@ import { ThemeService } from '../../core/services/theme.service';
                           
                           <select
                             [(ngModel)]="item.customer_id"
-                            (change)="assignItemToCustomer(item._id, $any($event.target).value || null)"
+                            (change)="assignItemToCustomer(item._id!, $any($event.target).value || null)"
                             class="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
                           >
                             <option value="">Sin asignar</option>
-                            @for (customer of customers(); track customer._id) {
-                              <option [value]="customer._id">{{ customer.customer_name }}</option>
+                            @for (customer of customers(); track customer._id!) {
+                              <option [value]="customer._id!">{{ customer.customer_name }}</option>
                             }
                           </select>
                         </div>
@@ -349,13 +350,13 @@ import { ThemeService } from '../../core/services/theme.service';
                         <div class="flex gap-1">
                           @if (item.item_state === 'ORDERED') {
                             <button
-                              (click)="markServiceItemServed(item._id)"
+                              (click)="markServiceItemServed(item._id!)"
                               class="text-xs px-2 py-1 bg-green-500 text-white rounded"
                             >
                               Servido
                             </button>
                             <button
-                              (click)="deleteItem(item._id)"
+                              (click)="deleteItem(item._id!)"
                               class="text-red-500 hover:text-red-700"
                               title="Eliminar item"
                             >
@@ -505,7 +506,7 @@ import { ThemeService } from '../../core/services/theme.service';
                       <input
                         type="checkbox"
                         [value]="extra._id"
-                        (change)="toggleExtra(extra._id)"
+                        (change)="toggleExtra(extra._id!)"
                         class="w-4 h-4"
                       />
                       <span class="flex-1">{{ extra.extra_name | localize }}</span>
@@ -524,8 +525,8 @@ import { ThemeService } from '../../core/services/theme.service';
                     class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
                   >
                     <option [value]="null">Sin asignar</option>
-                    @for (customer of customers(); track customer._id) {
-                      <option [value]="customer._id">{{ customer.customer_name }}</option>
+                    @for (customer of customers(); track customer._id!) {
+                      <option [value]="customer._id!">{{ customer.customer_name }}</option>
                     }
                   </select>
                 </div>
@@ -575,7 +576,7 @@ export class TasComponent implements OnInit, OnDestroy {
   newCustomerName = signal('');
   showMenu = signal(false);
   selectedCategory = signal<string | null>(null);
-  selectedDish = signal<any>(null);
+  selectedDish = signal<Dish | null>(null);
   selectedVariantId = signal<string | null>(null);
   selectedExtras = signal<string[]>([]);
   assignToCustomerId = signal<string | null>(null);
@@ -620,7 +621,7 @@ export class TasComponent implements OnInit, OnDestroy {
     const cat = this.selectedCategory();
     const all = this.dishes();
     if (!cat) return all;
-    return all.filter(d => (d as any).category_id === cat);
+    return all.filter(d => d.category_id === cat);
   });
 
   filteredItems = computed(() => {
@@ -709,7 +710,7 @@ export class TasComponent implements OnInit, OnDestroy {
     tasStore.selectSession(session);
     
     // Load session items
-    this.tasService.getSessionItems(session._id)
+    this.tasService.getSessionItems(session._id!)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (items) => tasStore.setSessionItems(items),
@@ -717,7 +718,7 @@ export class TasComponent implements OnInit, OnDestroy {
       });
 
     // Load customers for this session
-    this.tasService.getCustomers(session._id)
+    this.tasService.getCustomers(session._id!)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (customers) => tasStore.setCustomers(customers),
@@ -725,7 +726,7 @@ export class TasComponent implements OnInit, OnDestroy {
       });
 
     // Join socket room
-    this.socketService.joinSession(session._id);
+    this.socketService.joinSession(session._id!);
   }
 
   createTemporaryTotem() {
@@ -796,7 +797,7 @@ export class TasComponent implements OnInit, OnDestroy {
     const name = this.newCustomerName().trim();
     if (!name || !this.selectedSession()) return;
 
-    this.tasService.createCustomer(this.selectedSession()!._id, name)
+    this.tasService.createCustomer(this.selectedSession()!._id!, name)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (customer) => {
@@ -811,7 +812,7 @@ export class TasComponent implements OnInit, OnDestroy {
       });
   }
 
-  selectDish(dish: any) {
+  selectDish(dish: Dish) {
     this.selectedDish.set(dish);
     this.selectedVariantId.set(null);
     this.selectedExtras.set([]);
@@ -827,16 +828,16 @@ export class TasComponent implements OnInit, OnDestroy {
     });
   }
 
-  calculateDishTotal(dish: any): number {
+  calculateDishTotal(dish: Dish): number {
     let total = dish.disher_price;
     
-    const variant = dish.variants.find((v: any) => v._id === this.selectedVariantId());
+    const variant = dish.variants.find(v => v._id === this.selectedVariantId());
     if (variant) {
       total += variant.variant_price;
     }
 
     this.selectedExtras().forEach(extraId => {
-      const extra = dish.extras.find((e: any) => e._id === extraId);
+      const extra = dish.extras.find(e => e._id === extraId);
       if (extra) {
         total += extra.extra_price;
       }
@@ -845,7 +846,7 @@ export class TasComponent implements OnInit, OnDestroy {
     return total;
   }
 
-  addItemToOrder(dish: any) {
+  addItemToOrder(dish: Dish) {
     const session = this.selectedSession();
     if (!session) return;
 
@@ -858,8 +859,8 @@ export class TasComponent implements OnInit, OnDestroy {
     const createItem = () => {
       this.tasService.addItem({
         order_id: orderId,
-        session_id: session._id,
-        dish_id: dish._id,
+        session_id: session._id!,
+        dish_id: dish._id!,
         customer_id: this.assignToCustomerId() || undefined,
         variant_id: this.selectedVariantId() || undefined,
         extras: this.selectedExtras(),
@@ -884,7 +885,7 @@ export class TasComponent implements OnInit, OnDestroy {
       createItem();
     } else {
       // Create order first
-      this.tasService.createOrder({ session_id: session._id })
+      this.tasService.createOrder({ session_id: session._id! })
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (order) => {

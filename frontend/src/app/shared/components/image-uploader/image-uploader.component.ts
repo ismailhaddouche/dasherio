@@ -51,8 +51,9 @@ export class ImageUploaderComponent {
     if (initial) this.previewUrl.set(initial);
   }
 
-  onFileSelected(event: any) {
-    const file: File = event.target.files[0];
+  onFileSelected(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
     if (!file) return;
 
     // Show local preview immediately
