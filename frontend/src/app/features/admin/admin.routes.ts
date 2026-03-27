@@ -55,11 +55,11 @@ export const ADMIN_ROUTES: Routes = [
       },
       { 
         path: 'totems/new', 
-        loadComponent: () => import('./totems/totem-list.component').then(m => m.TotemFormComponent) 
+        loadComponent: () => import('./totems/totem-form.component').then(m => m.TotemFormComponent) 
       },
       { 
         path: 'totems/:id', 
-        loadComponent: () => import('./totems/totem-list.component').then(m => m.TotemFormComponent) 
+        loadComponent: () => import('./totems/totem-form.component').then(m => m.TotemFormComponent) 
       },
 
       // Staff

@@ -9,6 +9,10 @@ export async function getTotemByQR(qrToken: string) {
   return totemRepo.findByQR(qrToken);
 }
 
+export async function getTotemById(totemId: string) {
+  return totemRepo.findById(totemId);
+}
+
 export async function startSession(totemId: string) {
   const existing = await totemSessionRepo.findActiveByTotemId(totemId);
   if (existing) return existing;
@@ -22,6 +26,16 @@ export async function closeSession(sessionId: string) {
 export async function createTotem(data: any) {
   const qr = crypto.randomUUID();
   return totemRepo.createTotem({ ...data, totem_qr: qr });
+}
+
+export async function updateTotem(totemId: string, data: any) {
+  return totemRepo.updateTotem(totemId, data);
+}
+
+export async function regenerateQr(totemId: string) {
+  const newQr = crypto.randomUUID();
+  await totemRepo.updateTotem(totemId, { totem_qr: newQr });
+  return newQr;
 }
 
 export async function getTotemsByRestaurant(restaurantId: string) {

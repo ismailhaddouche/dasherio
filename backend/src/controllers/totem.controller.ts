@@ -8,14 +8,36 @@ export const listTotems = asyncHandler(async (req: Request, res: Response): Prom
   res.json(totems);
 });
 
+export const getTotem = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const totem = await TotemService.getTotemById(String(req.params.id));
+  if (!totem) {
+    throw createError.notFound('Totem not found');
+  }
+  // Verify totem belongs to user's restaurant
+  if ((totem as any).restaurant_id.toString() !== req.user!.restaurantId) {
+    throw createError.forbidden('Access denied');
+  }
+  res.json(totem);
+});
+
 export const createTotem = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const totem = await TotemService.createTotem({ ...req.body, restaurant_id: req.user!.restaurantId });
   res.status(201).json(totem);
 });
 
+export const updateTotem = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const totem = await TotemService.updateTotem(String(req.params.id), req.body);
+  res.json(totem);
+});
+
 export const deleteTotem = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   await TotemService.deleteTotem(String(req.params.id));
   res.status(204).end();
+});
+
+export const regenerateQr = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const qr = await TotemService.regenerateQr(String(req.params.id));
+  res.json({ qr });
 });
 
 export const startSession = asyncHandler(async (req: Request, res: Response): Promise<void> => {

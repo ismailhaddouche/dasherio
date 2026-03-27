@@ -14,8 +14,11 @@ router.get('/menu/:qr/dishes', qrLimiter, TotemController.getMenuDishes);
 router.use(authMiddleware);
 
 router.get('/', requirePermission('read', 'Totem'), TotemController.listTotems);
+router.get('/:id', requirePermission('read', 'Totem'), TotemController.getTotem);
 router.post('/', requirePermission('create', 'Totem'), TotemController.createTotem);
+router.patch('/:id', requirePermission('update', 'Totem'), TotemController.updateTotem);
 router.delete('/:id', requirePermission('delete', 'Totem'), TotemController.deleteTotem);
+router.post('/:id/regenerate-qr', requirePermission('update', 'Totem'), TotemController.regenerateQr);
 router.post('/:totemId/session', requirePermission('create', 'TotemSession'), TotemController.startSession);
 
 export default router;
