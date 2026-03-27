@@ -32,7 +32,7 @@ export async function loginWithUsername(username: string, password: string) {
     name: staff.staff_name,
   };
 
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES } as jwt.SignOptions);
   return { token, user: payload };
 }
 
@@ -55,7 +55,7 @@ export async function loginWithPin(pin: string, restaurantId: string) {
         name: staff.staff_name,
       };
 
-      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES } as jwt.SignOptions);
       return { token, user: payload };
     }
   }

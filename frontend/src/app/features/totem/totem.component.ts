@@ -138,7 +138,10 @@ export class TotemComponent implements OnInit {
   filteredDishes = computed(() => {
     const cat = this.selectedCategory();
     const all = this.dishes();
-    return cat ? all.filter((d) => d.category_id === cat || d.category_id?._id === cat) : all;
+    return cat ? all.filter((d) => {
+      const catId = typeof d.category_id === 'string' ? d.category_id : d.category_id?._id;
+      return catId === cat;
+    }) : all;
   });
 
   ngOnInit() {
