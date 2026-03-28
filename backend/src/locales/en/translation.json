@@ -5,15 +5,63 @@
     "UNAUTHORIZED": "Unauthorized",
     "FORBIDDEN": "Access denied",
     "NOT_FOUND": "Resource not found",
+    "SERVER_ERROR": "Internal server error",
+    "VALIDATION_ERROR": "Validation error",
+    "JWT_SECRET_MISSING": "JWT_SECRET environment variable is required",
+
     "DISH_NOT_FOUND": "Dish not found",
     "DISH_NOT_AVAILABLE": "Dish not available",
+    "CATEGORY_HAS_DISHES": "Category has associated dishes",
+    "CATEGORY_NOT_FOUND": "Category not found",
+
     "SESSION_NOT_ACTIVE": "Session is not active",
+    "SESSION_NOT_FOUND": "Session not found",
+    "SESSION_EXPIRED": "Session has expired",
+
+    "ORDER_NOT_FOUND": "Order not found",
+    "ORDER_ALREADY_PAID": "Order is already paid",
+    "ORDER_CANCELLED": "Order has been cancelled",
+
     "ITEM_NOT_FOUND": "Item not found",
+    "ITEM_NOT_FOUND_OR_ALREADY_PROCESSED": "Item not found or already processed",
+    "CANNOT_DELETE_ITEM_NOT_ORDERED": "Cannot delete item that is not ordered",
     "INVALID_STATE_TRANSITION": "Invalid state transition",
     "REQUIRES_POS_AUTHORIZATION": "Requires POS authorization",
+    "REQUIRES_AUTHORIZATION": "Authorization required",
+
     "PAYMENT_NOT_FOUND": "Payment not found",
     "TICKET_NOT_FOUND": "Ticket not found",
-    "SERVER_ERROR": "Internal server error"
+    "NO_ITEMS_TO_PAY": "No items to pay",
+    "PAYMENT_FAILED": "Payment failed",
+
+    "TOTEM_NOT_FOUND": "Totem not found",
+    "TOTEM_NOT_ACTIVE": "Totem is not active",
+    "TOTEM_QR_INVALID": "Invalid totem QR",
+
+    "RESTAURANT_NOT_FOUND": "Restaurant not found",
+    "RESTAURANT_NOT_ACTIVE": "Restaurant is not active",
+
+    "STAFF_NOT_FOUND": "Staff member not found",
+    "CUSTOMER_NOT_FOUND": "Customer not found",
+    "TABLE_NOT_FOUND": "Table not found",
+
+    "FILE_TOO_LARGE": "File too large",
+    "INVALID_FILE_TYPE": "Invalid file type",
+    "UPLOAD_FAILED": "Upload failed",
+
+    "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again later",
+    "SOCKET_NOT_INITIALIZED": "Socket.io not initialized",
+    "UPDATE_FAILED": "Update failed",
+    "DUPLICATE_RESOURCE": "Resource already exists"
+  },
+  "success": {
+    "LOGIN_SUCCESS": "Login successful",
+    "LOGOUT_SUCCESS": "Logout successful",
+    "CREATED": "Created successfully",
+    "UPDATED": "Updated successfully",
+    "DELETED": "Deleted successfully",
+    "ORDER_CREATED": "Order created successfully",
+    "PAYMENT_PROCESSED": "Payment processed successfully"
   },
   "mail": {
     "welcome_subject": "Welcome to DisherIo",

@@ -10,7 +10,12 @@
     "back": "Back",
     "search": "Search",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "close": "Close",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Information"
   },
   "auth": {
     "login": "Login",
@@ -18,7 +23,45 @@
     "email": "Email",
     "password": "Password",
     "pin": "PIN",
-    "error_invalid": "Invalid credentials"
+    "error_invalid": "Invalid credentials",
+    "session_expired": "Session has expired",
+    "unauthorized": "Unauthorized"
+  },
+  "errors": {
+    "INVALID_CREDENTIALS": "Invalid credentials",
+    "INVALID_PIN": "Invalid PIN",
+    "UNAUTHORIZED": "Unauthorized",
+    "FORBIDDEN": "Access denied",
+    "NOT_FOUND": "Resource not found",
+    "SERVER_ERROR": "Internal server error",
+    "DISH_NOT_FOUND": "Dish not found",
+    "DISH_NOT_AVAILABLE": "Dish not available",
+    "SESSION_NOT_ACTIVE": "Session is not active",
+    "SESSION_NOT_FOUND": "Session not found",
+    "ORDER_NOT_FOUND": "Order not found",
+    "ITEM_NOT_FOUND": "Item not found",
+    "INVALID_STATE_TRANSITION": "Invalid state transition",
+    "REQUIRES_POS_AUTHORIZATION": "Requires POS authorization",
+    "REQUIRES_AUTHORIZATION": "Authorization required",
+    "PAYMENT_NOT_FOUND": "Payment not found",
+    "NO_ITEMS_TO_PAY": "No items to pay",
+    "TOTEM_NOT_FOUND": "Totem not found",
+    "RESTAURANT_NOT_FOUND": "Restaurant not found",
+    "CANNOT_DELETE_ITEM_NOT_ORDERED": "Cannot delete item that is not ordered",
+    "ITEM_NOT_FOUND_OR_ALREADY_PROCESSED": "Item not found or already processed",
+    "UPDATE_FAILED": "Update failed",
+    "CATEGORY_HAS_DISHES": "Category has associated dishes",
+    "FILE_TOO_LARGE": "File too large",
+    "INVALID_FILE_TYPE": "Invalid file type",
+    "UPLOAD_FAILED": "Upload failed",
+    "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again later"
+  },
+  "success": {
+    "CREATED": "Created successfully",
+    "UPDATED": "Updated successfully",
+    "DELETED": "Deleted successfully",
+    "ORDER_CREATED": "Order created successfully",
+    "PAYMENT_PROCESSED": "Payment processed successfully"
   },
   "kds": {
     "title": "Kitchen",
@@ -26,7 +69,11 @@
     "in_preparation": "In preparation",
     "served": "Served",
     "prepare": "Prepare",
-    "serve": "Served"
+    "serve": "Served",
+    "cancel": "Cancel",
+    "time": "Time",
+    "order": "Order",
+    "table": "Table"
   },
   "pos": {
     "title": "POS",
@@ -39,19 +86,57 @@
       "all": "Full payment",
       "by_user": "Per person",
       "shared": "Split equally"
-    }
+    },
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "tip": "Tip",
+    "discount": "Discount",
+    "print_receipt": "Print receipt",
+    "send_receipt": "Send receipt"
   },
   "totem": {
     "my_order": "My order",
     "add_to_cart": "Add",
     "place_order": "Order",
-    "empty_cart": "Empty cart"
+    "empty_cart": "Empty cart",
+    "scan_qr": "Scan QR code",
+    "welcome": "Welcome",
+    "order_summary": "Order summary",
+    "total_to_pay": "Total to pay",
+    "continue": "Continue"
   },
   "admin": {
     "dishes": "Dishes",
     "categories": "Categories",
     "totems": "Totems",
     "staff": "Staff",
-    "settings": "Settings"
+    "settings": "Settings",
+    "restaurant_info": "Restaurant information",
+    "tax_settings": "Tax settings",
+    "tip_settings": "Tip settings",
+    "appearance": "Appearance"
+  },
+  "dish": {
+    "name": "Name",
+    "description": "Description",
+    "price": "Price",
+    "category": "Category",
+    "type": "Type",
+    "type_kitchen": "Kitchen",
+    "type_service": "Bar/Service",
+    "status": "Status",
+    "status_active": "Active",
+    "status_inactive": "Inactive",
+    "image": "Image",
+    "variants": "Variants",
+    "extras": "Extras"
+  },
+  "table": {
+    "number": "Number",
+    "qr_code": "QR Code",
+    "status": "Status",
+    "status_free": "Free",
+    "status_occupied": "Occupied",
+    "status_reserved": "Reserved"
   }
 }

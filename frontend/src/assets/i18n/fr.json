@@ -10,7 +10,12 @@
     "back": "Retour",
     "search": "Rechercher",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "close": "Fermer",
+    "error": "Erreur",
+    "success": "Succès",
+    "warning": "Avertissement",
+    "info": "Information"
   },
   "auth": {
     "login": "Connexion",
@@ -18,7 +23,45 @@
     "email": "Email",
     "password": "Mot de passe",
     "pin": "PIN",
-    "error_invalid": "Identifiants incorrects"
+    "error_invalid": "Identifiants incorrects",
+    "session_expired": "La session a expiré",
+    "unauthorized": "Non autorisé"
+  },
+  "errors": {
+    "INVALID_CREDENTIALS": "Identifiants incorrects",
+    "INVALID_PIN": "PIN incorrect",
+    "UNAUTHORIZED": "Non autorisé",
+    "FORBIDDEN": "Accès refusé",
+    "NOT_FOUND": "Ressource introuvable",
+    "SERVER_ERROR": "Erreur interne du serveur",
+    "DISH_NOT_FOUND": "Plat introuvable",
+    "DISH_NOT_AVAILABLE": "Plat indisponible",
+    "SESSION_NOT_ACTIVE": "La session n'est pas active",
+    "SESSION_NOT_FOUND": "Session introuvable",
+    "ORDER_NOT_FOUND": "Commande introuvable",
+    "ITEM_NOT_FOUND": "Article introuvable",
+    "INVALID_STATE_TRANSITION": "Transition d'état invalide",
+    "REQUIRES_POS_AUTHORIZATION": "Autorisation de la caisse requise",
+    "REQUIRES_AUTHORIZATION": "Autorisation requise",
+    "PAYMENT_NOT_FOUND": "Paiement introuvable",
+    "NO_ITEMS_TO_PAY": "Aucun article à payer",
+    "TOTEM_NOT_FOUND": "Totem introuvable",
+    "RESTAURANT_NOT_FOUND": "Restaurant introuvable",
+    "CANNOT_DELETE_ITEM_NOT_ORDERED": "Impossible de supprimer un article non commandé",
+    "ITEM_NOT_FOUND_OR_ALREADY_PROCESSED": "Article introuvable ou déjà traité",
+    "UPDATE_FAILED": "Échec de la mise à jour",
+    "CATEGORY_HAS_DISHES": "La catégorie contient des plats associés",
+    "FILE_TOO_LARGE": "Fichier trop volumineux",
+    "INVALID_FILE_TYPE": "Type de fichier invalide",
+    "UPLOAD_FAILED": "Échec du téléchargement",
+    "RATE_LIMIT_EXCEEDED": "Trop de requêtes. Veuillez réessayer plus tard"
+  },
+  "success": {
+    "CREATED": "Créé avec succès",
+    "UPDATED": "Mis à jour avec succès",
+    "DELETED": "Supprimé avec succès",
+    "ORDER_CREATED": "Commande créée avec succès",
+    "PAYMENT_PROCESSED": "Paiement traité avec succès"
   },
   "kds": {
     "title": "Cuisine",
@@ -26,7 +69,11 @@
     "in_preparation": "En préparation",
     "served": "Servi",
     "prepare": "Préparer",
-    "serve": "Servi"
+    "serve": "Servi",
+    "cancel": "Annuler",
+    "time": "Temps",
+    "order": "Commande",
+    "table": "Table"
   },
   "pos": {
     "title": "Caisse",
@@ -38,20 +85,58 @@
     "payment_type": {
       "all": "Paiement complet",
       "by_user": "Par personne",
-      "shared": "Parts égales"
-    }
+      "shared": "Partager également"
+    },
+    "subtotal": "Sous-total",
+    "tax": "Taxe",
+    "tip": "Pourboire",
+    "discount": "Remise",
+    "print_receipt": "Imprimer le reçu",
+    "send_receipt": "Envoyer le reçu"
   },
   "totem": {
     "my_order": "Ma commande",
     "add_to_cart": "Ajouter",
     "place_order": "Commander",
-    "empty_cart": "Panier vide"
+    "empty_cart": "Panier vide",
+    "scan_qr": "Scannez le code QR",
+    "welcome": "Bienvenue",
+    "order_summary": "Résumé de la commande",
+    "total_to_pay": "Total à payer",
+    "continue": "Continuer"
   },
   "admin": {
     "dishes": "Plats",
     "categories": "Catégories",
     "totems": "Totems",
     "staff": "Personnel",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "restaurant_info": "Informations du restaurant",
+    "tax_settings": "Paramètres de taxe",
+    "tip_settings": "Paramètres de pourboire",
+    "appearance": "Apparence"
+  },
+  "dish": {
+    "name": "Nom",
+    "description": "Description",
+    "price": "Prix",
+    "category": "Catégorie",
+    "type": "Type",
+    "type_kitchen": "Cuisine",
+    "type_service": "Bar/Service",
+    "status": "Statut",
+    "status_active": "Actif",
+    "status_inactive": "Inactif",
+    "image": "Image",
+    "variants": "Variantes",
+    "extras": "Extras"
+  },
+  "table": {
+    "number": "Numéro",
+    "qr_code": "Code QR",
+    "status": "Statut",
+    "status_free": "Libre",
+    "status_occupied": "Occupée",
+    "status_reserved": "Réservée"
   }
 }

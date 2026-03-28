@@ -5,15 +5,63 @@
     "UNAUTHORIZED": "No autorizado",
     "FORBIDDEN": "Acceso denegado",
     "NOT_FOUND": "Recurso no encontrado",
+    "SERVER_ERROR": "Error interno del servidor",
+    "VALIDATION_ERROR": "Error de validación",
+    "JWT_SECRET_MISSING": "Variable de entorno JWT_SECRET requerida",
+
     "DISH_NOT_FOUND": "Plato no encontrado",
     "DISH_NOT_AVAILABLE": "Plato no disponible",
+    "CATEGORY_HAS_DISHES": "La categoría tiene platos asociados",
+    "CATEGORY_NOT_FOUND": "Categoría no encontrada",
+
     "SESSION_NOT_ACTIVE": "La sesión no está activa",
+    "SESSION_NOT_FOUND": "Sesión no encontrada",
+    "SESSION_EXPIRED": "La sesión ha expirado",
+
+    "ORDER_NOT_FOUND": "Pedido no encontrado",
+    "ORDER_ALREADY_PAID": "El pedido ya está pagado",
+    "ORDER_CANCELLED": "El pedido ha sido cancelado",
+
     "ITEM_NOT_FOUND": "Item no encontrado",
+    "ITEM_NOT_FOUND_OR_ALREADY_PROCESSED": "Item no encontrado o ya procesado",
+    "CANNOT_DELETE_ITEM_NOT_ORDERED": "No se puede eliminar un item que no está ordenado",
     "INVALID_STATE_TRANSITION": "Transición de estado no válida",
     "REQUIRES_POS_AUTHORIZATION": "Requiere autorización del cajero",
+    "REQUIRES_AUTHORIZATION": "Requiere autorización",
+
     "PAYMENT_NOT_FOUND": "Pago no encontrado",
     "TICKET_NOT_FOUND": "Ticket no encontrado",
-    "SERVER_ERROR": "Error interno del servidor"
+    "NO_ITEMS_TO_PAY": "No hay items para pagar",
+    "PAYMENT_FAILED": "El pago ha fallado",
+
+    "TOTEM_NOT_FOUND": "Totem no encontrado",
+    "TOTEM_NOT_ACTIVE": "El totem no está activo",
+    "TOTEM_QR_INVALID": "QR de totem inválido",
+
+    "RESTAURANT_NOT_FOUND": "Restaurante no encontrado",
+    "RESTAURANT_NOT_ACTIVE": "El restaurante no está activo",
+
+    "STAFF_NOT_FOUND": "Empleado no encontrado",
+    "CUSTOMER_NOT_FOUND": "Cliente no encontrado",
+    "TABLE_NOT_FOUND": "Mesa no encontrada",
+
+    "FILE_TOO_LARGE": "Archivo demasiado grande",
+    "INVALID_FILE_TYPE": "Tipo de archivo no válido",
+    "UPLOAD_FAILED": "Error al subir el archivo",
+
+    "RATE_LIMIT_EXCEEDED": "Demasiadas peticiones. Inténtalo más tarde",
+    "SOCKET_NOT_INITIALIZED": "Socket.io no inicializado",
+    "UPDATE_FAILED": "Error al actualizar",
+    "DUPLICATE_RESOURCE": "El recurso ya existe"
+  },
+  "success": {
+    "LOGIN_SUCCESS": "Inicio de sesión exitoso",
+    "LOGOUT_SUCCESS": "Cierre de sesión exitoso",
+    "CREATED": "Creado exitosamente",
+    "UPDATED": "Actualizado exitosamente",
+    "DELETED": "Eliminado exitosamente",
+    "ORDER_CREATED": "Pedido creado exitosamente",
+    "PAYMENT_PROCESSED": "Pago procesado exitosamente"
   },
   "mail": {
     "welcome_subject": "Bienvenido a DisherIo",
