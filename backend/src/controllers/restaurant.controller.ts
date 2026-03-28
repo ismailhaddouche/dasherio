@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { asyncHandler, createError } from '../utils/async-handler';
 import * as RestaurantService from '../services/restaurant.service';
+import { UpdateRestaurantData } from '../services/restaurant.service';
 
 export const getMyRestaurant = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const restaurant = await RestaurantService.getRestaurantById(req.user!.restaurantId);
@@ -48,14 +49,18 @@ export const updateRestaurantSettings = asyncHandler(async (req: Request, res: R
   ];
   
   // Filter only allowed fields
-  const updates: any = {};
+  const updates: UpdateRestaurantData = {};
   for (const field of allowedFields) {
     if (req.body[field] !== undefined) {
-      updates[field] = req.body[field];
+      (updates as Record<string, unknown>)[field] = req.body[field];
     }
   }
   
   const restaurant = await RestaurantService.updateRestaurant(req.user!.restaurantId, updates);
+  if (!restaurant) {
+    res.status(404).json({ message: 'Restaurant not found' });
+    return;
+  }
   res.json({
     message: 'Settings updated successfully',
     settings: {

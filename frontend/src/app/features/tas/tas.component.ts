@@ -1,12 +1,15 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { TasService } from '../../services/tas.service';
 import { SocketService } from '../../services/socket/socket.service';
-import { tasStore, TotemSession, ItemOrder, Customer } from '../../store/tas.store';
+import { tasStore } from '../../store/tas.store';
+import type { TotemSession, ItemOrder, Customer, Dish } from '../../types';
 import { LocalizePipe } from '../../shared/pipes/localize.pipe';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
-import { authStore } from '../../store/auth.store';
+import { ThemeService } from '../../core/services/theme.service';
 
 @Component({
   selector: 'app-tas',
@@ -18,9 +21,27 @@ import { authStore } from '../../store/auth.store';
       <aside class="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
         <!-- Header -->
         <header class="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div class="flex items-center gap-2 mb-3">
-            <span class="material-symbols-outlined text-2xl text-primary">room_service</span>
-            <h1 class="text-lg font-bold">Servicio de Mesa</h1>
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-2xl text-primary">room_service</span>
+              <h1 class="text-lg font-bold text-gray-900 dark:text-white">Servicio de Mesa</h1>
+            </div>
+            <!-- Theme Toggle -->
+            <button 
+              (click)="themeService.toggleTheme()"
+              class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title="Cambiar tema"
+            >
+              @if (themeService.isDark()) {
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+              } @else {
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                </svg>
+              }
+            </button>
           </div>
           
           <!-- New Temporary Totem -->
@@ -43,25 +64,25 @@ import { authStore } from '../../store/auth.store';
 
         <!-- Active Sessions -->
         <div class="flex-1 overflow-auto p-3">
-          <h2 class="text-xs font-semibold text-gray-500 uppercase mb-2">Sesiones Activas</h2>
+          <h2 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Sesiones Activas</h2>
           
           @if (activeSessions().length === 0) {
-            <p class="text-sm text-gray-400 text-center py-4">No hay sesiones activas</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No hay sesiones activas</p>
           }
           
-          @for (session of activeSessions(); track session._id) {
+          @for (session of activeSessions(); track session._id!) {
             <div
               (click)="selectSession(session)"
               class="p-3 rounded-lg border cursor-pointer transition-colors mb-2"
-              [class.bg-primary-50]="selectedSession()?._id === session._id"
-              [class.border-primary]="selectedSession()?._id === session._id"
-              [class.bg-white]="selectedSession()?._id !== session._id"
-              [class.dark:bg-gray-700]="selectedSession()?._id !== session._id"
-              [class.border-gray-200]="selectedSession()?._id !== session._id"
-              [class.dark:border-gray-600]="selectedSession()?._id !== session._id"
+              [class.bg-primary-50]="selectedSession()?._id === session._id!"
+              [class.border-primary]="selectedSession()?._id === session._id!"
+              [class.bg-white]="selectedSession()?._id !== session._id!"
+              [class.dark:bg-gray-700]="selectedSession()?._id !== session._id!"
+              [class.border-gray-200]="selectedSession()?._id !== session._id!"
+              [class.dark:border-gray-600]="selectedSession()?._id !== session._id!"
             >
               <div class="flex items-center justify-between">
-                <span class="font-medium">{{ session.totem?.totem_name || 'Mesa' }}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ session.totem?.totem_name || 'Mesa' }}</span>
                 <span 
                   class="text-xs px-2 py-1 rounded-full"
                   [class.bg-yellow-100]="session.totem?.totem_type === 'TEMPORARY'"
@@ -73,7 +94,7 @@ import { authStore } from '../../store/auth.store';
                 </span>
               </div>
               <p class="text-xs text-gray-500 mt-1">
-                {{ getSessionItemCount(session._id) }} items • {{ getSessionTotal(session._id) | currencyFormat }}
+                {{ getSessionItemCount(session._id!) }} items • {{ getSessionTotal(session._id!) | currencyFormat }}
               </p>
             </div>
           }
@@ -81,11 +102,11 @@ import { authStore } from '../../store/auth.store';
 
         <!-- Available Totems (no active session) -->
         <div class="p-3 border-t border-gray-200 dark:border-gray-700 max-h-48 overflow-auto">
-          <h2 class="text-xs font-semibold text-gray-500 uppercase mb-2">Mesas Disponibles</h2>
+          <h2 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Mesas Disponibles</h2>
           
           @for (totem of availableTotems(); track totem._id) {
             <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-700 mb-1">
-              <span class="text-sm">{{ totem.totem_name }}</span>
+              <span class="text-sm text-gray-900 dark:text-white">{{ totem.totem_name }}</span>
               <button
                 (click)="startSession(totem._id)"
                 class="text-xs px-2 py-1 bg-green-500 text-white rounded"
@@ -96,7 +117,7 @@ import { authStore } from '../../store/auth.store';
           }
           
           @if (availableTotems().length === 0) {
-            <p class="text-xs text-gray-400 text-center">Todas las mesas están ocupadas</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 text-center">Todas las mesas están ocupadas</p>
           }
         </div>
       </aside>
@@ -143,23 +164,23 @@ import { authStore } from '../../store/auth.store';
                 Todos
               </button>
               
-              @for (customer of customers(); track customer._id) {
+              @for (customer of customers(); track customer._id!) {
                 <button
-                  (click)="selectedCustomerId.set(customer._id)"
+                  (click)="selectedCustomerId.set(customer._id!)"
                   class="px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors flex items-center gap-1"
-                  [class.bg-primary]="selectedCustomerId() === customer._id"
-                  [class.text-white]="selectedCustomerId() === customer._id"
-                  [class.bg-gray-200]="selectedCustomerId() !== customer._id"
-                  [class.dark:bg-gray-700]="selectedCustomerId() !== customer._id"
+                  [class.bg-primary]="selectedCustomerId() === customer._id!"
+                  [class.text-white]="selectedCustomerId() === customer._id!"
+                  [class.bg-gray-200]="selectedCustomerId() !== customer._id!"
+                  [class.dark:bg-gray-700]="selectedCustomerId() !== customer._id!"
                 >
                   {{ customer.customer_name }}
                   <span 
                     class="text-xs px-1.5 rounded-full"
-                    [class.bg-white]="selectedCustomerId() === customer._id"
-                    [class.bg-gray-300]="selectedCustomerId() !== customer._id"
-                    [class.text-primary]="selectedCustomerId() === customer._id"
+                    [class.bg-white]="selectedCustomerId() === customer._id!"
+                    [class.bg-gray-300]="selectedCustomerId() !== customer._id!"
+                    [class.text-primary]="selectedCustomerId() === customer._id!"
                   >
-                    {{ getCustomerItemCount(customer._id) }}
+                    {{ getCustomerItemCount(customer._id!) }}
                   </span>
                 </button>
               }
@@ -207,7 +228,7 @@ import { authStore } from '../../store/auth.store';
                   Cocina
                 </h3>
                 
-                @for (item of filteredItems(); track item._id) {
+                @for (item of filteredItems(); track item._id!) {
                   @if (item.item_disher_type === 'KITCHEN') {
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-3 mb-2 border-l-4"
                          [class.border-yellow-400]="item.item_state === 'ORDERED'"
@@ -247,12 +268,12 @@ import { authStore } from '../../store/auth.store';
                             <!-- Customer Assignment -->
                             <select
                               [(ngModel)]="item.customer_id"
-                              (change)="assignItemToCustomer(item._id, $any($event.target).value || null)"
+                              (change)="assignItemToCustomer(item._id!, $any($event.target).value || null)"
                               class="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
                             >
                               <option value="">Sin asignar</option>
-                              @for (customer of customers(); track customer._id) {
-                                <option [value]="customer._id">{{ customer.customer_name }}</option>
+                              @for (customer of customers(); track customer._id!) {
+                                <option [value]="customer._id!">{{ customer.customer_name }}</option>
                               }
                             </select>
                           </div>
@@ -263,7 +284,7 @@ import { authStore } from '../../store/auth.store';
                           
                           @if (item.item_state === 'ORDERED') {
                             <button
-                              (click)="deleteItem(item._id)"
+                              (click)="deleteItem(item._id!)"
                               class="text-red-500 hover:text-red-700"
                               title="Eliminar item"
                             >
@@ -286,7 +307,7 @@ import { authStore } from '../../store/auth.store';
                   Barra / Servicio
                 </h3>
                 
-                @for (item of serviceItemsSession(); track item._id) {
+                @for (item of serviceItemsSession(); track item._id!) {
                   <div class="bg-white dark:bg-gray-800 rounded-lg p-3 mb-2 border-l-4"
                        [class.border-yellow-400]="item.item_state === 'ORDERED'"
                        [class.border-green-400]="item.item_state === 'SERVED'"
@@ -312,12 +333,12 @@ import { authStore } from '../../store/auth.store';
                           
                           <select
                             [(ngModel)]="item.customer_id"
-                            (change)="assignItemToCustomer(item._id, $any($event.target).value || null)"
+                            (change)="assignItemToCustomer(item._id!, $any($event.target).value || null)"
                             class="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
                           >
                             <option value="">Sin asignar</option>
-                            @for (customer of customers(); track customer._id) {
-                              <option [value]="customer._id">{{ customer.customer_name }}</option>
+                            @for (customer of customers(); track customer._id!) {
+                              <option [value]="customer._id!">{{ customer.customer_name }}</option>
                             }
                           </select>
                         </div>
@@ -329,13 +350,13 @@ import { authStore } from '../../store/auth.store';
                         <div class="flex gap-1">
                           @if (item.item_state === 'ORDERED') {
                             <button
-                              (click)="markServiceItemServed(item._id)"
+                              (click)="markServiceItemServed(item._id!)"
                               class="text-xs px-2 py-1 bg-green-500 text-white rounded"
                             >
                               Servido
                             </button>
                             <button
-                              (click)="deleteItem(item._id)"
+                              (click)="deleteItem(item._id!)"
                               class="text-red-500 hover:text-red-700"
                               title="Eliminar item"
                             >
@@ -351,7 +372,7 @@ import { authStore } from '../../store/auth.store';
             }
 
             @if (filteredItems().length === 0) {
-              <div class="text-center py-8 text-gray-400">
+              <div class="text-center py-8 text-gray-500 dark:text-gray-400">
                 <span class="material-symbols-outlined text-4xl mb-2">restaurant_menu</span>
                 <p>No hay items en esta sesión</p>
               </div>
@@ -370,7 +391,7 @@ import { authStore } from '../../store/auth.store';
           </div>
         } @else {
           <!-- No Session Selected -->
-          <div class="flex-1 flex flex-col items-center justify-center text-gray-400">
+          <div class="flex-1 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
             <span class="material-symbols-outlined text-6xl mb-4">table_restaurant</span>
             <p class="text-lg">Selecciona una mesa para ver los pedidos</p>
           </div>
@@ -485,7 +506,7 @@ import { authStore } from '../../store/auth.store';
                       <input
                         type="checkbox"
                         [value]="extra._id"
-                        (change)="toggleExtra(extra._id)"
+                        (change)="toggleExtra(extra._id!)"
                         class="w-4 h-4"
                       />
                       <span class="flex-1">{{ extra.extra_name | localize }}</span>
@@ -504,8 +525,8 @@ import { authStore } from '../../store/auth.store';
                     class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
                   >
                     <option [value]="null">Sin asignar</option>
-                    @for (customer of customers(); track customer._id) {
-                      <option [value]="customer._id">{{ customer.customer_name }}</option>
+                    @for (customer of customers(); track customer._id!) {
+                      <option [value]="customer._id!">{{ customer.customer_name }}</option>
                     }
                   </select>
                 </div>
@@ -545,6 +566,8 @@ import { authStore } from '../../store/auth.store';
 export class TasComponent implements OnInit, OnDestroy {
   private tasService = inject(TasService);
   private socketService = inject(SocketService);
+  themeService = inject(ThemeService);
+  private destroy$ = new Subject<void>();
 
   // Local state signals
   newTotemName = signal('');
@@ -553,7 +576,7 @@ export class TasComponent implements OnInit, OnDestroy {
   newCustomerName = signal('');
   showMenu = signal(false);
   selectedCategory = signal<string | null>(null);
-  selectedDish = signal<any>(null);
+  selectedDish = signal<Dish | null>(null);
   selectedVariantId = signal<string | null>(null);
   selectedExtras = signal<string[]>([]);
   assignToCustomerId = signal<string | null>(null);
@@ -598,7 +621,7 @@ export class TasComponent implements OnInit, OnDestroy {
     const cat = this.selectedCategory();
     const all = this.dishes();
     if (!cat) return all;
-    return all.filter(d => (d as any).category_id === cat);
+    return all.filter(d => d.category_id === cat);
   });
 
   filteredItems = computed(() => {
@@ -614,6 +637,12 @@ export class TasComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.socketService.off('kds:new_item');
+    this.socketService.off('item:state_changed');
+    this.socketService.off('item:deleted');
+    this.socketService.off('item:customer_assigned');
     this.socketService.disconnect();
   }
 
@@ -621,25 +650,33 @@ export class TasComponent implements OnInit, OnDestroy {
     tasStore.setLoading(true);
     
     // Load active sessions
-    this.tasService.getActiveSessions().subscribe({
-      next: (sessions) => {
-        tasStore.setSessions(sessions);
-        tasStore.setLoading(false);
-      },
-      error: () => tasStore.setLoading(false),
-    });
+    this.tasService.getActiveSessions()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (sessions) => {
+          tasStore.setSessions(sessions);
+          tasStore.setLoading(false);
+        },
+        error: () => tasStore.setLoading(false),
+      });
 
     // Load all totems
-    this.tasService.getTotems().subscribe({
-      next: (totems) => this.allTotems.set(totems),
-    });
+    this.tasService.getTotems()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (totems) => this.allTotems.set(totems),
+        error: (err) => console.error('[TAS] Error loading totems:', err),
+      });
 
     // Load dishes
-    this.tasService.getDishes().subscribe({
-      next: ({ dishes, categories }) => {
-        tasStore.setDishes(dishes, categories);
-      },
-    });
+    this.tasService.getDishes()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ dishes, categories }) => {
+          tasStore.setDishes(dishes, categories);
+        },
+        error: (err) => console.error('[TAS] Error loading dishes:', err),
+      });
 
     // Connect socket
     this.socketService.connect();
@@ -673,17 +710,23 @@ export class TasComponent implements OnInit, OnDestroy {
     tasStore.selectSession(session);
     
     // Load session items
-    this.tasService.getSessionItems(session._id).subscribe({
-      next: (items) => tasStore.setSessionItems(items),
-    });
+    this.tasService.getSessionItems(session._id!)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (items) => tasStore.setSessionItems(items),
+        error: (err) => console.error('[TAS] Error loading session items:', err),
+      });
 
     // Load customers for this session
-    this.tasService.getCustomers(session._id).subscribe({
-      next: (customers) => tasStore.setCustomers(customers),
-    });
+    this.tasService.getCustomers(session._id!)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (customers) => tasStore.setCustomers(customers),
+        error: (err) => console.error('[TAS] Error loading customers:', err),
+      });
 
     // Join socket room
-    this.socketService.joinSession(session._id);
+    this.socketService.joinSession(session._id!);
   }
 
   createTemporaryTotem() {
@@ -694,7 +737,9 @@ export class TasComponent implements OnInit, OnDestroy {
     this.tasService.createTotem({
       totem_name: name,
       totem_type: 'TEMPORARY',
-    }).subscribe({
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
       next: (totem) => {
         this.allTotems.update(current => [...current, { ...totem, totem_type: 'TEMPORARY' }]);
         this.newTotemName.set('');
@@ -703,49 +748,71 @@ export class TasComponent implements OnInit, OnDestroy {
         // Auto-start session
         this.startSession(totem._id);
       },
-      error: () => this.isCreatingTotem.set(false),
+      error: (err) => {
+        console.error('[TAS] Error creating totem:', err);
+        this.isCreatingTotem.set(false);
+        alert('Error al crear mesa temporal');
+      },
     });
   }
 
   startSession(totemId: string) {
-    this.tasService.startSession(totemId).subscribe({
-      next: (session) => {
-        tasStore.setSessions([...this.sessions(), session]);
-        this.selectSession(session);
-      },
-    });
+    this.tasService.startSession(totemId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (session) => {
+          tasStore.setSessions([...this.sessions(), session]);
+          this.selectSession(session);
+        },
+        error: (err) => {
+          console.error('[TAS] Error starting session:', err);
+          alert('Error al iniciar sesión');
+        },
+      });
   }
 
   closeTemporaryTotem(totemId: string) {
     if (!confirm('¿Cerrar esta mesa temporal? Se marcará la sesión como completada.')) return;
 
-    this.tasService.deleteTotem(totemId).subscribe({
-      next: () => {
-        // Remove from sessions if active
-        tasStore.setSessions(this.sessions().filter(s => s.totem_id !== totemId));
-        this.allTotems.update(current => current.filter(t => t._id !== totemId));
-        
-        if (this.selectedSession()?.totem_id === totemId) {
-          tasStore.selectSession(null);
-        }
-      },
-    });
+    this.tasService.deleteTotem(totemId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          // Remove from sessions if active
+          tasStore.setSessions(this.sessions().filter(s => s.totem_id !== totemId));
+          this.allTotems.update(current => current.filter(t => t._id !== totemId));
+          
+          if (this.selectedSession()?.totem_id === totemId) {
+            tasStore.selectSession(null);
+          }
+        },
+        error: (err) => {
+          console.error('[TAS] Error closing totem:', err);
+          alert('Error al cerrar mesa temporal');
+        },
+      });
   }
 
   addCustomer() {
     const name = this.newCustomerName().trim();
     if (!name || !this.selectedSession()) return;
 
-    this.tasService.createCustomer(this.selectedSession()!._id, name).subscribe({
-      next: (customer) => {
-        tasStore.addCustomer(customer);
-        this.newCustomerName.set('');
-        this.showAddCustomer.set(false);
-      },
-    });
+    this.tasService.createCustomer(this.selectedSession()!._id!, name)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (customer) => {
+          tasStore.addCustomer(customer);
+          this.newCustomerName.set('');
+          this.showAddCustomer.set(false);
+        },
+        error: (err) => {
+          console.error('[TAS] Error creating customer:', err);
+          alert('Error al crear cliente');
+        },
+      });
   }
 
-  selectDish(dish: any) {
+  selectDish(dish: Dish) {
     this.selectedDish.set(dish);
     this.selectedVariantId.set(null);
     this.selectedExtras.set([]);
@@ -761,16 +828,16 @@ export class TasComponent implements OnInit, OnDestroy {
     });
   }
 
-  calculateDishTotal(dish: any): number {
+  calculateDishTotal(dish: Dish): number {
     let total = dish.disher_price;
     
-    const variant = dish.variants.find((v: any) => v._id === this.selectedVariantId());
+    const variant = dish.variants.find(v => v._id === this.selectedVariantId());
     if (variant) {
       total += variant.variant_price;
     }
 
     this.selectedExtras().forEach(extraId => {
-      const extra = dish.extras.find((e: any) => e._id === extraId);
+      const extra = dish.extras.find(e => e._id === extraId);
       if (extra) {
         total += extra.extra_price;
       }
@@ -779,7 +846,7 @@ export class TasComponent implements OnInit, OnDestroy {
     return total;
   }
 
-  addItemToOrder(dish: any) {
+  addItemToOrder(dish: Dish) {
     const session = this.selectedSession();
     if (!session) return;
 
@@ -792,19 +859,25 @@ export class TasComponent implements OnInit, OnDestroy {
     const createItem = () => {
       this.tasService.addItem({
         order_id: orderId,
-        session_id: session._id,
-        dish_id: dish._id,
+        session_id: session._id!,
+        dish_id: dish._id!,
         customer_id: this.assignToCustomerId() || undefined,
         variant_id: this.selectedVariantId() || undefined,
         extras: this.selectedExtras(),
-      }).subscribe({
+      })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
         next: (item) => {
           tasStore.addItem(item);
           this.isAddingItem.set(false);
           this.selectedDish.set(null);
           this.showMenu.set(false);
         },
-        error: () => this.isAddingItem.set(false),
+        error: (err) => {
+          console.error('[TAS] Error adding item:', err);
+          this.isAddingItem.set(false);
+          alert('Error al añadir item');
+        },
       });
     };
 
@@ -812,34 +885,58 @@ export class TasComponent implements OnInit, OnDestroy {
       createItem();
     } else {
       // Create order first
-      this.tasService.createOrder({ session_id: session._id }).subscribe({
-        next: (order) => {
-          orderId = order._id;
-          createItem();
-        },
-        error: () => this.isAddingItem.set(false),
-      });
+      this.tasService.createOrder({ session_id: session._id! })
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (order) => {
+            orderId = order._id;
+            createItem();
+          },
+          error: (err) => {
+            console.error('[TAS] Error creating order:', err);
+            this.isAddingItem.set(false);
+            alert('Error al crear orden');
+          },
+        });
     }
   }
 
   deleteItem(itemId: string) {
     if (!confirm('¿Eliminar este item?')) return;
 
-    this.tasService.deleteItem(itemId).subscribe({
-      next: () => tasStore.removeItem(itemId),
-    });
+    this.tasService.deleteItem(itemId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => tasStore.removeItem(itemId),
+        error: (err) => {
+          console.error('[TAS] Error deleting item:', err);
+          alert('Error al eliminar item');
+        },
+      });
   }
 
   markServiceItemServed(itemId: string) {
-    this.tasService.updateItemState(itemId, 'SERVED').subscribe({
-      next: () => tasStore.updateItemState(itemId, 'SERVED'),
-    });
+    this.tasService.updateItemState(itemId, 'SERVED')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => tasStore.updateItemState(itemId, 'SERVED'),
+        error: (err) => {
+          console.error('[TAS] Error marking item served:', err);
+          alert('Error al marcar item como servido');
+        },
+      });
   }
 
   assignItemToCustomer(itemId: string, customerId: string | null) {
-    this.tasService.assignItemToCustomer(itemId, customerId).subscribe({
-      next: () => tasStore.assignItemToCustomer(itemId, customerId),
-    });
+    this.tasService.assignItemToCustomer(itemId, customerId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => tasStore.assignItemToCustomer(itemId, customerId),
+        error: (err) => {
+          console.error('[TAS] Error assigning item:', err);
+          alert('Error al asignar item');
+        },
+      });
   }
 
   getItemTotal(item: ItemOrder): number {

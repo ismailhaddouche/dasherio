@@ -1,54 +1,140 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable, OnDestroy, inject } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { kdsStore } from '../../store/kds.store';
+import { authStore } from '../../store/auth.store';
+
+// Socket event payload types
+interface ItemStateChangedPayload {
+  itemId: string;
+  newState: string;
+}
+
+interface ItemDeletedPayload {
+  itemId: string;
+}
+
+interface KdsNewItem {
+  _id: string;
+  [key: string]: unknown;
+}
+
+type SocketEventCallback<T> = (data: T) => void;
 
 @Injectable({ providedIn: 'root' })
 export class SocketService implements OnDestroy {
   private socket: Socket | null = null;
+  private reconnectAttempts = 0;
+  private readonly maxReconnectAttempts = 5;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   connect(): void {
     if (this.socket?.connected) return;
-    this.socket = io(environment.wsUrl, { withCredentials: true });
-    this.socket.on('item:state_changed', ({ itemId, newState }: { itemId: string; newState: any }) => {
-      kdsStore.updateItemState(itemId, newState);
-    });
-    this.socket.on('kds:new_item', (item: any) => {
-      kdsStore.addItem(item);
-    });
+    
+    try {
+      this.socket = io(environment.wsUrl, { 
+        withCredentials: true,
+        reconnection: true,
+        reconnectionAttempts: this.maxReconnectAttempts,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+      });
+
+      // Connection events
+      this.socket.on('connect', () => {
+        console.log('Socket connected');
+        this.reconnectAttempts = 0;
+      });
+
+      this.socket.on('connect_error', (err: Error) => {
+        console.error('Socket connection error:', err.message);
+        this.reconnectAttempts++;
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+          console.error('Max reconnection attempts reached');
+          this.socket?.disconnect();
+        }
+      });
+
+      this.socket.on('disconnect', (reason: Socket.DisconnectReason) => {
+        console.log('Socket disconnected:', reason);
+        if (reason === 'io server disconnect') {
+          // Server initiated disconnect, try to reconnect
+          this.socket?.connect();
+        }
+      });
+
+      this.socket.on('error', (err: Error) => {
+        console.error('Socket error:', err);
+      });
+
+      // Application events
+      this.socket.on('item:state_changed', ({ itemId, newState }: ItemStateChangedPayload) => {
+        kdsStore.updateItemState(itemId, newState as 'ORDERED' | 'ON_PREPARE' | 'SERVED' | 'CANCELED');
+      });
+      
+      this.socket.on('kds:new_item', (item: KdsNewItem) => {
+        kdsStore.addItem(item as unknown as Parameters<typeof kdsStore.addItem>[0]);
+      });
+
+      this.socket.on('item:deleted', ({ itemId }: ItemDeletedPayload) => {
+        kdsStore.removeItem(itemId);
+      });
+
+    } catch (err) {
+      console.error('Failed to initialize socket:', err);
+    }
   }
 
   joinSession(sessionId: string): void {
-    this.socket?.emit('pos:join', sessionId);
-    this.socket?.emit('kds:join', sessionId);
+    if (!this.socket?.connected) {
+      console.warn('Cannot join session: socket not connected');
+      return;
+    }
+    this.socket.emit('pos:join', sessionId);
+    this.socket.emit('kds:join', sessionId);
   }
 
   leaveSession(sessionId: string): void {
-    this.socket?.emit('pos:leave', sessionId);
+    if (!this.socket?.connected) return;
+    this.socket.emit('pos:leave', sessionId);
   }
 
-  emit(event: string, data: any): void {
-    this.socket?.emit(event, data);
+  emit<T = unknown>(event: string, data: T): boolean {
+    if (!this.socket?.connected) {
+      console.warn(`Cannot emit ${event}: socket not connected`);
+      return false;
+    }
+    this.socket.emit(event, data);
+    return true;
   }
 
-  on(event: string, callback: (data: any) => void): void {
-    this.socket?.on(event, callback);
+  on<T = unknown>(event: string, callback: SocketEventCallback<T>): void {
+    this.socket?.on(event, callback as (data: unknown) => void);
   }
 
-  off(event: string, callback?: (data: any) => void): void {
+  off<T = unknown>(event: string, callback?: SocketEventCallback<T>): void {
     if (callback) {
-      this.socket?.off(event, callback);
+      this.socket?.off(event, callback as (data: unknown) => void);
     } else {
       this.socket?.off(event);
     }
   }
 
   disconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     this.socket?.disconnect();
     this.socket = null;
+    this.reconnectAttempts = 0;
   }
 
   ngOnDestroy(): void {
     this.disconnect();
+  }
+
+  isConnected(): boolean {
+    return this.socket?.connected ?? false;
   }
 }

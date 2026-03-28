@@ -1,16 +1,20 @@
 {
-  "name": "shared",
+  "name": "@disherio/shared",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Shared types and schemas for DisherIo",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "dev": "tsc --watch"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
   }
 }

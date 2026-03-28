@@ -11,6 +11,21 @@ interface CacheEntry<T> {
 class CacheService {
   private cache: Map<string, CacheEntry<any>> = new Map();
   private defaultTTL: number = 2 * 60 * 1000; // 2 minutos
+  private cleanupInterval: NodeJS.Timeout | null = null;
+
+  constructor() {
+    // Start automatic cleanup every 5 minutes
+    this.cleanupInterval = setInterval(() => {
+      this.cleanup();
+    }, 5 * 60 * 1000);
+  }
+
+  stopCleanup(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+  }
 
   set<T>(key: string, value: T, ttlMs: number = this.defaultTTL): void {
     this.cache.set(key, {

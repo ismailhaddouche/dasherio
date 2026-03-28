@@ -1,7 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { authStore } from '../../../store/auth.store';
 import { LocalizePipe } from '../../../shared/pipes/localize.pipe';
@@ -13,7 +15,7 @@ import { LocalizePipe } from '../../../shared/pipes/localize.pipe';
   template: `
     <div class="flex flex-col gap-6">
       <header class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Platos</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Platos</h1>
         <a 
           routerLink="new" 
           class="bg-primary text-white rounded-lg px-4 py-2 font-bold flex items-center gap-1 active:scale-95 transition-transform"
@@ -23,7 +25,7 @@ import { LocalizePipe } from '../../../shared/pipes/localize.pipe';
       </header>
 
       @if (error()) {
-        <div class="bg-red-100 text-red-700 p-4 rounded-lg">{{ error() }}</div>
+        <div class="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-4 rounded-lg border border-red-400 dark:border-red-600">{{ error() }}</div>
       }
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -43,7 +45,7 @@ import { LocalizePipe } from '../../../shared/pipes/localize.pipe';
             </div>
             
             <div class="p-4 flex flex-col gap-1">
-              <h3 class="font-bold text-lg">{{ dish.disher_name | localize }}</h3>
+              <h3 class="font-bold text-lg text-gray-900 dark:text-white">{{ dish.disher_name | localize }}</h3>
               <p class="text-sm text-gray-500">{{ dish.disher_description || 'Sin descripción' }}</p>
               <p class="text-lg font-bold text-primary">{{ dish.disher_price | currency:'EUR' }}</p>
               
@@ -67,17 +69,18 @@ import { LocalizePipe } from '../../../shared/pipes/localize.pipe';
           </div>
         }
         @if (dishes().length === 0) {
-          <div class="col-span-full py-20 flex flex-col items-center justify-center text-gray-400">
+          <div class="col-span-full py-20 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
             <span class="material-symbols-outlined text-6xl mb-2">inventory_2</span>
-            <p>No hay platos creados aún</p>
+            <p class="dark:text-gray-400">No hay platos creados aún</p>
           </div>
         }
       </div>
     </div>
   `
 })
-export class DishListComponent implements OnInit {
+export class DishListComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
+  private destroy$ = new Subject<void>();
   dishes = signal<any[]>([]);
   error = signal<string>('');
 
@@ -91,20 +94,33 @@ export class DishListComponent implements OnInit {
 
   loadDishes() {
     this.error.set('');
-    this.http.get<any[]>(`${environment.apiUrl}/dishes`).subscribe({
-      next: (res) => {
-        this.dishes.set(res);
-      },
-      error: (err) => {
-        console.error('[DishList] Error loading dishes:', err);
-        this.error.set('Error loading dishes. Please try again.');
-      }
-    });
+    this.http.get<any[]>(`${environment.apiUrl}/dishes`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.dishes.set(res);
+        },
+        error: (err) => {
+          console.error('[DishList] Error loading dishes:', err);
+          this.error.set('Error loading dishes. Please try again.');
+        }
+      });
   }
 
   toggleStatus(id: string) {
-    this.http.patch(`${environment.apiUrl}/dishes/${id}/toggle`, {}).subscribe(() => {
-      this.loadDishes();
-    });
+    this.http.patch(`${environment.apiUrl}/dishes/${id}/toggle`, {})
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => this.loadDishes(),
+        error: (err) => {
+          console.error('[DishList] Error toggling status:', err);
+          alert('Error al cambiar el estado del plato');
+        }
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

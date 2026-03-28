@@ -14,8 +14,8 @@ export const RestaurantSchema = z.object({
   tips_state: z.boolean().default(false),
   tips_type: z.enum(['MANDATORY', 'VOLUNTARY']).optional(),
   tips_rate: z.number().min(0).max(100).optional(),
-  language: z.string().default('es'),
-  theme: z.string().default('light'),
+  default_language: z.enum(['es', 'en']).default('es'),
+  default_theme: z.enum(['light', 'dark']).default('light'),
   currency: z.string().default('EUR'),
 });
 

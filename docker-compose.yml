@@ -9,6 +9,21 @@ services:
       - disherio_net
     environment:
       MONGO_INITDB_DATABASE: disherio
+    # Resource limits for MongoDB
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
@@ -41,6 +56,21 @@ services:
       - "3000"
     volumes:
       - disherio_uploads:/app/uploads
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"]
       interval: 10s
@@ -61,6 +91,21 @@ services:
     restart: unless-stopped
     expose:
       - "4200"
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4200 || exit 1"]
       interval: 10s
@@ -87,6 +132,21 @@ services:
       - caddy_config:/config
     networks:
       - disherio_net
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.25'
+          memory: 64M
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "caddy", "version"]
       interval: 10s

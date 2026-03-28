@@ -9,10 +9,10 @@ import {
   TotemSessionRepository,
   RestaurantRepository,
   DishRepository,
+  CustomerRepository,
   ValidationError,
 } from '../repositories';
 
-// Repository instances
 const orderRepo = new OrderRepository();
 const itemOrderRepo = new ItemOrderRepository();
 const paymentRepo = new PaymentRepository();
@@ -20,11 +20,93 @@ const totemRepo = new TotemRepository();
 const totemSessionRepo = new TotemSessionRepository();
 const restaurantRepo = new RestaurantRepository();
 const dishRepo = new DishRepository();
+const customerRepo = new CustomerRepository();
+
+// KITCHEN items flow: ORDERED -> ON_PREPARE -> SERVED
+// SERVICE items (drinks) flow: ORDERED -> SERVED (skip ON_PREPARE)
+const KITCHEN_STATE_TRANSITIONS: Record<string, string[]> = {
+  ORDERED: ['ON_PREPARE', 'CANCELED'],
+  ON_PREPARE: ['SERVED', 'CANCELED'],
+  SERVED: [],
+  CANCELED: [],
+};
+
+const SERVICE_STATE_TRANSITIONS: Record<string, string[]> = {
+  ORDERED: ['SERVED', 'CANCELED'],  // SERVICE items skip ON_PREPARE
+  SERVED: [],
+  CANCELED: [],
+};
+
+const CANCEL_PERMISSIONS = ['ADMIN', 'POS'];
+const DELETE_PERMISSIONS = ['ADMIN', 'POS', 'TAS'];
+
+interface ItemPriceBreakdown {
+  basePrice: number;
+  variantPrice: number;
+  extrasTotal: number;
+  total: number;
+}
+
+function calculateItemPrice(item: {
+  item_base_price: number;
+  item_disher_variant?: { price?: number } | null;
+  item_disher_extras?: Array<{ price: number }>;
+}): ItemPriceBreakdown {
+  const variantPrice = item.item_disher_variant?.price ?? 0;
+  const extrasTotal = item.item_disher_extras?.reduce((sum, e) => sum + e.price, 0) ?? 0;
+  
+  return {
+    basePrice: item.item_base_price,
+    variantPrice,
+    extrasTotal,
+    total: item.item_base_price + variantPrice + extrasTotal,
+  };
+}
+
+function validateStateTransition(currentState: string, newState: string, itemType?: 'KITCHEN' | 'SERVICE'): void {
+  const transitions = itemType === 'SERVICE' 
+    ? SERVICE_STATE_TRANSITIONS 
+    : KITCHEN_STATE_TRANSITIONS;
+  const validTransitions = transitions[currentState];
+  if (!validTransitions?.includes(newState)) {
+    throw new Error('INVALID_STATE_TRANSITION');
+  }
+}
+
+function canForceCancel(permissions: string[]): boolean {
+  return permissions.some((p) => CANCEL_PERMISSIONS.includes(p));
+}
+
+function canDelete(permissions: string[]): boolean {
+  return permissions.some((p) => DELETE_PERMISSIONS.includes(p));
+}
+
+function emitItemStateChanged(sessionId: string, itemId: string, newState: string): void {
+  getIO().to(`session:${sessionId}`).emit('item:state_changed', { itemId, newState });
+}
+
+function emitItemDeleted(sessionId: string, itemId: string): void {
+  getIO().to(`session:${sessionId}`).emit('item:deleted', { itemId });
+}
+
+function emitCustomerAssigned(sessionId: string, itemId: string, customerId: string | null): void {
+  getIO().to(`session:${sessionId}`).emit('item:customer_assigned', { itemId, customerId });
+}
+
+function emitNewKitchenItem(sessionId: string, item: unknown): void {
+  getIO().to(`session:${sessionId}`).emit('kds:new_item', item);
+}
+
+function emitSessionPaid(sessionId: string): void {
+  getIO().to(`session:${sessionId}`).emit('session:paid');
+}
 
 export async function createOrder(sessionId: string, staffId?: string, customerId?: string) {
   try {
     const session = await totemSessionRepo.findById(sessionId);
-    if (!session || session.totem_state !== 'STARTED') throw new Error('SESSION_NOT_ACTIVE');
+    if (!session || session.totem_state !== 'STARTED') {
+      throw new Error('SESSION_NOT_ACTIVE');
+    }
     return orderRepo.createOrder(sessionId, staffId, customerId);
   } catch (err) {
     if (err instanceof ValidationError) throw err;
@@ -40,7 +122,6 @@ export async function addItemToOrder(
   variantId?: string,
   extras: string[] = []
 ) {
-  // Validate order exists
   const order = await orderRepo.findById(orderId);
   if (!order) throw new Error('ORDER_NOT_FOUND');
 
@@ -51,15 +132,24 @@ export async function addItemToOrder(
   const variant = variantId
     ? dish.variants.find((v: IVariant) => v._id.toString() === variantId)
     : null;
-  const extraItems = dish.extras.filter((e: IExtra) =>
+  
+  const selectedExtras = dish.extras.filter((e: IExtra) =>
     extras.includes(e._id.toString())
   );
+
+  // Get customer name if customerId is provided
+  let customerName: string | undefined;
+  if (customerId) {
+    const customer = await customerRepo.findById(customerId);
+    customerName = customer?.customer_name;
+  }
 
   const item = await itemOrderRepo.createItem({
     order_id: orderId,
     session_id: sessionId,
     item_dish_id: dishId,
     customer_id: customerId,
+    customer_name: customerName,
     item_disher_type: dish.disher_type,
     item_name_snapshot: dish.disher_name,
     item_base_price: dish.disher_price,
@@ -70,7 +160,7 @@ export async function addItemToOrder(
           price: variant.variant_price,
         }
       : null,
-    item_disher_extras: extraItems.map((e: any) => ({
+    item_disher_extras: selectedExtras.map((e: IExtra) => ({
       extra_id: e._id.toString(),
       name: e.extra_name,
       price: e.extra_price,
@@ -78,7 +168,7 @@ export async function addItemToOrder(
   });
 
   if (dish.disher_type === 'KITCHEN') {
-    getIO().to(`session:${sessionId}`).emit('kds:new_item', item);
+    emitNewKitchenItem(sessionId, item);
   }
 
   return item;
@@ -93,25 +183,12 @@ export async function updateItemState(
   const item = await itemOrderRepo.findById(itemId);
   if (!item) throw new Error('ITEM_NOT_FOUND');
 
-  // SERVICE items (drinks) go directly from ORDERED to SERVED
-  // KITCHEN items go through ORDERED -> ON_PREPARE -> SERVED
-  const validTransitions: Record<string, string[]> = {
-    ORDERED: item.item_disher_type === 'SERVICE' 
-      ? ['SERVED', 'CANCELED']  // SERVICE: skip ON_PREPARE
-      : ['ON_PREPARE', 'CANCELED'],  // KITCHEN: normal flow
-    ON_PREPARE: ['SERVED', 'CANCELED'],
-    SERVED: [],
-    CANCELED: [],
-  };
+  validateStateTransition(item.item_state, newState, item.item_disher_type);
 
-  if (!validTransitions[item.item_state]?.includes(newState)) {
-    throw new Error('INVALID_STATE_TRANSITION');
-  }
-
-  // TAS can only cancel ORDERED items freely; ON_PREPARE requires POS/ADMIN
   if (newState === 'CANCELED' && item.item_state === 'ON_PREPARE') {
-    const canForceCancel = requesterPerms.some((p) => ['ADMIN', 'POS'].includes(p));
-    if (!canForceCancel) throw new Error('REQUIRES_POS_AUTHORIZATION');
+    if (!canForceCancel(requesterPerms)) {
+      throw new Error('REQUIRES_POS_AUTHORIZATION');
+    }
   }
 
   const updated = await itemOrderRepo.updateState(
@@ -119,10 +196,7 @@ export async function updateItemState(
     newState as 'ORDERED' | 'ON_PREPARE' | 'SERVED' | 'CANCELED'
   );
 
-  getIO().to(`session:${item.session_id.toString()}`).emit('item:state_changed', {
-    itemId: item._id,
-    newState,
-  });
+  emitItemStateChanged(item.session_id.toString(), item._id.toString(), newState);
 
   return updated;
 }
@@ -131,7 +205,6 @@ export async function getSessionItems(sessionId: string) {
   return itemOrderRepo.findBySessionIdLean(sessionId);
 }
 
-// BUG-05: return all active kitchen items for the restaurant (ORDERED + ON_PREPARE)
 export async function getKitchenItems(restaurantId: string) {
   const totems = await totemRepo.findByRestaurantIdSelectId(restaurantId);
   const totemIds = totems.map((t) => t._id.toString());
@@ -148,7 +221,6 @@ export async function calculateSessionTotal(
   const session = await totemSessionRepo.findById(sessionId);
   if (!session) throw new Error('SESSION_NOT_FOUND');
 
-  // Get restaurant through totem
   const totem = await totemRepo.findById(session.totem_id.toString());
   if (!totem) throw new Error('TOTEM_NOT_FOUND');
 
@@ -157,39 +229,37 @@ export async function calculateSessionTotal(
 
   const items = await itemOrderRepo.findActiveBySessionId(sessionId);
 
-  // The prices in items already INCLUDE tax (PVP)
   const totalWithTax = items.reduce((acc, item) => {
-    const variantPrice = item.item_disher_variant?.price || 0;
-    const extrasTotal =
-      (item.item_disher_extras || []).reduce(
-        (s: number, e) => s + e.price,
-        0
-      );
-    return acc + item.item_base_price + variantPrice + extrasTotal;
+    const prices = calculateItemPrice(item);
+    return acc + prices.total;
   }, 0);
 
-  // Extract tax from the total gross
   const tax = TaxUtils.extractTax(totalWithTax, restaurant.tax_rate);
   const subtotal = parseFloat((totalWithTax - tax).toFixed(2));
-
-  // Tips: If customTip is provided, use it. Otherwise, if MANDATORY, calculate it.
-  let tips = 0;
-  if (customTip !== undefined && customTip >= 0) {
-    tips = customTip;
-  } else if (
-    restaurant.tips_state &&
-    restaurant.tips_type === 'MANDATORY' &&
-    restaurant.tips_rate
-  ) {
-    tips = parseFloat((totalWithTax * (restaurant.tips_rate / 100)).toFixed(2));
-  }
+  const tips = calculateTips(totalWithTax, customTip, restaurant);
 
   return {
     subtotal,
     tax,
-    tips: parseFloat(tips.toFixed(2)),
+    tips,
     total: parseFloat((totalWithTax + tips).toFixed(2)),
   };
+}
+
+function calculateTips(
+  totalWithTax: number,
+  customTip: number | undefined,
+  restaurant: { tips_state?: boolean; tips_type?: string; tips_rate?: number }
+): number {
+  if (customTip !== undefined && customTip >= 0) {
+    return parseFloat(customTip.toFixed(2));
+  }
+  
+  if (restaurant.tips_state && restaurant.tips_type === 'MANDATORY' && restaurant.tips_rate) {
+    return parseFloat((totalWithTax * (restaurant.tips_rate / 100)).toFixed(2));
+  }
+  
+  return 0;
 }
 
 export async function createPayment(
@@ -200,6 +270,7 @@ export async function createPayment(
 ) {
   const { total } = await calculateSessionTotal(sessionId, customTip);
 
+<<<<<<< HEAD
   // Validar que haya items en la sesión antes de crear el pago
   if (total <= 0) {
     throw new Error('NO_ITEMS_TO_PAY');
@@ -214,6 +285,11 @@ export async function createPayment(
           ticket_amount: amount,
           paid: false,
         }));
+=======
+  const tickets = paymentType === 'BY_USER'
+    ? await buildByUserTickets(sessionId)
+    : buildSharedTickets(total, parts);
+>>>>>>> fa2220c10c338f918f61834cf1c2dd9c95620df0
 
   const payment = await paymentRepo.createPayment({
     session_id: sessionId,
@@ -226,35 +302,44 @@ export async function createPayment(
   return payment;
 }
 
-async function buildByUserTickets(sessionId: string, _total: number) {
-  const items = await itemOrderRepo.findBySessionId(sessionId);
-
-  const byCustomer: Record<
-    string,
-    { name: string; amount: number }
-  > = {};
-
-  for (const item of items) {
-    const cId = item.customer_id?.toString() || 'unknown';
-    // Note: customer name lookup would require Customer model
-    if (!byCustomer[cId]) byCustomer[cId] = { name: `Customer ${cId.slice(-4)}`, amount: 0 };
-    const variantPrice = item.item_disher_variant?.price || 0;
-    const extrasTotal =
-      (item.item_disher_extras || []).reduce(
-        (s: number, e) => s + e.price,
-        0
-      );
-    byCustomer[cId].amount += item.item_base_price + variantPrice + extrasTotal;
-  }
-
-  const customers = Object.values(byCustomer);
-  return customers.map((c, i) => ({
-    ticket_part: i + 1,
-    ticket_total_parts: customers.length,
-    ticket_amount: parseFloat(c.amount.toFixed(2)),
-    ticket_customer_name: c.name,
+function buildSharedTickets(total: number, parts: number) {
+  return TaxUtils.splitAmount(total, parts).map((amount, index) => ({
+    ticket_part: index + 1,
+    ticket_total_parts: parts,
+    ticket_amount: amount,
     paid: false,
   }));
+}
+
+async function buildByUserTickets(sessionId: string) {
+  const items = await itemOrderRepo.findBySessionId(sessionId);
+  const customerTotals = calculateCustomerTotals(items);
+
+  return Object.entries(customerTotals).map(([customerId, amount], index) => ({
+    ticket_part: index + 1,
+    ticket_total_parts: Object.keys(customerTotals).length,
+    ticket_amount: parseFloat(amount.toFixed(2)),
+    ticket_customer_name: `Customer ${customerId.slice(-4)}`,
+    paid: false,
+  }));
+}
+
+function calculateCustomerTotals(items: Array<{
+  customer_id?: { toString(): string } | null;
+  item_base_price: number;
+  item_disher_variant?: { price?: number } | null;
+  item_disher_extras?: Array<{ price: number }>;
+}>): Record<string, number> {
+  const totals: Record<string, number> = {};
+
+  for (const item of items) {
+    const customerId = item.customer_id?.toString() ?? 'unknown';
+    const prices = calculateItemPrice(item);
+    
+    totals[customerId] = (totals[customerId] ?? 0) + prices.total;
+  }
+
+  return totals;
 }
 
 export async function markTicketPaid(paymentId: string, ticketPart: number) {
@@ -267,7 +352,7 @@ export async function markTicketPaid(paymentId: string, ticketPart: number) {
   const allPaid = updated.tickets.every((t) => t.paid);
   if (allPaid) {
     await totemSessionRepo.updateState(updated.session_id.toString(), 'PAID');
-    getIO().to(`session:${updated.session_id.toString()}`).emit('session:paid');
+    emitSessionPaid(updated.session_id.toString());
   }
 
   return updated;
@@ -277,22 +362,24 @@ export async function deleteItem(itemId: string, requesterPerms: string[]) {
   const item = await itemOrderRepo.findById(itemId);
   if (!item) throw new Error('ITEM_NOT_FOUND');
   
-  // Only ORDERED items can be deleted
   if (item.item_state !== 'ORDERED') {
     throw new Error('CANNOT_DELETE_ITEM_NOT_ORDERED');
   }
   
+<<<<<<< HEAD
   // TAS can cancel ORDERED items; POS/ADMIN can cancel any ORDERED item
   const canDelete = requesterPerms.some((p) => ['ADMIN', 'POS', 'TAS'].includes(p));
   if (!canDelete) throw new Error('REQUIRES_AUTHORIZATION');
+=======
+  if (!canDelete(requesterPerms)) {
+    throw new Error('REQUIRES_AUTHORIZATION');
+  }
+>>>>>>> fa2220c10c338f918f61834cf1c2dd9c95620df0
 
   const deleted = await itemOrderRepo.deleteItem(itemId);
   if (!deleted) throw new Error('ITEM_NOT_FOUND_OR_ALREADY_PROCESSED');
 
-  // Notify via WebSocket
-  getIO().to(`session:${item.session_id.toString()}`).emit('item:deleted', {
-    itemId: item._id,
-  });
+  emitItemDeleted(item.session_id.toString(), item._id.toString());
 
   return deleted;
 }
@@ -300,14 +387,18 @@ export async function deleteItem(itemId: string, requesterPerms: string[]) {
 export async function assignItemToCustomer(itemId: string, customerId: string | null) {
   const item = await itemOrderRepo.findById(itemId);
   if (!item) throw new Error('ITEM_NOT_FOUND');
-  
-  const updated = await itemOrderRepo.assignItemToCustomer(itemId, customerId);
+
+  // Get customer name if customerId is provided
+  let customerName: string | null = null;
+  if (customerId) {
+    const customer = await customerRepo.findById(customerId);
+    customerName = customer?.customer_name ?? null;
+  }
+
+  const updated = await itemOrderRepo.assignItemToCustomer(itemId, customerId, customerName);
   if (!updated) throw new Error('UPDATE_FAILED');
 
-  getIO().to(`session:${item.session_id.toString()}`).emit('item:customer_assigned', {
-    itemId: item._id,
-    customerId,
-  });
+  emitCustomerAssigned(item.session_id.toString(), item._id.toString(), customerId);
 
   return updated;
 }

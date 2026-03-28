@@ -42,6 +42,7 @@ export class ItemOrderRepository extends BaseRepository<IItemOrder> {
     session_id: string;
     item_dish_id: string;
     customer_id?: string;
+    customer_name?: string;
     item_disher_type: 'KITCHEN' | 'SERVICE';
     item_name_snapshot: { es: string; en: string; fr: string; ar: string };
     item_base_price: number;
@@ -127,12 +128,22 @@ export class ItemOrderRepository extends BaseRepository<IItemOrder> {
     }).exec();
   }
 
-  async assignItemToCustomer(itemId: string, customerId: string | null): Promise<IItemOrder | null> {
+  async assignItemToCustomer(itemId: string, customerId: string | null, customerName?: string | null): Promise<IItemOrder | null> {
     validateObjectId(itemId, 'item_id');
     validateObjectIdOptional(customerId, 'customer_id');
+    
+    const update: Record<string, unknown> = { 
+      customer_id: customerId ? new Types.ObjectId(customerId) : null 
+    };
+    
+    // If customerName provided, use it; if null, clear it; otherwise keep existing
+    if (customerName !== undefined) {
+      update.customer_name = customerName;
+    }
+    
     return this.model.findByIdAndUpdate(
       itemId,
-      { customer_id: customerId ? new Types.ObjectId(customerId) : null },
+      update,
       { new: true }
     ).exec();
   }

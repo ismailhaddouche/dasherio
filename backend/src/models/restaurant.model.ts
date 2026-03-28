@@ -10,7 +10,7 @@ export interface IRestaurant extends Document {
   tips_type?: 'MANDATORY' | 'VOLUNTARY';
   tips_rate?: number;
   default_language: 'es' | 'en';
-  default_theme: 'light' | 'dark' | 'system';
+  default_theme: 'light' | 'dark';
   currency: string;
 }
 
@@ -28,7 +28,7 @@ const RestaurantSchema = new Schema<IRestaurant>(
     tips_type: { type: String, enum: ['MANDATORY', 'VOLUNTARY'] },
     tips_rate: Number,
     default_language: { type: String, enum: ['es', 'en'], default: 'es' },
-    default_theme: { type: String, enum: ['light', 'dark', 'system'], default: 'light' },
+    default_theme: { type: String, enum: ['light', 'dark'], default: 'light' },
     currency: { type: String, default: 'EUR' },
   },
   { timestamps: true }

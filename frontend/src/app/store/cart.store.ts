@@ -6,9 +6,15 @@ export interface CartItem {
   price: number;
   variantId?: string;
   variantPrice?: number;
-  extras: { extraId: string; name: string; price: number }[];
+  extras: Extra[];
   quantity: number;
   customerId?: string;
+}
+
+export interface Extra {
+  extraId: string;
+  name: string;
+  price: number;
 }
 
 export interface RestaurantConfig {
@@ -35,14 +41,43 @@ export interface CartStore {
   clear: () => void;
 }
 
+const TAX_DECIMAL_PLACES = 2;
+const DEFAULT_TAX_RATE = 10;
+
 const _items = signal<CartItem[]>([]);
 const _config = signal<RestaurantConfig>({
-  taxRate: 10,
+  taxRate: DEFAULT_TAX_RATE,
   tipsState: false,
   tipsType: 'VOLUNTARY',
   tipsRate: 0
 });
 const _customTip = signal<number>(0);
+
+function calculateItemTotal(item: CartItem): number {
+  const basePrice = item.price + (item.variantPrice ?? 0);
+  const extrasTotal = item.extras.reduce((sum, e) => sum + e.price, 0);
+  return (basePrice + extrasTotal) * item.quantity;
+}
+
+function extractTaxFromTotal(total: number, taxRate: number): number {
+  return total - total / (1 + taxRate / 100);
+}
+
+function formatCurrency(value: number): number {
+  return parseFloat(value.toFixed(TAX_DECIMAL_PLACES));
+}
+
+function calculateMandatoryTip(total: number, tipsRate: number): number {
+  return formatCurrency(total * (tipsRate / 100));
+}
+
+function isMandatoryTipEnabled(config: RestaurantConfig): boolean {
+  return config.tipsState && config.tipsType === 'MANDATORY' && config.tipsRate > 0;
+}
+
+function findItemIndex(items: CartItem[], dishId: string, variantId?: string): number {
+  return items.findIndex((i) => i.dishId === dishId && i.variantId === variantId);
+}
 
 export const cartStore: CartStore = {
   items: _items.asReadonly(),
@@ -50,40 +85,47 @@ export const cartStore: CartStore = {
   customTip: _customTip.asReadonly(),
 
   totalGross: computed(() =>
-    _items().reduce((acc: number, item: CartItem) => {
-      const base = item.price + (item.variantPrice ?? 0);
-      const extras = item.extras.reduce((s: number, e) => s + e.price, 0);
-      return acc + (base + extras) * item.quantity;
-    }, 0)
+    _items().reduce((total, item) => total + calculateItemTotal(item), 0)
   ),
 
   taxAmount: computed(() => {
-    const total = cartStore.totalGross();
-    const rate = _config().taxRate;
-    return parseFloat((total - total / (1 + rate / 100)).toFixed(2));
+    const grossTotal = cartStore.totalGross();
+    const tax = extractTaxFromTotal(grossTotal, _config().taxRate);
+    return formatCurrency(tax);
   }),
 
   subtotal: computed(() => {
-    return parseFloat((cartStore.totalGross() - cartStore.taxAmount()).toFixed(2));
+    const grossTotal = cartStore.totalGross();
+    const tax = cartStore.taxAmount();
+    return formatCurrency(grossTotal - tax);
   }),
 
   tipsAmount: computed(() => {
-    if (_customTip() > 0) return _customTip();
-    const config = _config();
-    if (config.tipsState && config.tipsType === 'MANDATORY') {
-      return parseFloat((cartStore.totalGross() * (config.tipsRate / 100)).toFixed(2));
+    const customTipValue = _customTip();
+    if (customTipValue > 0) {
+      return formatCurrency(customTipValue);
     }
+    
+    const config = _config();
+    if (isMandatoryTipEnabled(config)) {
+      return calculateMandatoryTip(cartStore.totalGross(), config.tipsRate);
+    }
+    
     return 0;
   }),
 
   total: computed(() => {
-    return parseFloat((cartStore.totalGross() + cartStore.tipsAmount()).toFixed(2));
+    const grossTotal = cartStore.totalGross();
+    const tips = cartStore.tipsAmount();
+    return formatCurrency(grossTotal + tips);
   }),
 
-  itemCount: computed(() => _items().reduce((acc: number, i: CartItem) => acc + i.quantity, 0)),
+  itemCount: computed(() =>
+    _items().reduce((total, item) => total + item.quantity, 0)
+  ),
 
   setConfig(config: Partial<RestaurantConfig>) {
-    _config.update(c => ({ ...c, ...config }));
+    _config.update((current) => ({ ...current, ...config }));
   },
 
   setCustomTip(tip: number) {
@@ -91,22 +133,20 @@ export const cartStore: CartStore = {
   },
 
   addItem(item: Omit<CartItem, 'quantity'>) {
-    _items.update((current: CartItem[]) => {
-      const existing = current.find(
-        (i: CartItem) => i.dishId === item.dishId && i.variantId === item.variantId
-      );
-      if (existing) {
-        return current.map((i: CartItem) =>
-          i === existing ? { ...i, quantity: i.quantity + 1 } : i
-        );
+    _items.update((current) => {
+      const existingIndex = findItemIndex(current, item.dishId, item.variantId);
+      
+      if (existingIndex >= 0) {
+        return incrementItemQuantity(current, existingIndex);
       }
+      
       return [...current, { ...item, quantity: 1 }];
     });
   },
 
   removeItem(dishId: string, variantId?: string) {
-    _items.update((current: CartItem[]) =>
-      current.filter((i: CartItem) => !(i.dishId === dishId && i.variantId === variantId))
+    _items.update((current) =>
+      current.filter((item) => !(item.dishId === dishId && item.variantId === variantId))
     );
   },
 
@@ -115,3 +155,9 @@ export const cartStore: CartStore = {
     _customTip.set(0);
   },
 };
+
+function incrementItemQuantity(items: CartItem[], index: number): CartItem[] {
+  return items.map((item, i) =>
+    i === index ? { ...item, quantity: item.quantity + 1 } : item
+  );
+}

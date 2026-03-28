@@ -5,7 +5,7 @@ export const OrderSchema = z.object({
   session_id: z.string(),
   customer_id: z.string().optional(),
   staff_id: z.string().optional(),
-  order_date: z.date().optional(),
+  order_date: z.string().datetime().optional(),
 });
 
 const VariantSnapshotSchema = z.object({
@@ -25,6 +25,7 @@ export const ItemOrderSchema = z.object({
   session_id: z.string(),
   item_dish_id: z.string(),
   customer_id: z.string().optional(),
+  customer_name: z.string().optional(),
   item_state: z.enum(['ORDERED', 'ON_PREPARE', 'SERVED', 'CANCELED']).default('ORDERED'),
   item_disher_type: z.enum(['KITCHEN', 'SERVICE']),
   item_name_snapshot: LocalizedStringSchema,
@@ -45,6 +46,6 @@ export const PaymentSchema = z.object({
   session_id: z.string(),
   payment_type: z.enum(['ALL', 'BY_USER', 'SHARED']),
   payment_total: z.number().min(0),
-  payment_date: z.date().optional(),
+  payment_date: z.string().datetime().optional(),
   tickets: z.array(PaymentTicketSchema).default([]),
 });

@@ -77,7 +77,7 @@ export class UserRepository extends BaseRepository<IStaff> {
   }
 
   async existsByUsername(username: string, restaurantId?: string): Promise<boolean> {
-    const query: any = { username: username.toLowerCase() };
+    const query: { username: string; restaurant_id?: Types.ObjectId } = { username: username.toLowerCase() };
     if (restaurantId) {
       validateObjectId(restaurantId, 'restaurant_id');
       query.restaurant_id = new Types.ObjectId(restaurantId);

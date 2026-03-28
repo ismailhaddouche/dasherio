@@ -3,79 +3,89 @@ import jwt from 'jsonwebtoken';
 import { UserRepository, RoleRepository } from '../repositories/user.repository';
 import { Restaurant } from '../models/restaurant.model';
 
-// Repository instances
 const userRepo = new UserRepository();
 const roleRepo = new RoleRepository();
 
 const JWT_SECRET: string = process.env.JWT_SECRET || '';
 const JWT_EXPIRES: string = process.env.JWT_EXPIRES || '8h';
 
-// SEC-01: JWT_SECRET must be defined - no fallback
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
-export async function loginWithUsername(username: string, password: string) {
-  const staff = await userRepo.findByUsername(username.toLowerCase());
-  if (!staff) throw new Error('INVALID_CREDENTIALS');
+interface TokenPayload {
+  staffId: string;
+  restaurantId: string;
+  role: string;
+  permissions: string[];
+  name: string;
+}
 
-  const match = await bcrypt.compare(password, staff.password_hash);
-  if (!match) throw new Error('INVALID_CREDENTIALS');
+interface UserPreferences {
+  language: string;
+  theme: string;
+}
 
+interface AuthResult {
+  token: string;
+  user: TokenPayload & { preferences: UserPreferences };
+}
+
+async function buildAuthResult(
+  staff: { 
+    _id: { toString(): string }; 
+    restaurant_id: { toString(): string }; 
+    role_id: { toString(): string }; 
+    staff_name: string;
+    language?: string;
+    theme?: string;
+  },
+  restaurant: { default_language?: string; default_theme?: string } | null
+): Promise<AuthResult> {
   const role = await roleRepo.findById(staff.role_id.toString());
-  const permissions = role?.permissions || [];
+  const permissions = role?.permissions ?? [];
 
-  // Get restaurant defaults
-  const restaurant = await Restaurant.findById(staff.restaurant_id);
-
-  const payload = {
+  const payload: TokenPayload = {
     staffId: staff._id.toString(),
     restaurantId: staff.restaurant_id.toString(),
-    role: role?.role_name || '',
+    role: role?.role_name ?? '',
     permissions,
     name: staff.staff_name,
   };
 
-  // User preferences (if set) or restaurant defaults
-  const preferences = {
-    language: staff.language || restaurant?.default_language || 'es',
-    theme: staff.theme || restaurant?.default_theme || 'light',
+  const preferences: UserPreferences = {
+    language: staff.language ?? restaurant?.default_language ?? 'es',
+    theme: staff.theme ?? restaurant?.default_theme ?? 'light',
   };
 
   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES } as jwt.SignOptions);
+  
   return { token, user: { ...payload, preferences } };
 }
 
-export async function loginWithPin(pin: string, restaurantId: string) {
-  // Find staff by restaurant only - PIN is hashed, can't query directly
-  const staffMembers = await userRepo.findByRestaurantId(restaurantId);
+export async function loginWithUsername(username: string, password: string): Promise<AuthResult> {
+  const staff = await userRepo.findByUsername(username.toLowerCase());
+  if (!staff) {
+    throw new Error('INVALID_CREDENTIALS');
+  }
 
-  // Get restaurant defaults
+  const isPasswordValid = await bcrypt.compare(password, staff.password_hash);
+  if (!isPasswordValid) {
+    throw new Error('INVALID_CREDENTIALS');
+  }
+
+  const restaurant = await Restaurant.findById(staff.restaurant_id);
+  return buildAuthResult(staff, restaurant);
+}
+
+export async function loginWithPin(pin: string, restaurantId: string): Promise<AuthResult> {
+  const staffMembers = await userRepo.findByRestaurantId(restaurantId);
   const restaurant = await Restaurant.findById(restaurantId);
 
-  // Compare PIN with bcrypt for each staff member
   for (const staff of staffMembers) {
-    const pinMatch = await bcrypt.compare(pin, staff.pin_code_hash);
-    if (pinMatch) {
-      const role = await roleRepo.findById(staff.role_id.toString());
-      const permissions = role?.permissions || [];
-
-      const payload = {
-        staffId: staff._id.toString(),
-        restaurantId: staff.restaurant_id.toString(),
-        role: role?.role_name || '',
-        permissions,
-        name: staff.staff_name,
-      };
-
-      // User preferences (if set) or restaurant defaults
-      const preferences = {
-        language: staff.language || restaurant?.default_language || 'es',
-        theme: staff.theme || restaurant?.default_theme || 'light',
-      };
-
-      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES } as jwt.SignOptions);
-      return { token, user: { ...payload, preferences } };
+    const isPinValid = await bcrypt.compare(pin, staff.pin_code_hash);
+    if (isPinValid) {
+      return buildAuthResult(staff, restaurant);
     }
   }
 

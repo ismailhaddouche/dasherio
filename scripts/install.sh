@@ -29,7 +29,7 @@ ADMIN_PASS=""
 ADMIN_PIN=""
 IS_DOMAIN=false
 DEFAULT_LANGUAGE="es"    # es | en
-DEFAULT_THEME="light"    # light | dark | system
+DEFAULT_THEME="dark"     # light | dark
 DEFAULT_TAX_RATE="10"    # porcentaje
 DEFAULT_CURRENCY="EUR"   # EUR | USD | GBP
 
@@ -234,15 +234,13 @@ configure_access() {
   echo "  Selecciona el tema por defecto:"
   echo "    1) Claro (Light)"
   echo "    2) Oscuro (Dark)"
-  echo "    3) Sistema (System - usa preferencia del navegador)"
   echo ""
   while true; do
-    read -rp "  Opción [1]: " theme_choice
-    theme_choice="${theme_choice:-1}"
+    read -rp "  Opción [2]: " theme_choice
+    theme_choice="${theme_choice:-2}"
     case "$theme_choice" in
       1) DEFAULT_THEME="light"; break;;
       2) DEFAULT_THEME="dark"; break;;
-      3) DEFAULT_THEME="system"; break;;
       *) echo "Opción inválida";;
     esac
   done
@@ -620,18 +618,34 @@ async function seed() {
     console.log('Restaurante creado');
   }
   
-  // Crear rol admin
-  let role = await mongoose.connection.collection('roles').findOne({ restaurant_id: restaurant._id, role_name: 'Admin' });
-  if (!role) {
-    const result = await mongoose.connection.collection('roles').insertOne({
-      restaurant_id: restaurant._id,
-      role_name: 'Admin',
-      permissions: ['ADMIN'],
-      createdAt: new Date(),
-      updatedAt: new Date()
+  // Crear roles por defecto
+  const defaultRoles = [
+    { role_name: 'Admin', permissions: ['ADMIN'] },
+    { role_name: 'KTS', permissions: ['KTS'] },
+    { role_name: 'POS', permissions: ['POS'] },
+    { role_name: 'TAS', permissions: ['TAS'] }
+  ];
+  
+  let adminRole = null;
+  for (const roleData of defaultRoles) {
+    let role = await mongoose.connection.collection('roles').findOne({ 
+      restaurant_id: restaurant._id, 
+      role_name: roleData.role_name 
     });
-    role = await mongoose.connection.collection('roles').findOne({ _id: result.insertedId });
-    console.log('Rol Admin creado');
+    if (!role) {
+      const result = await mongoose.connection.collection('roles').insertOne({
+        restaurant_id: restaurant._id,
+        role_name: roleData.role_name,
+        permissions: roleData.permissions,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      role = await mongoose.connection.collection('roles').findOne({ _id: result.insertedId });
+      console.log('Rol ' + roleData.role_name + ' creado');
+    }
+    if (roleData.role_name === 'Admin') {
+      adminRole = role;
+    }
   }
   
   // Crear usuario admin
@@ -642,7 +656,7 @@ async function seed() {
     
     await mongoose.connection.collection('staffs').insertOne({
       restaurant_id: restaurant._id,
-      role_id: role._id,
+      role_id: adminRole._id,
       staff_name: 'Administrator',
       username: 'admin',
       password_hash: passwordHash,
@@ -681,7 +695,7 @@ NODE_SCRIPT
     -e DEFAULT_TAX_RATE="$DEFAULT_TAX_RATE" \
     -e DEFAULT_CURRENCY="$DEFAULT_CURRENCY" \
     node:20-alpine sh -c "npm install --silent && node seed.js" >> "$LOG_FILE" 2>&1; then
-    ok "Usuario administrador creado"
+    ok "Usuario administrador y roles creados (Admin, KTS, POS, TAS)"
     rm -rf "$seed_dir"
   else
     rm -rf "$seed_dir"

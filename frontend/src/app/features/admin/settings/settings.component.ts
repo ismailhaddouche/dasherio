@@ -3,9 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
-import { I18nService, Language } from '../../../core/services/i18n.service';
-import { ThemeService, Theme } from '../../../core/services/theme.service';
-import { authStore } from '../../../store/auth.store';
+import { I18nService, type Language } from '../../../core/services/i18n.service';
+import { ThemeService, type Theme } from '../../../core/services/theme.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 
 interface RestaurantSettings {
@@ -25,9 +24,28 @@ interface RestaurantSettings {
   imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
     <div class="p-4 lg:p-6 max-w-4xl mx-auto">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-        {{ 'settings.title' | translate }}
-      </h1>
+      <header class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          {{ 'settings.title' | translate }}
+        </h1>
+        <div class="flex items-center gap-3">
+          @if (saveSuccess()) {
+            <span class="text-green-600 dark:text-green-400 flex items-center">
+              <svg class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              {{ 'settings.preferences.saved' | translate }}
+            </span>
+          }
+          <button
+            (click)="saveSettings()"
+            [disabled]="saving()"
+            class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {{ saving() ? ('common.loading' | translate) : ('common.save' | translate) }}
+          </button>
+        </div>
+      </header>
 
       @if (loading()) {
         <div class="flex justify-center py-10">
@@ -58,7 +76,7 @@ interface RestaurantSettings {
                 </label>
                 <input
                   type="text"
-                  [(ngModel)]="settings.restaurant_name"
+                  [(ngModel)]="settings().restaurant_name"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
@@ -68,7 +86,7 @@ interface RestaurantSettings {
                   {{ 'settings.currency' | translate }}
                 </label>
                 <select
-                  [(ngModel)]="settings.currency"
+                  [(ngModel)]="settings().currency"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="EUR">EUR (€)</option>
@@ -83,7 +101,7 @@ interface RestaurantSettings {
                 </label>
                 <input
                   type="number"
-                  [(ngModel)]="settings.tax_rate"
+                  [(ngModel)]="settings().tax_rate"
                   min="0"
                   max="100"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -108,7 +126,7 @@ interface RestaurantSettings {
                   {{ 'common.language' | translate }} ({{ 'common.default' | translate }})
                 </label>
                 <select
-                  [(ngModel)]="settings.default_language"
+                  [(ngModel)]="settings().default_language"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   @for (lang of availableLanguages; track lang.code) {
@@ -123,80 +141,14 @@ interface RestaurantSettings {
                   {{ 'common.theme' | translate }} ({{ 'common.default' | translate }})
                 </label>
                 <select
-                  [(ngModel)]="settings.default_theme"
+                  [(ngModel)]="settings().default_theme"
                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="light">☀️ {{ 'common.light' | translate }}</option>
                   <option value="dark">🌙 {{ 'common.dark' | translate }}</option>
-                  <option value="system">💻 {{ 'common.system' | translate }}</option>
                 </select>
               </div>
             </div>
-          </div>
-
-          <!-- User Personal Preferences -->
-          <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl shadow-sm p-6">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              {{ 'common.profile' | translate }} - {{ 'common.settings' | translate }}
-            </h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Your personal preferences. These override the restaurant defaults.
-            </p>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <!-- User Language -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {{ 'common.language' | translate }}
-                </label>
-                <select
-                  [ngModel]="userLanguage()"
-                  (ngModelChange)="setUserLanguage($event)"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option [value]="null">Use restaurant default ({{ settings.default_language }})</option>
-                  @for (lang of availableLanguages; track lang.code) {
-                    <option [value]="lang.code">{{ lang.flag }} {{ lang.name }}</option>
-                  }
-                </select>
-              </div>
-              
-              <!-- User Theme -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {{ 'common.theme' | translate }}
-                </label>
-                <select
-                  [ngModel]="userTheme()"
-                  (ngModelChange)="setUserTheme($event)"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option [value]="null">Use restaurant default ({{ settings.default_theme }})</option>
-                  <option value="light">☀️ {{ 'common.light' | translate }}</option>
-                  <option value="dark">🌙 {{ 'common.dark' | translate }}</option>
-                  <option value="system">💻 {{ 'common.system' | translate }}</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Save Button -->
-          <div class="flex justify-end gap-3">
-            @if (saveSuccess()) {
-              <span class="text-green-600 dark:text-green-400 flex items-center">
-                <svg class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
-                {{ 'settings.preferences.saved' | translate }}
-              </span>
-            }
-            <button
-              (click)="saveSettings()"
-              [disabled]="saving()"
-              class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {{ saving() ? ('common.loading' | translate) : ('common.save' | translate) }}
-            </button>
           </div>
         </div>
       }
@@ -206,7 +158,6 @@ interface RestaurantSettings {
 export class SettingsComponent implements OnInit {
   private http = inject(HttpClient);
   private i18n = inject(I18nService);
-  private theme = inject(ThemeService);
 
   settings = signal<RestaurantSettings>({
     _id: '',
@@ -225,10 +176,6 @@ export class SettingsComponent implements OnInit {
   saveSuccess = signal(false);
 
   readonly availableLanguages = this.i18n.getAvailableLanguages();
-
-  // User personal preferences from auth store
-  userLanguage = () => authStore.preferences()?.language || null;
-  userTheme = () => authStore.preferences()?.theme || null;
 
   ngOnInit() {
     this.loadSettings();
@@ -276,25 +223,5 @@ export class SettingsComponent implements OnInit {
         this.error.set(this.i18n.translate('error.saving'));
       }
     });
-  }
-
-  setUserLanguage(lang: Language | null) {
-    if (lang) {
-      this.i18n.setLanguage(lang);
-    } else {
-      // Reset to restaurant default
-      const defaultLang = this.settings().default_language;
-      this.i18n.setLanguage(defaultLang);
-    }
-  }
-
-  setUserTheme(theme: Theme | null) {
-    if (theme) {
-      this.theme.setTheme(theme);
-    } else {
-      // Reset to restaurant default
-      const defaultTheme = this.settings().default_theme;
-      this.theme.setTheme(defaultTheme);
-    }
   }
 }

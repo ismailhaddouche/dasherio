@@ -35,20 +35,40 @@ async function seed() {
     });
   }
 
-  // Create admin role
-  let adminRole = await Role.findOne({ restaurant_id: restaurant._id, role_name: 'Admin' });
-  if (!adminRole) {
-    adminRole = await Role.create({
-      restaurant_id: restaurant._id,
-      role_name: 'Admin',
-      permissions: ['ADMIN'],
+  // Create default roles
+  const defaultRoles = [
+    { role_name: 'Admin', permissions: ['ADMIN'] },
+    { role_name: 'KTS', permissions: ['KTS'] },      // Kitchen Table Service
+    { role_name: 'POS', permissions: ['POS'] },      // Point of Sale
+    { role_name: 'TAS', permissions: ['TAS'] },      // Table Assistance Service
+  ];
+
+  for (const roleData of defaultRoles) {
+    const existingRole = await Role.findOne({ 
+      restaurant_id: restaurant._id, 
+      role_name: roleData.role_name 
     });
+    if (!existingRole) {
+      await Role.create({
+        restaurant_id: restaurant._id,
+        role_name: roleData.role_name,
+        permissions: roleData.permissions,
+      });
+      logger.info(`Role created: ${roleData.role_name}`);
+    }
   }
 
   // Create or update admin user
   const existing = await Staff.findOne({ username: adminUsername, restaurant_id: restaurant._id });
   const password_hash  = await bcrypt.hash(adminPassword, 12);
   const pin_code_hash  = await bcrypt.hash(adminPin, 12);
+
+  // Get Admin role
+  const adminRole = await Role.findOne({ restaurant_id: restaurant._id, role_name: 'Admin' });
+  if (!adminRole) {
+    logger.error('Admin role not found');
+    process.exit(1);
+  }
 
   if (!existing) {
     await Staff.create({

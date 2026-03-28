@@ -1,6 +1,7 @@
 import { DishRepository, CategoryRepository } from '../repositories/dish.repository';
 import { IDish, ICategory } from '../models/dish.model';
 import { cache, CacheKeys } from './cache.service';
+import { CreateDishData, UpdateDishData, CreateCategoryData, UpdateCategoryData } from '@disherio/shared';
 
 // Repository instances
 const dishRepo = new DishRepository();
@@ -9,85 +10,52 @@ const categoryRepo = new CategoryRepository();
 // Cache TTL en ms
 const CACHE_TTL = 2 * 60 * 1000; // 2 minutos
 
-// Tipos para crear/actualizar platos
-interface LocalizedString {
-  es: string;
-  en?: string;
-  fr?: string;
-  ar?: string;
+// Cache invalidation helpers
+function invalidateDishCaches(dishId: string, restaurantId?: string): void {
+  cache.delete(CacheKeys.dishById(dishId));
+  if (restaurantId) {
+    cache.delete(CacheKeys.dishByRestaurant(restaurantId));
+  }
 }
 
-interface CreateVariantData {
-  variant_name: LocalizedString;
-  variant_description?: LocalizedString;
-  variant_price: number;
-  variant_url_image?: string;
+function invalidateCategoryCaches(categoryId: string, restaurantId?: string): void {
+  cache.delete(CacheKeys.categoryById(categoryId));
+  if (restaurantId) {
+    cache.delete(CacheKeys.categoriesByRestaurant(restaurantId));
+  }
 }
 
-interface CreateExtraData {
-  extra_name: LocalizedString;
-  extra_description?: LocalizedString;
-  extra_price: number;
-  extra_url_image?: string;
+// Generic cached fetch helper
+async function fetchWithCache<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  ttl: number = CACHE_TTL
+): Promise<T> {
+  const cached = cache.get<T>(key);
+  if (cached) return cached;
+  
+  const data = await fetcher();
+  cache.set(key, data, ttl);
+  return data;
 }
-
-interface CreateDishData {
-  restaurant_id: string;
-  category_id: string;
-  disher_name: LocalizedString;
-  disher_description?: LocalizedString;
-  disher_price: number;
-  disher_type: 'KITCHEN' | 'SERVICE';
-  disher_status?: 'ACTIVATED' | 'DESACTIVATED';
-  disher_alergens?: string[];
-  disher_variant?: boolean;
-  variants?: CreateVariantData[];
-  extras?: CreateExtraData[];
-}
-
-interface UpdateDishData extends Partial<CreateDishData> {}
-
-interface CreateCategoryData {
-  restaurant_id: string;
-  category_name: LocalizedString;
-  category_description?: LocalizedString;
-  category_order?: number;
-  category_image_url?: string;
-}
-
-interface UpdateCategoryData extends Partial<CreateCategoryData> {}
 
 export async function getDishesByRestaurant(restaurantId: string, _lang: string = 'es'): Promise<IDish[]> {
-  const cacheKey = CacheKeys.dishByRestaurant(restaurantId);
-  const cached = cache.get<IDish[]>(cacheKey);
-  
-  if (cached) {
-    return cached;
-  }
-  
-  const dishes = await dishRepo.findActiveByRestaurantId(restaurantId);
-  cache.set(cacheKey, dishes, CACHE_TTL);
-  return dishes;
+  return fetchWithCache(
+    CacheKeys.dishByRestaurant(restaurantId),
+    () => dishRepo.findActiveByRestaurantId(restaurantId)
+  );
 }
 
 export async function getDishById(dishId: string): Promise<IDish | null> {
-  const cacheKey = CacheKeys.dishById(dishId);
-  const cached = cache.get<IDish>(cacheKey);
-  
-  if (cached) {
-    return cached;
-  }
-  
-  const dish = await dishRepo.findByIdWithDetails(dishId);
-  if (dish) {
-    cache.set(cacheKey, dish, CACHE_TTL);
-  }
+  const dish = await fetchWithCache(
+    CacheKeys.dishById(dishId),
+    () => dishRepo.findByIdWithDetails(dishId)
+  );
   return dish;
 }
 
 export async function createDish(data: CreateDishData): Promise<IDish> {
-  const dish = await dishRepo.createDish(data as any);
-  // Invalidar cache
+  const dish = await dishRepo.createDish(data as unknown as Parameters<typeof dishRepo.createDish>[0]);
   cache.delete(CacheKeys.dishByRestaurant(data.restaurant_id));
   return dish;
 }
@@ -96,15 +64,9 @@ export async function updateDish(dishId: string, data: UpdateDishData): Promise<
   const existing = await dishRepo.findById(dishId);
   if (!existing) return null;
   
-  const updated = await dishRepo.updateDish(dishId, data as any);
-  
-  // Invalidar caches
-  cache.delete(CacheKeys.dishById(dishId));
-  if (data.restaurant_id) {
-    cache.delete(CacheKeys.dishByRestaurant(data.restaurant_id));
-  } else {
-    cache.delete(CacheKeys.dishByRestaurant(existing.restaurant_id.toString()));
-  }
+  const updated = await dishRepo.updateDish(dishId, data as unknown as Parameters<typeof dishRepo.updateDish>[1]);
+  const restaurantId = data.restaurant_id || existing.restaurant_id.toString();
+  invalidateDishCaches(dishId, restaurantId);
   
   return updated;
 }
@@ -114,10 +76,7 @@ export async function deleteDish(dishId: string): Promise<IDish | null> {
   if (!existing) return null;
   
   const deleted = await dishRepo.delete(dishId);
-  
-  // Invalidar caches
-  cache.delete(CacheKeys.dishById(dishId));
-  cache.delete(CacheKeys.dishByRestaurant(existing.restaurant_id.toString()));
+  invalidateDishCaches(dishId, existing.restaurant_id.toString());
   
   return deleted;
 }
@@ -127,44 +86,27 @@ export async function toggleDishStatus(dishId: string): Promise<IDish | null> {
   if (!existing) return null;
   
   const updated = await dishRepo.toggleStatus(dishId);
-  
-  // Invalidar caches
-  cache.delete(CacheKeys.dishById(dishId));
-  cache.delete(CacheKeys.dishByRestaurant(existing.restaurant_id.toString()));
+  invalidateDishCaches(dishId, existing.restaurant_id.toString());
   
   return updated;
 }
 
 export async function getCategoriesByRestaurant(restaurantId: string): Promise<ICategory[]> {
-  const cacheKey = CacheKeys.categoriesByRestaurant(restaurantId);
-  const cached = cache.get<ICategory[]>(cacheKey);
-  
-  if (cached) {
-    return cached;
-  }
-  
-  const categories = await categoryRepo.findByRestaurantId(restaurantId);
-  cache.set(cacheKey, categories, CACHE_TTL);
-  return categories;
+  return fetchWithCache(
+    CacheKeys.categoriesByRestaurant(restaurantId),
+    () => categoryRepo.findByRestaurantId(restaurantId)
+  );
 }
 
 export async function getCategoryById(id: string): Promise<ICategory | null> {
-  const cacheKey = CacheKeys.categoryById(id);
-  const cached = cache.get<ICategory>(cacheKey);
-  
-  if (cached) {
-    return cached;
-  }
-  
-  const category = await categoryRepo.findById(id);
-  if (category) {
-    cache.set(cacheKey, category, CACHE_TTL);
-  }
-  return category;
+  return fetchWithCache(
+    CacheKeys.categoryById(id),
+    () => categoryRepo.findById(id)
+  );
 }
 
 export async function createCategory(data: CreateCategoryData): Promise<ICategory> {
-  const category = await categoryRepo.createCategory(data as any);
+  const category = await categoryRepo.createCategory(data as unknown as Parameters<typeof categoryRepo.createCategory>[0]);
   cache.delete(CacheKeys.categoriesByRestaurant(data.restaurant_id));
   return category;
 }
@@ -173,15 +115,9 @@ export async function updateCategory(id: string, data: UpdateCategoryData): Prom
   const existing = await categoryRepo.findById(id);
   if (!existing) return null;
   
-  const updated = await categoryRepo.updateCategory(id, data as any);
-  
-  // Invalidar caches
-  cache.delete(CacheKeys.categoryById(id));
-  if (data.restaurant_id) {
-    cache.delete(CacheKeys.categoriesByRestaurant(data.restaurant_id));
-  } else {
-    cache.delete(CacheKeys.categoriesByRestaurant(existing.restaurant_id.toString()));
-  }
+  const updated = await categoryRepo.updateCategory(id, data as unknown as Parameters<typeof categoryRepo.updateCategory>[1]);
+  const restaurantId = data.restaurant_id || existing.restaurant_id.toString();
+  invalidateCategoryCaches(id, restaurantId);
   
   return updated;
 }
@@ -197,10 +133,7 @@ export async function deleteCategory(id: string): Promise<ICategory | null> {
   }
   
   const deleted = await categoryRepo.deleteCategory(id);
-  
-  // Invalidar caches
-  cache.delete(CacheKeys.categoryById(id));
-  cache.delete(CacheKeys.categoriesByRestaurant(existing.restaurant_id.toString()));
+  invalidateCategoryCaches(id, existing.restaurant_id.toString());
   
   return deleted;
 }

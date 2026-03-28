@@ -5,12 +5,12 @@ export const TotemSchema = z.object({
   totem_name: z.string().min(1),
   totem_qr: z.string().optional(),
   totem_type: z.enum(['STANDARD', 'TEMPORARY']),
-  totem_start_date: z.date().optional(),
+  totem_start_date: z.string().datetime().optional(),
 });
 
 export const TotemSessionSchema = z.object({
   totem_id: z.string(),
-  session_date_start: z.date().optional(),
+  session_date_start: z.string().datetime().optional(),
   totem_state: z.enum(['STARTED', 'COMPLETE', 'PAID']).default('STARTED'),
 });
 

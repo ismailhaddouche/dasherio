@@ -1,7 +1,9 @@
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { Platform } from '@angular/cdk/platform';
 import { HttpClient } from '@angular/common/http';
-import { authStore, Theme } from '../../store/auth.store';
+import { authStore, type Theme } from '../../store/auth.store';
+
+export type { Theme };
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -12,16 +14,10 @@ export class ThemeService {
   private readonly http = inject(HttpClient);
   
   // Signals
-  private readonly _currentTheme = signal<Theme>('system');
+  private readonly _currentTheme = signal<Theme>('light');
   readonly currentTheme = this._currentTheme.asReadonly();
   
-  readonly isDark = computed(() => {
-    const theme = this._currentTheme();
-    if (theme === 'system') {
-      return this.platform.isBrowser && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return theme === 'dark';
-  });
+  readonly isDark = computed(() => this._currentTheme() === 'dark');
   
   readonly isLight = computed(() => !this.isDark());
   
@@ -51,15 +47,7 @@ export class ThemeService {
       }
     });
     
-    // Listen for system theme changes
-    if (this.platform.isBrowser) {
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        if (this._currentTheme() === 'system') {
-          // Trigger re-computation
-          this._currentTheme.update(t => t);
-        }
-      });
-    }
+    
   }
   
   private loadTheme(): void {
@@ -72,13 +60,14 @@ export class ThemeService {
     
     if (this.platform.isBrowser) {
       const saved = localStorage.getItem('disherio-theme') as Theme;
-      if (saved && ['light', 'dark', 'system'].includes(saved)) {
+      if (saved && ['light', 'dark'].includes(saved)) {
         this._currentTheme.set(saved);
         return;
       }
     }
     
-    this._currentTheme.set('system');
+    // Default to light theme
+    this._currentTheme.set('light');
   }
   
   setTheme(theme: Theme): void {
@@ -101,21 +90,16 @@ export class ThemeService {
   }
   
   toggleTheme(): void {
+    // Toggle entre light y dark
     const current = this._currentTheme();
-    if (current === 'light') {
-      this.setTheme('dark');
-    } else if (current === 'dark') {
-      this.setTheme('system');
-    } else {
-      this.setTheme('light');
-    }
+    const newTheme = current === 'dark' ? 'light' : 'dark';
+    this.setTheme(newTheme);
   }
   
   getThemeLabel(theme: Theme): string {
     const labels: Record<Theme, string> = {
       light: 'Claro',
-      dark: 'Oscuro',
-      system: 'Sistema'
+      dark: 'Oscuro'
     };
     return labels[theme];
   }
@@ -123,8 +107,7 @@ export class ThemeService {
   getThemeIcon(theme: Theme): string {
     const icons: Record<Theme, string> = {
       light: '☀️',
-      dark: '🌙',
-      system: '💻'
+      dark: '🌙'
     };
     return icons[theme];
   }
