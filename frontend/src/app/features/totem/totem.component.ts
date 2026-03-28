@@ -9,26 +9,7 @@ import { LocalizePipe } from '../../shared/pipes/localize.pipe';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { ThemeService } from '../../core/services/theme.service';
 import { environment } from '../../../environments/environment';
-
-interface LocalizedString {
-  es: string;
-  en: string;
-  fr?: string;
-  ar?: string;
-}
-
-interface Category {
-  _id: string;
-  category_name: LocalizedString;
-}
-
-interface Dish {
-  _id: string;
-  disher_name: LocalizedString;
-  disher_price: number;
-  disher_url_image?: string;
-  category_id: string | { _id: string };
-}
+import type { Dish, Category } from '../../types';
 
 @Component({
   selector: 'app-totem',
