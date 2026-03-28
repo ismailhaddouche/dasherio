@@ -108,7 +108,7 @@ import { ThemeService } from '../../core/services/theme.service';
             <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-700 mb-1">
               <span class="text-sm text-gray-900 dark:text-white">{{ totem.totem_name }}</span>
               <button
-                (click)="startSession(totem._id)"
+                (click)="startSession(totem._id!)"
                 class="text-xs px-2 py-1 bg-green-500 text-white rounded"
               >
                 Abrir
@@ -422,7 +422,7 @@ import { ThemeService } from '../../core/services/theme.service';
             </button>
             @for (cat of categories(); track cat._id) {
               <button
-                (click)="selectedCategory.set(cat._id)"
+                (click)="selectedCategory.set(cat._id!)"
                 class="px-3 py-1.5 rounded-full text-sm whitespace-nowrap"
                 [class.bg-primary]="selectedCategory() === cat._id"
                 [class.text-white]="selectedCategory() === cat._id"
@@ -746,7 +746,7 @@ export class TasComponent implements OnInit, OnDestroy {
         this.isCreatingTotem.set(false);
         
         // Auto-start session
-        this.startSession(totem._id);
+        this.startSession(totem._id!);
       },
       error: (err) => {
         console.error('[TAS] Error creating totem:', err);

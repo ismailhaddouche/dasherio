@@ -52,7 +52,7 @@ import { environment } from '../../../environments/environment';
               <p class="font-semibold text-base text-gray-900 dark:text-white">{{ item.item_name_snapshot | localize }}</p>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ item.createdAt | date:'HH:mm:ss' }}</p>
               <button
-                (click)="prepareItem(item._id)"
+                (click)="prepareItem(item._id!)"
                 class="mt-2 w-full bg-yellow-500 hover:bg-yellow-600 text-black rounded py-2 font-bold active:scale-95 transition-transform flex items-center justify-center gap-1"
               >
                 <span class="material-symbols-outlined text-sm">check_circle</span> Preparar
@@ -71,7 +71,7 @@ import { environment } from '../../../environments/environment';
               <p class="font-semibold text-base text-gray-900 dark:text-white">{{ item.item_name_snapshot | localize }}</p>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ item.createdAt | date:'HH:mm:ss' }}</p>
               <button
-                (click)="serveItem(item._id)"
+                (click)="serveItem(item._id!)"
                 class="mt-2 w-full bg-green-500 hover:bg-green-600 text-white rounded py-2 font-bold active:scale-95 transition-transform flex items-center justify-center gap-1"
               >
                 <span class="material-symbols-outlined text-sm">done_all</span> Servido

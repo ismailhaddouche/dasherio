@@ -57,7 +57,7 @@ import { LocalizePipe } from '../../../shared/pipes/localize.pipe';
                   Editar
                 </a>
                 <button 
-                  (click)="toggleStatus(dish._id)"
+                  (click)="toggleStatus(dish._id!)"
                   class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   [class.text-green-500]="dish.disher_status !== 'ACTIVATED'"
                   [class.text-gray-400]="dish.disher_status === 'ACTIVATED'"

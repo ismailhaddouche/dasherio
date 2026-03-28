@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { Totem, ITotem, TotemSession, ITotemSession, Customer, ICustomer } from '../models/totem.model';
 import { BaseRepository, validateObjectId, validateObjectIdOptional } from './base.repository';
+import { CreateTotemData, UpdateTotemData } from '@disherio/shared';
 
 export { validateObjectId, validateObjectIdOptional };
 
@@ -21,32 +22,26 @@ export class TotemRepository extends BaseRepository<ITotem> {
     return this.model.findOne({ totem_qr: qr }).lean().exec();
   }
 
-  async createTotem(
-    data: Partial<ITotem> & {
-      restaurant_id: string;
-      totem_name: string;
-      totem_type: 'STANDARD' | 'TEMPORARY';
-    }
-  ): Promise<ITotem> {
+  async createTotem(data: CreateTotemData & { totem_qr: string }): Promise<ITotem> {
     validateObjectId(data.restaurant_id, 'restaurant_id');
+    const { restaurant_id, totem_start_date, ...rest } = data;
     return this.create({
-      ...data,
-      restaurant_id: new Types.ObjectId(data.restaurant_id),
+      ...rest,
+      restaurant_id: new Types.ObjectId(restaurant_id),
+      ...(totem_start_date !== undefined && { totem_start_date: new Date(totem_start_date) }),
     });
   }
 
-  async updateTotem(
-    id: string,
-    data: Omit<Partial<ITotem>, 'restaurant_id'> & { restaurant_id?: string }
-  ): Promise<ITotem | null> {
+  async updateTotem(id: string, data: UpdateTotemData & { totem_qr?: string }): Promise<ITotem | null> {
     validateObjectId(id, 'totem_id');
-    const { restaurant_id, ...rest } = data;
+    const { restaurant_id, totem_start_date, ...rest } = data;
     return this.model
       .findByIdAndUpdate(
         id,
         {
           ...rest,
           ...(restaurant_id !== undefined && { restaurant_id: new Types.ObjectId(restaurant_id) }),
+          ...(totem_start_date !== undefined && { totem_start_date: new Date(totem_start_date) }),
         },
         { new: true }
       )

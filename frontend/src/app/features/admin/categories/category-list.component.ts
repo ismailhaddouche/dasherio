@@ -52,7 +52,7 @@ import { authStore } from '../../../store/auth.store';
                   Editar
                 </a>
                 <button 
-                  (click)="deleteCategory(cat._id)"
+                  (click)="deleteCategory(cat._id!)"
                   class="w-10 h-10 flex items-center justify-center text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 >
                   <span class="material-symbols-outlined">delete</span>

@@ -27,13 +27,7 @@ export async function closeSession(sessionId: string): Promise<ITotemSession | n
 
 export async function createTotem(data: CreateTotemData): Promise<ITotem> {
   const qr = crypto.randomUUID();
-  // CreateTotem expects restaurant_id as string and converts internally
-  return totemRepo.createTotem({ 
-    restaurant_id: data.restaurant_id,
-    totem_name: data.totem_name,
-    totem_type: data.totem_type,
-    totem_qr: qr 
-  } as Parameters<typeof totemRepo.createTotem>[0]);
+  return totemRepo.createTotem({ ...data, totem_qr: qr });
 }
 
 export async function updateTotem(totemId: string, data: UpdateTotemData): Promise<ITotem | null> {
