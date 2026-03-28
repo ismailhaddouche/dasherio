@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { Dish, IDish, Category, ICategory, Allergen, IAllergen } from '../models/dish.model';
 import { BaseRepository, validateObjectId } from './base.repository';
+import { CreateDishData, UpdateDishData, CreateCategoryData, UpdateCategoryData } from '@disherio/shared';
 
 export { validateObjectId };
 
@@ -52,22 +53,32 @@ export class DishRepository extends BaseRepository<IDish> {
       .exec();
   }
 
-  async createDish(data: Partial<IDish> & { restaurant_id: string; category_id: string }): Promise<IDish> {
+  async createDish(data: CreateDishData): Promise<IDish> {
     validateObjectId(data.restaurant_id, 'restaurant_id');
     validateObjectId(data.category_id, 'category_id');
-
-    const dishData = {
+    return this.create({
       ...data,
       restaurant_id: new Types.ObjectId(data.restaurant_id),
       category_id: new Types.ObjectId(data.category_id),
-    };
-
-    return this.create(dishData);
+      disher_alergens: data.disher_alergens.map(id => new Types.ObjectId(id)),
+    } as unknown as Partial<IDish>);
   }
 
-  async updateDish(id: string, data: Partial<IDish>): Promise<IDish | null> {
+  async updateDish(id: string, data: UpdateDishData): Promise<IDish | null> {
     validateObjectId(id, 'dish_id');
-    return this.model.findByIdAndUpdate(id, data, { new: true }).exec();
+    const { restaurant_id, category_id, disher_alergens, ...rest } = data;
+    return this.model.findByIdAndUpdate(
+      id,
+      {
+        ...rest,
+        ...(restaurant_id !== undefined && { restaurant_id: new Types.ObjectId(restaurant_id) }),
+        ...(category_id !== undefined && { category_id: new Types.ObjectId(category_id) }),
+        ...(disher_alergens !== undefined && {
+          disher_alergens: disher_alergens.map(id => new Types.ObjectId(id)),
+        }),
+      } as Partial<IDish>,
+      { new: true }
+    ).exec();
   }
 
   async toggleStatus(id: string): Promise<IDish | null> {
@@ -118,9 +129,7 @@ export class CategoryRepository extends BaseRepository<ICategory> {
       .exec();
   }
 
-  async createCategory(
-    data: Partial<ICategory> & { restaurant_id: string }
-  ): Promise<ICategory> {
+  async createCategory(data: CreateCategoryData): Promise<ICategory> {
     validateObjectId(data.restaurant_id, 'restaurant_id');
     return this.create({
       ...data,
@@ -128,9 +137,17 @@ export class CategoryRepository extends BaseRepository<ICategory> {
     });
   }
 
-  async updateCategory(id: string, data: Partial<ICategory>): Promise<ICategory | null> {
+  async updateCategory(id: string, data: UpdateCategoryData): Promise<ICategory | null> {
     validateObjectId(id, 'category_id');
-    return this.model.findByIdAndUpdate(id, data, { new: true }).exec();
+    const { restaurant_id, ...rest } = data;
+    return this.model.findByIdAndUpdate(
+      id,
+      {
+        ...rest,
+        ...(restaurant_id !== undefined && { restaurant_id: new Types.ObjectId(restaurant_id) }),
+      },
+      { new: true }
+    ).exec();
   }
 
   async deleteCategory(id: string): Promise<ICategory | null> {

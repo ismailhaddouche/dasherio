@@ -55,7 +55,7 @@ export async function getDishById(dishId: string): Promise<IDish | null> {
 }
 
 export async function createDish(data: CreateDishData): Promise<IDish> {
-  const dish = await dishRepo.createDish(data as unknown as Parameters<typeof dishRepo.createDish>[0]);
+  const dish = await dishRepo.createDish(data);
   cache.delete(CacheKeys.dishByRestaurant(data.restaurant_id));
   return dish;
 }
@@ -64,7 +64,7 @@ export async function updateDish(dishId: string, data: UpdateDishData): Promise<
   const existing = await dishRepo.findById(dishId);
   if (!existing) return null;
   
-  const updated = await dishRepo.updateDish(dishId, data as unknown as Parameters<typeof dishRepo.updateDish>[1]);
+  const updated = await dishRepo.updateDish(dishId, data);
   const restaurantId = data.restaurant_id || existing.restaurant_id.toString();
   invalidateDishCaches(dishId, restaurantId);
   
@@ -106,7 +106,7 @@ export async function getCategoryById(id: string): Promise<ICategory | null> {
 }
 
 export async function createCategory(data: CreateCategoryData): Promise<ICategory> {
-  const category = await categoryRepo.createCategory(data as unknown as Parameters<typeof categoryRepo.createCategory>[0]);
+  const category = await categoryRepo.createCategory(data);
   cache.delete(CacheKeys.categoriesByRestaurant(data.restaurant_id));
   return category;
 }
@@ -115,7 +115,7 @@ export async function updateCategory(id: string, data: UpdateCategoryData): Prom
   const existing = await categoryRepo.findById(id);
   if (!existing) return null;
   
-  const updated = await categoryRepo.updateCategory(id, data as unknown as Parameters<typeof categoryRepo.updateCategory>[1]);
+  const updated = await categoryRepo.updateCategory(id, data);
   const restaurantId = data.restaurant_id || existing.restaurant_id.toString();
   invalidateCategoryCaches(id, restaurantId);
   
