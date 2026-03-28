@@ -37,14 +37,14 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
   const token = extractToken(req);
   if (!token) {
-    res.status(401).json({ error: 'Unauthorized' });
+    res.status(401).json({ errorCode: 'UNAUTHORIZED' });
     return;
   }
 
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     console.error('JWT_SECRET not configured');
-    res.status(500).json({ error: 'Server configuration error' });
+    res.status(500).json({ errorCode: 'SERVER_ERROR' });
     return;
   }
 
@@ -53,6 +53,6 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     req.user = payload;
     next();
   } catch {
-    res.status(401).json({ error: 'Invalid or expired token' });
+    res.status(401).json({ errorCode: 'INVALID_TOKEN' });
   }
 }

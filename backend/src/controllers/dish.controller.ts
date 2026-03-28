@@ -15,7 +15,7 @@ export const createDish = asyncHandler(async (req: Request, res: Response): Prom
 export const updateDish = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const dish = await DishService.updateDish(String(req.params.id), req.body);
   if (!dish) {
-    throw createError.notFound('Dish not found');
+    throw createError.notFound('DISH_NOT_FOUND');
   }
   res.json(dish);
 });
@@ -38,7 +38,7 @@ export const listCategories = asyncHandler(async (req: Request, res: Response): 
 export const getCategory = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const category = await DishService.getCategoryById(String(req.params.id));
   if (!category) {
-    throw createError.notFound('Category not found');
+    throw createError.notFound('CATEGORY_NOT_FOUND');
   }
   res.json(category);
 });
@@ -51,7 +51,7 @@ export const createCategory = asyncHandler(async (req: Request, res: Response): 
 export const updateCategory = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const category = await DishService.updateCategory(String(req.params.id), req.body);
   if (!category) {
-    throw createError.notFound('Category not found');
+    throw createError.notFound('CATEGORY_NOT_FOUND');
   }
   res.json(category);
 });

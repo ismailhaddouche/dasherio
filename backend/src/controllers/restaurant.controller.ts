@@ -6,7 +6,7 @@ import { UpdateRestaurantData } from '../services/restaurant.service';
 export const getMyRestaurant = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const restaurant = await RestaurantService.getRestaurantById(req.user!.restaurantId);
   if (!restaurant) {
-    throw createError.notFound('Restaurant not found');
+    throw createError.notFound('RESTAURANT_NOT_FOUND');
   }
   res.json(restaurant);
 });
@@ -20,7 +20,7 @@ export const updateMyRestaurant = asyncHandler(async (req: Request, res: Respons
 export const getRestaurantSettings = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const restaurant = await RestaurantService.getRestaurantById(req.user!.restaurantId);
   if (!restaurant) {
-    throw createError.notFound('Restaurant not found');
+    throw createError.notFound('RESTAURANT_NOT_FOUND');
   }
   
   // Return only relevant settings fields
@@ -58,11 +58,11 @@ export const updateRestaurantSettings = asyncHandler(async (req: Request, res: R
   
   const restaurant = await RestaurantService.updateRestaurant(req.user!.restaurantId, updates);
   if (!restaurant) {
-    res.status(404).json({ message: 'Restaurant not found' });
+    res.status(404).json({ message: 'RESTAURANT_NOT_FOUND' });
     return;
   }
   res.json({
-    message: 'Settings updated successfully',
+    message: 'SETTINGS_UPDATED',
     settings: {
       restaurant_name: restaurant.restaurant_name,
       tax_rate: restaurant.tax_rate,

@@ -30,7 +30,7 @@ export const getStaff = asyncHandler(async (req: Request, res: Response): Promis
     .lean();
 
   if (!staff) {
-    throw createError.notFound('Miembro del personal no encontrado');
+    throw createError.notFound('STAFF_NOT_FOUND');
   }
 
   res.json(staff);
@@ -50,7 +50,7 @@ export const createStaff = asyncHandler(async (req: Request, res: Response): Pro
     restaurant_id: new Types.ObjectId(restaurantId)
   });
   if (existingStaff) {
-    throw createError.conflict('El usuario ya existe en este restaurante');
+    throw createError.conflict('USER_ALREADY_EXISTS');
   }
 
   // Hash password and PIN
@@ -86,7 +86,7 @@ export const updateStaff = asyncHandler(async (req: Request, res: Response): Pro
   });
 
   if (!staff) {
-    throw createError.notFound('Miembro del personal no encontrado');
+    throw createError.notFound('STAFF_NOT_FOUND');
   }
 
   // Check username uniqueness if changing
@@ -97,7 +97,7 @@ export const updateStaff = asyncHandler(async (req: Request, res: Response): Pro
       restaurant_id: new Types.ObjectId(restaurantId)
     });
     if (existing) {
-      throw createError.conflict('El usuario ya existe en este restaurante');
+      throw createError.conflict('USER_ALREADY_EXISTS');
     }
     staff.username = normalizedUsername;
   }
@@ -135,7 +135,7 @@ export const deleteStaff = asyncHandler(async (req: Request, res: Response): Pro
   });
 
   if (!staff) {
-    throw createError.notFound('Miembro del personal no encontrado');
+    throw createError.notFound('STAFF_NOT_FOUND');
   }
 
   res.status(204).end();
@@ -177,7 +177,7 @@ export const updateMyPreferences = asyncHandler(async (req: Request, res: Respon
   const staff = await Staff.findById(staffId);
   
   if (!staff) {
-    throw createError.notFound('Usuario no encontrado');
+    throw createError.notFound('USER_NOT_FOUND');
   }
 
   // Update only allowed preference fields
@@ -191,7 +191,7 @@ export const updateMyPreferences = asyncHandler(async (req: Request, res: Respon
   await staff.save();
 
   res.json({
-    message: 'Preferencias actualizadas',
+    message: 'PREFERENCES_UPDATED',
     preferences: {
       language: staff.language,
       theme: staff.theme
@@ -209,7 +209,7 @@ export const getMyProfile = asyncHandler(async (req: Request, res: Response): Pr
     .lean();
 
   if (!staff) {
-    throw createError.notFound('Usuario no encontrado');
+    throw createError.notFound('USER_NOT_FOUND');
   }
 
   res.json(staff);

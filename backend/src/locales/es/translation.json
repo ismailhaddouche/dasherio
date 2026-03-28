@@ -8,6 +8,7 @@
     "SERVER_ERROR": "Error interno del servidor",
     "VALIDATION_ERROR": "Error de validación",
     "JWT_SECRET_MISSING": "Variable de entorno JWT_SECRET requerida",
+    "INVALID_TOKEN": "Token inválido o expirado",
 
     "DISH_NOT_FOUND": "Plato no encontrado",
     "DISH_NOT_AVAILABLE": "Plato no disponible",
@@ -42,17 +43,27 @@
     "RESTAURANT_NOT_ACTIVE": "El restaurante no está activo",
 
     "STAFF_NOT_FOUND": "Empleado no encontrado",
+    "USER_NOT_FOUND": "Usuario no encontrado",
     "CUSTOMER_NOT_FOUND": "Cliente no encontrado",
     "TABLE_NOT_FOUND": "Mesa no encontrada",
+    "USER_ALREADY_EXISTS": "El usuario ya existe en este restaurante",
 
     "FILE_TOO_LARGE": "Archivo demasiado grande",
     "INVALID_FILE_TYPE": "Tipo de archivo no válido",
     "UPLOAD_FAILED": "Error al subir el archivo",
 
     "RATE_LIMIT_EXCEEDED": "Demasiadas peticiones. Inténtalo más tarde",
+    "AUTH_RATE_LIMIT_EXCEEDED": "Demasiados intentos de inicio de sesión. Inténtalo más tarde",
+    "QR_RATE_LIMIT_EXCEEDED": "Demasiados escaneos de QR. Inténtalo más tarde",
+    "QR_BRUTE_FORCE_DETECTED": "Demasiados intentos. El código QR puede ser inválido",
+    
     "SOCKET_NOT_INITIALIZED": "Socket.io no inicializado",
     "UPDATE_FAILED": "Error al actualizar",
-    "DUPLICATE_RESOURCE": "El recurso ya existe"
+    "DUPLICATE_RESOURCE": "El recurso ya existe",
+    
+    "DASHBOARD_ERROR": "Error al obtener estadísticas del dashboard",
+    "LOGS_ERROR": "Error al obtener logs",
+    "LOGS_USERS_ERROR": "Error al obtener usuarios"
   },
   "success": {
     "LOGIN_SUCCESS": "Inicio de sesión exitoso",
@@ -61,10 +72,21 @@
     "UPDATED": "Actualizado exitosamente",
     "DELETED": "Eliminado exitosamente",
     "ORDER_CREATED": "Pedido creado exitosamente",
-    "PAYMENT_PROCESSED": "Pago procesado exitosamente"
+    "PAYMENT_PROCESSED": "Pago procesado exitosamente",
+    "PREFERENCES_UPDATED": "Preferencias actualizadas",
+    "SETTINGS_UPDATED": "Configuración actualizada exitosamente"
   },
   "mail": {
     "welcome_subject": "Bienvenido a DisherIo",
     "welcome_body": "Hola {{name}}, tu cuenta ha sido creada correctamente."
+  },
+  "common": {
+    "UNKNOWN": "Desconocido",
+    "UNCATEGORIZED": "Sin categoría",
+    "UNKNOWN_ACTION": "Acción desconocida",
+    "ORDERED": "Plato pedido",
+    "ON_PREPARE": "Preparación iniciada",
+    "SERVED": "Plato servido",
+    "CANCELED": "Plato cancelado"
   }
 }

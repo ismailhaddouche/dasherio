@@ -8,6 +8,7 @@
     "SERVER_ERROR": "Internal server error",
     "VALIDATION_ERROR": "Validation error",
     "JWT_SECRET_MISSING": "JWT_SECRET environment variable is required",
+    "INVALID_TOKEN": "Invalid or expired token",
 
     "DISH_NOT_FOUND": "Dish not found",
     "DISH_NOT_AVAILABLE": "Dish not available",
@@ -42,17 +43,27 @@
     "RESTAURANT_NOT_ACTIVE": "Restaurant is not active",
 
     "STAFF_NOT_FOUND": "Staff member not found",
+    "USER_NOT_FOUND": "User not found",
     "CUSTOMER_NOT_FOUND": "Customer not found",
     "TABLE_NOT_FOUND": "Table not found",
+    "USER_ALREADY_EXISTS": "User already exists in this restaurant",
 
     "FILE_TOO_LARGE": "File too large",
     "INVALID_FILE_TYPE": "Invalid file type",
     "UPLOAD_FAILED": "Upload failed",
 
     "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again later",
+    "AUTH_RATE_LIMIT_EXCEEDED": "Too many login attempts. Please try again later",
+    "QR_RATE_LIMIT_EXCEEDED": "Too many QR scans. Please try again later",
+    "QR_BRUTE_FORCE_DETECTED": "Too many attempts. QR code may be invalid",
+    
     "SOCKET_NOT_INITIALIZED": "Socket.io not initialized",
     "UPDATE_FAILED": "Update failed",
-    "DUPLICATE_RESOURCE": "Resource already exists"
+    "DUPLICATE_RESOURCE": "Resource already exists",
+    
+    "DASHBOARD_ERROR": "Error getting dashboard statistics",
+    "LOGS_ERROR": "Error getting logs",
+    "LOGS_USERS_ERROR": "Error getting users"
   },
   "success": {
     "LOGIN_SUCCESS": "Login successful",
@@ -61,10 +72,21 @@
     "UPDATED": "Updated successfully",
     "DELETED": "Deleted successfully",
     "ORDER_CREATED": "Order created successfully",
-    "PAYMENT_PROCESSED": "Payment processed successfully"
+    "PAYMENT_PROCESSED": "Payment processed successfully",
+    "PREFERENCES_UPDATED": "Preferences updated",
+    "SETTINGS_UPDATED": "Settings updated successfully"
   },
   "mail": {
     "welcome_subject": "Welcome to DisherIo",
     "welcome_body": "Hello {{name}}, your account has been successfully created."
+  },
+  "common": {
+    "UNKNOWN": "Unknown",
+    "UNCATEGORIZED": "Uncategorized",
+    "UNKNOWN_ACTION": "Unknown action",
+    "ORDERED": "Dish ordered",
+    "ON_PREPARE": "Preparation started",
+    "SERVED": "Dish served",
+    "CANCELED": "Dish cancelled"
   }
 }

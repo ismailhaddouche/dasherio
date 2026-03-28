@@ -12,7 +12,7 @@ export async function getDashboardStats(req: Request, res: Response): Promise<vo
   try {
     const restaurantId = req.user?.restaurantId;
     if (!restaurantId) {
-      res.status(401).json({ error: 'No autorizado' });
+      res.status(401).json({ errorCode: 'UNAUTHORIZED' });
       return;
     }
 
@@ -75,7 +75,7 @@ export async function getDashboardStats(req: Request, res: Response): Promise<vo
       const dish = dishDetails.find(d => d._id.equals(sale._id));
       return {
         dishId: sale._id,
-        dishName: dish?.disher_name || 'Desconocido',
+        dishName: dish?.disher_name || 'UNKNOWN',
         quantity: sale.totalQuantity,
         revenue: sale.totalRevenue
       };
@@ -106,7 +106,7 @@ export async function getDashboardStats(req: Request, res: Response): Promise<vo
       const category = categories.find(c => c._id.equals(catId));
       return {
         categoryId: catId,
-        categoryName: category?.category_name?.es || 'Sin categoría',
+        categoryName: category?.category_name?.es || 'UNCATEGORIZED',
         revenue: data.revenue,
         quantity: data.quantity
       };
@@ -162,6 +162,6 @@ export async function getDashboardStats(req: Request, res: Response): Promise<vo
 
   } catch (error) {
     logger.error({ err: error }, 'Error getting dashboard stats');
-    res.status(500).json({ error: 'Error al obtener estadísticas del dashboard' });
+    res.status(500).json({ errorCode: 'DASHBOARD_ERROR' });
   }
 }

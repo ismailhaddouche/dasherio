@@ -23,7 +23,7 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
   try {
     const restaurantId = req.user?.restaurantId;
     if (!restaurantId) {
-      res.status(401).json({ error: 'No autorizado' });
+      res.status(401).json({ errorCode: 'UNAUTHORIZED' });
       return;
     }
 
@@ -126,7 +126,7 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
 
   } catch (error) {
     logger.error({ err: error }, 'Error getting logs');
-    res.status(500).json({ error: 'Error al obtener logs' });
+    res.status(500).json({ errorCode: 'LOGS_ERROR' });
   }
 }
 
@@ -137,7 +137,7 @@ export async function getLogUsers(req: Request, res: Response): Promise<void> {
   try {
     const restaurantId = req.user?.restaurantId;
     if (!restaurantId) {
-      res.status(401).json({ error: 'No autorizado' });
+      res.status(401).json({ errorCode: 'UNAUTHORIZED' });
       return;
     }
 
@@ -183,16 +183,17 @@ export async function getLogUsers(req: Request, res: Response): Promise<void> {
 
   } catch (error) {
     logger.error({ err: error }, 'Error getting log users');
-    res.status(500).json({ error: 'Error al obtener usuarios' });
+    res.status(500).json({ errorCode: 'LOGS_USERS_ERROR' });
   }
 }
 
 function getActionFromState(state: string): string {
+  // Return codes that will be translated on the frontend
   switch (state) {
-    case 'ORDERED': return 'Plato Pedido';
-    case 'ON_PREPARE': return 'Preparación Iniciada';
-    case 'SERVED': return 'Plato Servido';
-    case 'CANCELED': return 'Plato Cancelado';
-    default: return 'Acción Desconocida';
+    case 'ORDERED': return 'ORDERED';
+    case 'ON_PREPARE': return 'ON_PREPARE';
+    case 'SERVED': return 'SERVED';
+    case 'CANCELED': return 'CANCELED';
+    default: return 'UNKNOWN_ACTION';
   }
 }

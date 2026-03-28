@@ -69,5 +69,5 @@ export const logout = asyncHandler(async (req: Request, res: Response): Promise<
     secure: isSecure,
     sameSite: isSecure ? 'strict' : 'lax',
   });
-  res.json({ message: 'Logged out' });
+  res.json({ message: 'LOGOUT_SUCCESS' });
 });
