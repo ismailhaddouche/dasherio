@@ -24,13 +24,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
-
   backend:
     build:
       context: .
@@ -43,8 +36,7 @@ services:
           - backend
     restart: unless-stopped
     depends_on:
-      mongo:
-        condition: service_healthy
+      - mongo
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -71,13 +63,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 30s
-
   frontend:
     build:
       context: .
@@ -106,22 +91,13 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4200 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 30s
-
   caddy:
     image: caddy:2-alpine
     container_name: disherio_caddy
     restart: unless-stopped
     depends_on:
-      backend:
-        condition: service_healthy
-      frontend:
-        condition: service_healthy
+      - backend
+      - frontend
     ports:
       - "${PORT:-80}:${PORT:-80}"
       - "${HTTPS_PORT:-443}:443"
@@ -147,12 +123,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    healthcheck:
-      test: ["CMD", "caddy", "version"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 10s
 
 networks:
   disherio_net:
