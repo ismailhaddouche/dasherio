@@ -61,7 +61,7 @@ export class SocketService implements OnDestroy {
 
   private doConnect(): void {
     // Prevent multiple connection attempts
-    if (this.socket?.connected || this.socket?.connecting) return;
+    if (this.socket?.connected) return;
     
     try {
       this.socket = io(environment.wsUrl, { 
