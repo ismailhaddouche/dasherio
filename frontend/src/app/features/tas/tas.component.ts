@@ -10,11 +10,13 @@ import type { TotemSession, ItemOrder, Customer, Dish } from '../../types';
 import { LocalizePipe } from '../../shared/pipes/localize.pipe';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { ThemeService } from '../../core/services/theme.service';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
+import { I18nService } from '../../core/services/i18n.service';
 
 @Component({
   selector: 'app-tas',
   standalone: true,
-  imports: [CommonModule, FormsModule, LocalizePipe, CurrencyFormatPipe],
+  imports: [CommonModule, FormsModule, LocalizePipe, CurrencyFormatPipe, TranslatePipe],
   template: `
     <div class="h-screen flex bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white overflow-hidden">
       <!-- LEFT PANEL: Sessions & Totems -->
@@ -24,13 +26,13 @@ import { ThemeService } from '../../core/services/theme.service';
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-2xl text-primary">room_service</span>
-              <h1 class="text-lg font-bold text-gray-900 dark:text-white">Servicio de Mesa</h1>
+              <h1 class="text-lg font-bold text-gray-900 dark:text-white">{{ 'tas.title' | translate }}</h1>
             </div>
             <!-- Theme Toggle -->
             <button 
               (click)="themeService.toggleTheme()"
               class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              title="Cambiar tema"
+              [title]="'common.theme' | translate"
             >
               @if (themeService.isDark()) {
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,7 +50,7 @@ import { ThemeService } from '../../core/services/theme.service';
           <div class="flex gap-2">
             <input
               [(ngModel)]="newTotemName"
-              placeholder="Nueva mesa temporal..."
+              [placeholder]="'tas.new_temp_table' | translate"
               class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
               (keyup.enter)="createTemporaryTotem()"
             />
@@ -64,10 +66,10 @@ import { ThemeService } from '../../core/services/theme.service';
 
         <!-- Active Sessions -->
         <div class="flex-1 overflow-auto p-3">
-          <h2 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Sesiones Activas</h2>
-          
+          <h2 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">{{ 'tas.active_sessions' | translate }}</h2>
+
           @if (activeSessions().length === 0) {
-            <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No hay sesiones activas</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">{{ 'tas.no_active_sessions' | translate }}</p>
           }
           
           @for (session of activeSessions(); track session._id!) {
@@ -102,8 +104,8 @@ import { ThemeService } from '../../core/services/theme.service';
 
         <!-- Available Totems (no active session) -->
         <div class="p-3 border-t border-gray-200 dark:border-gray-700 max-h-48 overflow-auto">
-          <h2 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Mesas Disponibles</h2>
-          
+          <h2 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">{{ 'tas.available_tables' | translate }}</h2>
+
           @for (totem of availableTotems(); track totem._id) {
             <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-700 mb-1">
               <span class="text-sm text-gray-900 dark:text-white">{{ totem.totem_name }}</span>
@@ -111,13 +113,13 @@ import { ThemeService } from '../../core/services/theme.service';
                 (click)="startSession(totem._id!)"
                 class="text-xs px-2 py-1 bg-green-500 text-white rounded"
               >
-                Abrir
+                {{ 'tas.session.open' | translate }}
               </button>
             </div>
           }
-          
+
           @if (availableTotems().length === 0) {
-            <p class="text-xs text-gray-500 dark:text-gray-400 text-center">Todas las mesas están ocupadas</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 text-center">{{ 'tas.all_tables_occupied' | translate }}</p>
           }
         </div>
       </aside>
@@ -161,7 +163,7 @@ import { ThemeService } from '../../core/services/theme.service';
                 [class.bg-gray-200]="selectedCustomerId() !== null"
                 [class.dark:bg-gray-700]="selectedCustomerId() !== null"
               >
-                Todos
+                {{ 'tas.all' | translate }}
               </button>
               
               @for (customer of customers(); track customer._id!) {
@@ -189,7 +191,7 @@ import { ThemeService } from '../../core/services/theme.service';
                 (click)="showAddCustomer.set(true)"
                 class="px-3 py-1.5 rounded-full text-sm bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
               >
-                + Cliente
+                {{ 'tas.add_customer' | translate }}
               </button>
             </div>
 
@@ -198,7 +200,7 @@ import { ThemeService } from '../../core/services/theme.service';
               <div class="flex gap-2 mt-2">
                 <input
                   [(ngModel)]="newCustomerName"
-                  placeholder="Nombre del cliente..."
+                  [placeholder]="'tas.session.customers' | translate"
                   class="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg"
                   (keyup.enter)="addCustomer()"
                 />
@@ -206,13 +208,13 @@ import { ThemeService } from '../../core/services/theme.service';
                   (click)="addCustomer()"
                   class="px-3 py-2 bg-green-500 text-white rounded-lg"
                 >
-                  Añadir
+                  {{ 'common.add' | translate }}
                 </button>
                 <button
                   (click)="showAddCustomer.set(false)"
                   class="px-3 py-2 bg-gray-300 dark:bg-gray-600 rounded-lg"
                 >
-                  Cancelar
+                  {{ 'common.cancel' | translate }}
                 </button>
               </div>
             }
@@ -225,7 +227,7 @@ import { ThemeService } from '../../core/services/theme.service';
               <div class="mb-6">
                 <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2 flex items-center gap-1">
                   <span class="material-symbols-outlined text-base">restaurant</span>
-                  Cocina
+                  {{ 'tas.kitchen' | translate }}
                 </h3>
                 
                 @for (item of filteredItems(); track item._id!) {
@@ -271,7 +273,7 @@ import { ThemeService } from '../../core/services/theme.service';
                               (change)="assignItemToCustomer(item._id!, $any($event.target).value || null)"
                               class="text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
                             >
-                              <option value="">Sin asignar</option>
+                              <option value="">{{ 'tas.unassigned' | translate }}</option>
                               @for (customer of customers(); track customer._id!) {
                                 <option [value]="customer._id!">{{ customer.customer_name }}</option>
                               }
@@ -304,7 +306,7 @@ import { ThemeService } from '../../core/services/theme.service';
               <div class="mb-6">
                 <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2 flex items-center gap-1">
                   <span class="material-symbols-outlined text-base">local_bar</span>
-                  Barra / Servicio
+                  {{ 'tas.bar_service' | translate }}
                 </h3>
                 
                 @for (item of serviceItemsSession(); track item._id!) {
@@ -353,7 +355,7 @@ import { ThemeService } from '../../core/services/theme.service';
                               (click)="markServiceItemServed(item._id!)"
                               class="text-xs px-2 py-1 bg-green-500 text-white rounded"
                             >
-                              Servido
+                              {{ 'tas.state.served' | translate }}
                             </button>
                             <button
                               (click)="deleteItem(item._id!)"
@@ -374,7 +376,7 @@ import { ThemeService } from '../../core/services/theme.service';
             @if (filteredItems().length === 0) {
               <div class="text-center py-8 text-gray-500 dark:text-gray-400">
                 <span class="material-symbols-outlined text-4xl mb-2">restaurant_menu</span>
-                <p>No hay items en esta sesión</p>
+                <p>{{ 'tas.no_items' | translate }}</p>
               </div>
             }
           </div>
@@ -386,14 +388,14 @@ import { ThemeService } from '../../core/services/theme.service';
               class="w-full py-3 bg-primary text-white rounded-lg font-semibold flex items-center justify-center gap-2"
             >
               <span class="material-symbols-outlined">add_circle</span>
-              Añadir Pedido
+              {{ 'tas.add_order' | translate }}
             </button>
           </div>
         } @else {
           <!-- No Session Selected -->
           <div class="flex-1 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
             <span class="material-symbols-outlined text-6xl mb-4">table_restaurant</span>
-            <p class="text-lg">Selecciona una mesa para ver los pedidos</p>
+            <p class="text-lg">{{ 'tas.select_table' | translate }}</p>
           </div>
         }
       </main>
@@ -402,7 +404,7 @@ import { ThemeService } from '../../core/services/theme.service';
       @if (showMenu()) {
         <aside class="w-96 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col">
           <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <h2 class="text-lg font-bold">Añadir Pedido</h2>
+            <h2 class="text-lg font-bold">{{ 'tas.add_order' | translate }}</h2>
             <button (click)="showMenu.set(false)" class="text-gray-500 hover:text-gray-700">
               <span class="material-symbols-outlined">close</span>
             </button>
@@ -418,7 +420,7 @@ import { ThemeService } from '../../core/services/theme.service';
               [class.bg-gray-200]="selectedCategory() !== null"
               [class.dark:bg-gray-700]="selectedCategory() !== null"
             >
-              Todos
+              {{ 'tas.all' | translate }}
             </button>
             @for (cat of categories(); track cat._id) {
               <button
@@ -457,7 +459,7 @@ import { ThemeService } from '../../core/services/theme.service';
                   [class.bg-blue-100]="dish.disher_type === 'SERVICE'"
                   [class.text-blue-800]="dish.disher_type === 'SERVICE'"
                 >
-                  {{ dish.disher_type === 'KITCHEN' ? 'Cocina' : 'Barra' }}
+                  {{ dish.disher_type === 'KITCHEN' ? ('tas.kitchen' | translate) : ('tas.bar' | translate) }}
                 </span>
               </div>
             }
@@ -480,7 +482,7 @@ import { ThemeService } from '../../core/services/theme.service';
               <!-- Variants -->
               @if (dish.variants.length > 0) {
                 <div class="mb-4">
-                  <h4 class="text-sm font-semibold mb-2">Variante</h4>
+                  <h4 class="text-sm font-semibold mb-2">{{ 'tas.variant' | translate }}</h4>
                   @for (variant of dish.variants; track variant._id) {
                     <label class="flex items-center gap-2 p-2 rounded-lg border border-gray-200 dark:border-gray-700 mb-1 cursor-pointer">
                       <input
@@ -500,7 +502,7 @@ import { ThemeService } from '../../core/services/theme.service';
               <!-- Extras -->
               @if (dish.extras.length > 0) {
                 <div class="mb-4">
-                  <h4 class="text-sm font-semibold mb-2">Extras</h4>
+                  <h4 class="text-sm font-semibold mb-2">{{ 'dish.extras' | translate }}</h4>
                   @for (extra of dish.extras; track extra._id) {
                     <label class="flex items-center gap-2 p-2 rounded-lg border border-gray-200 dark:border-gray-700 mb-1 cursor-pointer">
                       <input
@@ -519,12 +521,12 @@ import { ThemeService } from '../../core/services/theme.service';
               <!-- Assign to Customer -->
               @if (customers().length > 0) {
                 <div class="mb-4">
-                  <h4 class="text-sm font-semibold mb-2">Asignar a</h4>
+                  <h4 class="text-sm font-semibold mb-2">{{ 'tas.assign_to' | translate }}</h4>
                   <select
                     [(ngModel)]="assignToCustomerId"
                     class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
                   >
-                    <option [value]="null">Sin asignar</option>
+                    <option [value]="null">{{ 'tas.unassigned' | translate }}</option>
                     @for (customer of customers(); track customer._id!) {
                       <option [value]="customer._id!">{{ customer.customer_name }}</option>
                     }
@@ -534,7 +536,7 @@ import { ThemeService } from '../../core/services/theme.service';
 
               <!-- Total -->
               <div class="flex items-center justify-between py-3 border-t border-gray-200 dark:border-gray-700">
-                <span class="font-semibold">Total:</span>
+                <span class="font-semibold">{{ 'common.total' | translate }}:</span>
                 <span class="text-xl font-bold text-primary">{{ calculateDishTotal(dish) | currencyFormat }}</span>
               </div>
 
@@ -544,7 +546,7 @@ import { ThemeService } from '../../core/services/theme.service';
                 [disabled]="isAddingItem()"
                 class="w-full py-3 bg-green-500 text-white rounded-lg font-semibold disabled:opacity-50"
               >
-                {{ isAddingItem() ? 'Añadiendo...' : 'Añadir al Pedido' }}
+                {{ isAddingItem() ? ('tas.adding' | translate) : ('tas.add_order' | translate) }}
               </button>
             </div>
           </div>
@@ -556,7 +558,7 @@ import { ThemeService } from '../../core/services/theme.service';
         <div class="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
           <div class="bg-white dark:bg-gray-800 rounded-lg p-4 flex items-center gap-3">
             <span class="material-symbols-outlined animate-spin">refresh</span>
-            <span>Cargando...</span>
+            <span>{{ 'common.loading' | translate }}</span>
           </div>
         </div>
       }
@@ -566,6 +568,7 @@ import { ThemeService } from '../../core/services/theme.service';
 export class TasComponent implements OnInit, OnDestroy {
   private tasService = inject(TasService);
   private socketService = inject(SocketService);
+  private i18n = inject(I18nService);
   themeService = inject(ThemeService);
   private destroy$ = new Subject<void>();
 
@@ -757,7 +760,7 @@ export class TasComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('[TAS] Error creating totem:', err);
         this.isCreatingTotem.set(false);
-        alert('Error al crear mesa temporal');
+        alert(this.i18n.translate('errors.SERVER_ERROR'));
       },
     });
   }
@@ -772,13 +775,13 @@ export class TasComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('[TAS] Error starting session:', err);
-          alert('Error al iniciar sesión');
+          alert(this.i18n.translate('errors.SERVER_ERROR'));
         },
       });
   }
 
   closeTemporaryTotem(totemId: string) {
-    if (!confirm('¿Cerrar esta mesa temporal? Se marcará la sesión como completada.')) return;
+    if (!confirm(this.i18n.translate('tas.close_temp_table') + '?')) return;
 
     this.tasService.deleteTotem(totemId)
       .pipe(takeUntil(this.destroy$))
@@ -794,7 +797,7 @@ export class TasComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('[TAS] Error closing totem:', err);
-          alert('Error al cerrar mesa temporal');
+          alert(this.i18n.translate('errors.SERVER_ERROR'));
         },
       });
   }
@@ -813,7 +816,7 @@ export class TasComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('[TAS] Error creating customer:', err);
-          alert('Error al crear cliente');
+          alert(this.i18n.translate('errors.SERVER_ERROR'));
         },
       });
   }
@@ -882,7 +885,7 @@ export class TasComponent implements OnInit, OnDestroy {
         error: (err) => {
           console.error('[TAS] Error adding item:', err);
           this.isAddingItem.set(false);
-          alert('Error al añadir item');
+          alert(this.i18n.translate('errors.SERVER_ERROR'));
         },
       });
     };
@@ -901,14 +904,14 @@ export class TasComponent implements OnInit, OnDestroy {
           error: (err) => {
             console.error('[TAS] Error creating order:', err);
             this.isAddingItem.set(false);
-            alert('Error al crear orden');
+            alert(this.i18n.translate('errors.SERVER_ERROR'));
           },
         });
     }
   }
 
   deleteItem(itemId: string) {
-    if (!confirm('¿Eliminar este item?')) return;
+    if (!confirm(this.i18n.translate('common.delete') + '?')) return;
 
     this.tasService.deleteItem(itemId)
       .pipe(takeUntil(this.destroy$))
@@ -916,7 +919,7 @@ export class TasComponent implements OnInit, OnDestroy {
         next: () => tasStore.removeItem(itemId),
         error: (err) => {
           console.error('[TAS] Error deleting item:', err);
-          alert('Error al eliminar item');
+          alert(this.i18n.translate('errors.SERVER_ERROR'));
         },
       });
   }
@@ -928,7 +931,7 @@ export class TasComponent implements OnInit, OnDestroy {
         next: () => tasStore.updateItemState(itemId, 'SERVED'),
         error: (err) => {
           console.error('[TAS] Error marking item served:', err);
-          alert('Error al marcar item como servido');
+          alert(this.i18n.translate('errors.SERVER_ERROR'));
         },
       });
   }
@@ -940,7 +943,7 @@ export class TasComponent implements OnInit, OnDestroy {
         next: () => tasStore.assignItemToCustomer(itemId, customerId),
         error: (err) => {
           console.error('[TAS] Error assigning item:', err);
-          alert('Error al asignar item');
+          alert(this.i18n.translate('errors.SERVER_ERROR'));
         },
       });
   }
@@ -952,13 +955,13 @@ export class TasComponent implements OnInit, OnDestroy {
   }
 
   getStateLabel(state: ItemOrder['item_state']): string {
-    const labels: Record<string, string> = {
-      ORDERED: 'Pedido',
-      ON_PREPARE: 'En preparación',
-      SERVED: 'Servido',
-      CANCELED: 'Cancelado',
+    const keyMap: Record<string, string> = {
+      ORDERED: 'tas.state.ordered',
+      ON_PREPARE: 'tas.state.on_prepare',
+      SERVED: 'tas.state.served',
+      CANCELED: 'tas.state.canceled',
     };
-    return labels[state] || state;
+    return keyMap[state] ? this.i18n.translate(keyMap[state]) : state;
   }
 
   getSessionItemCount(sessionId: string): number {

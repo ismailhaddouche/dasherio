@@ -2,6 +2,8 @@ import { Component, signal, inject, computed } from '@angular/core';
 import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../core/services/i18n.service';
 
 interface LogEntry {
   id: string;
@@ -24,12 +26,12 @@ interface LogUser {
 @Component({
   selector: 'app-logs-viewer',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe],
+  imports: [CommonModule, FormsModule, DatePipe, TranslatePipe],
   template: `
     <div class="p-6">
       <header class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">System Logs</h1>
-        <p class="text-gray-600 dark:text-gray-400">View activity logs from KDS, POS, and TAS</p>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ 'logs.title' | translate }}</h1>
+        <p class="text-gray-600 dark:text-gray-400">{{ 'logs.subtitle' | translate }}</p>
       </header>
 
       <!-- Filters -->
@@ -37,7 +39,7 @@ interface LogUser {
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <!-- Date From -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Date</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ 'common.from' | translate }}</label>
             <input 
               type="date" 
               [ngModel]="dateFrom()"
@@ -48,7 +50,7 @@ interface LogUser {
 
           <!-- Date To -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Date</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ 'common.to' | translate }}</label>
             <input 
               type="date" 
               [ngModel]="dateTo()"
@@ -59,13 +61,13 @@ interface LogUser {
 
           <!-- Type Filter -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">System Type</label>
-            <select 
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ 'logs.system_type' | translate }}</label>
+            <select
               [ngModel]="filterType()"
               (ngModelChange)="filterType.set($event); loadLogs()"
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="ALL">All Systems</option>
+              <option value="ALL">{{ 'logs.all_systems' | translate }}</option>
               <option value="KDS">Kitchen (KDS)</option>
               <option value="POS">Point of Sale (POS)</option>
               <option value="TAS">Table Service (TAS)</option>
@@ -74,13 +76,13 @@ interface LogUser {
 
           <!-- User Filter -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
-            <select 
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ 'common.profile' | translate }}</label>
+            <select
               [ngModel]="filterUser()"
               (ngModelChange)="filterUser.set($event); loadLogs()"
               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="">All Users</option>
+              <option value="">{{ 'logs.all_users' | translate }}</option>
               <option *ngFor="let user of users()" [value]="user.id">{{ user.name }} ({{ user.type }})</option>
             </select>
           </div>
@@ -90,7 +92,7 @@ interface LogUser {
       <!-- Loading State -->
       <div *ngIf="loading()" class="text-center py-8">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p class="mt-2 text-gray-600 dark:text-gray-400">Loading logs...</p>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">{{ 'common.loading' | translate }}</p>
       </div>
 
       <!-- Error State -->
@@ -104,12 +106,12 @@ interface LogUser {
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Time</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Item</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Details</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.time' | translate }}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.system_type' | translate }}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.action' | translate }}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.item' | translate }}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.status' | translate }}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.details' | translate }}</th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -154,14 +156,14 @@ interface LogUser {
               </tr>
               <tr *ngIf="logs().length === 0">
                 <td colspan="6" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                  No logs found matching the selected filters.
+                  {{ 'logs.no_logs' | translate }}
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
         <div class="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-sm text-gray-500 dark:text-gray-400">
-          Showing {{ logs().length }} entries
+          {{ 'logs.showing' | translate }} {{ logs().length }} {{ 'logs.entries' | translate }}
         </div>
       </div>
     </div>
@@ -169,6 +171,7 @@ interface LogUser {
 })
 export class LogsViewerComponent {
   private http = inject(HttpClient);
+  private i18n = inject(I18nService);
 
   // State
   logs = signal<LogEntry[]>([]);
@@ -208,7 +211,7 @@ export class LogsViewerComponent {
           this.loading.set(false);
         },
         error: (err) => {
-          this.error.set(err.error?.message || 'Failed to load logs');
+          this.error.set(err.error?.message || this.i18n.translate('errors.LOADING_ERROR'));
           this.loading.set(false);
         }
       });
