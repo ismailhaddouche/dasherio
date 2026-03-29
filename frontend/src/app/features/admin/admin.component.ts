@@ -39,6 +39,10 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
             <span class="material-symbols-outlined text-base">settings</span> {{ 'admin.menu.settings' | translate }}
           </a>
         </nav>
+
+        <footer class="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
+          <p class="text-xs text-gray-400 dark:text-gray-500 text-center">&copy; {{ year }} Disherio</p>
+        </footer>
       </aside>
 
       <!-- Content -->
@@ -48,4 +52,6 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
     </div>
   `,
 })
-export class AdminComponent {}
+export class AdminComponent {
+  readonly year = new Date().getFullYear();
+}
