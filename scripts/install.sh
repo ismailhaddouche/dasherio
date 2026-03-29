@@ -524,45 +524,23 @@ build_and_start() {
   ok "Imágenes construidas correctamente"
   
   echo ""
-  log "Limpiando contenedores anteriores..."
-  docker compose down --remove-orphans 2>&1 | tee -a "$LOG_FILE" || true
-  docker compose rm -f 2>&1 | tee -a "$LOG_FILE" || true
-  ok "Contenedores limpiados"
-  
-  echo ""
   log "Iniciando servicios..."
-  # Iniciar MongoDB primero
-  docker compose up -d mongo 2>&1 | tee -a "$LOG_FILE" || err "No se pudo iniciar MongoDB"
-  ok "MongoDB iniciado"
-  
-  # Esperar a que MongoDB esté listo antes de iniciar el backend
-  log "Esperando a que MongoDB esté listo..."
-  local mongo_count=0
-  until docker compose exec -T mongo mongosh --quiet --eval "db.adminCommand('ping')" >/dev/null 2>&1; do
-    sleep 2
-    mongo_count=$((mongo_count + 1))
-    if [[ $mongo_count -gt 30 ]]; then
-      err "MongoDB no respondió tras 60 segundos"
-    fi
-  done
-  ok "MongoDB está listo"
-  
-  # Iniciar todos los servicios de una vez (sin healthchecks de Docker)
   docker compose up -d 2>&1 | tee -a "$LOG_FILE" || err "No se pudieron iniciar los servicios"
   ok "Servicios iniciados"
   
-  # Esperar a que backend responda (verificación manual)
-  log "Esperando a que el backend esté listo..."
-  local backend_count=0
-  until docker exec disherio_backend wget -qO- http://localhost:3000/health >/dev/null 2>&1; do
-    sleep 5
-    backend_count=$((backend_count + 1))
-    echo -e "  ${BLUE}⏳ Esperando backend... ($((backend_count * 5)) segundos)${NC}"
-    if [[ $backend_count -gt 72 ]]; then
-      err "Backend no respondió tras 360 segundos (6 minutos). Verifica: docker logs disherio_backend"
+  # Esperar a que MongoDB esté listo
+  echo ""
+  log "Esperando a que MongoDB esté listo..."
+  local count=0
+  until docker compose exec -T mongo mongosh --quiet --eval "db.adminCommand('ping')" >/dev/null 2>&1; do
+    sleep 2
+    count=$((count + 1))
+    echo -e "  ${BLUE}⏳ Esperando MongoDB... ($count segundos)${NC}"
+    if [[ $count -gt 30 ]]; then
+      err "MongoDB no respondió tras 60 segundos"
     fi
   done
-  ok "Backend está respondiendo"
+  ok "MongoDB está listo y respondiendo"
 }
 
 # ── Paso 6: Healthcheck y Verificación ───────────────────────────────────────
