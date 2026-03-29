@@ -530,8 +530,12 @@ build_and_start() {
   
   echo ""
   log "=== FASE 2: Iniciando Backend ==="
-  log "  (Este proceso puede tardar 3-5 minutos en la primera ejecución)"
-  docker compose up -d backend --wait --wait-timeout 420 2>&1 | tee -a "$LOG_FILE" || err "No se pudo iniciar Backend"
+  log "  (Este proceso puede tardar 1-2 minutos en la primera ejecución)"
+  if ! docker compose up -d backend --wait --wait-timeout 180 2>&1 | tee -a "$LOG_FILE"; then
+    warn "Backend no arrancó correctamente. Últimos logs del contenedor:"
+    docker compose logs --tail=60 backend 2>&1 | tee -a "$LOG_FILE" || true
+    err "No se pudo iniciar Backend. Revisa los logs arriba o ejecuta: docker compose logs backend"
+  fi
   ok "Backend iniciado y saludable"
   
   echo ""

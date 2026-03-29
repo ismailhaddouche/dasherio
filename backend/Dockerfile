@@ -11,6 +11,9 @@ RUN cd shared && npm install && npm run build
 # Instalar y compilar backend (encontrará shared en file:../shared)
 RUN cd backend && npm install && npm run build
 
+# Copiar locales al directorio dist (tsc no copia archivos no-TS)
+RUN cp -r backend/src/locales backend/dist/
+
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production

@@ -12,16 +12,10 @@ export function applySecurityMiddleware(app: Express): void {
   if (process.env.FRONTEND_URL) {
     const frontendUrl = process.env.FRONTEND_URL;
     allowedOrigins.push(frontendUrl);
-    
-    // Also add variant without :80 port (browser may send it differently)
+
+    // Also add the variant without an explicit :80 port (browsers may omit it)
     if (frontendUrl.includes(':80')) {
       allowedOrigins.push(frontendUrl.replace(':80', ''));
-    }
-    // Also add variant with :80 port (if not present)
-    if (!frontendUrl.includes(':') || frontendUrl.match(/:\d+$/)) {
-      // Already has port or no port - add :80 variant
-      const urlWithoutPort = frontendUrl.replace(/:\d+$/, '');
-      allowedOrigins.push(`${urlWithoutPort}:80`);
     }
   }
   
