@@ -14,6 +14,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
   es: {
     // Common
     'common.loading': 'Cargando...',
+    'common.logging_in': 'Accediendo...',
     'common.save': 'Guardar',
     'common.cancel': 'Cancelar',
     'common.delete': 'Eliminar',
@@ -28,6 +29,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'common.confirm': 'Confirmar',
     'common.yes': 'Sí',
     'common.no': 'No',
+    'common.active': 'Activo',
+    'common.inactive': 'Inactivo',
     'common.error': 'Error',
     'common.success': 'Éxito',
     'common.warning': 'Advertencia',
@@ -44,7 +47,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'common.default': 'Por defecto',
     'common.from': 'Desde',
     'common.to': 'Hasta',
-    
+
     // Auth
     'auth.login': 'Iniciar sesión',
     'auth.login.username': 'Usuario',
@@ -53,7 +56,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'auth.login.submit': 'Entrar',
     'auth.login.error': 'Error al iniciar sesión',
     'auth.login.success': 'Sesión iniciada correctamente',
-    
+
     // Dashboard
     'dashboard.title': 'Panel de Control',
     'dashboard.stats.today': 'Hoy',
@@ -69,17 +72,25 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'dashboard.popularDishes': 'Platos populares',
     'dashboard.loading': 'Cargando datos del panel...',
     'dashboard.error': 'Error al cargar los datos del panel',
-    
-    // Admin Menu
+
+    // Admin
+    'admin.title': 'Administración',
     'admin.menu.dashboard': 'Dashboard',
     'admin.menu.orders': 'Pedidos',
     'admin.menu.dishes': 'Carta',
     'admin.menu.categories': 'Categorías',
     'admin.menu.staff': 'Personal',
-    'admin.menu.totems': 'Totems',
+    'admin.menu.totems': 'Tótems',
+    'admin.menu.logs': 'Logs',
     'admin.menu.settings': 'Ajustes',
     'admin.menu.reports': 'Informes',
-    
+
+    // Dish
+    'dish.new_dish': 'Nuevo Plato',
+    'dish.no_description': 'Sin descripción',
+    'dish.no_dishes': 'No hay platos creados aún',
+    'dish.toggle_status_error': 'Error al cambiar el estado del plato',
+
     // TAS (Table Assistance)
     'tas.title': 'Servicio de Mesas',
     'tas.tables': 'Mesas',
@@ -92,24 +103,35 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'tas.order.add': 'Añadir pedido',
     'tas.order.send': 'Enviar a cocina',
     'tas.order.pay': 'Pagar',
-    
+
     // POS
-    'pos.title': 'Terminal Punto de Venta',
+    'pos.title': 'Punto de Venta',
+    'pos.tables': 'Mesas',
+    'pos.no_active_sessions': 'Sin sesiones activas',
+    'pos.new_table': 'Nueva Mesa',
+    'pos.select_table': 'Selecciona una mesa para ver los pedidos',
+    'pos.ticket': 'Ticket',
+    'pos.empty_cart': 'Carrito vacío',
     'pos.checkout': 'Cobrar',
+    'pos.charge': 'Cobrar',
     'pos.total': 'Total',
-    'pos.subtotal': 'Subtotal',
-    'pos.tax': 'Impuestos',
+    'pos.subtotal': 'Subtotal (sin IVA)',
+    'pos.tax': 'IVA',
     'pos.discount': 'Descuento',
     'pos.tip': 'Propina',
-    
+
     // KDS
     'kds.title': 'Pantalla de Cocina',
-    'kds.pending': 'Pendiente',
+    'kds.pending': 'pendientes',
+    'kds.new_orders': 'Nuevos',
+    'kds.prepare': 'Preparar',
+    'kds.in_preparation': 'En preparación',
+    'kds.serve': 'Servido',
     'kds.preparing': 'Preparando',
     'kds.ready': 'Listo',
     'kds.served': 'Servido',
-    
-    // Errors
+
+    // Errors (error.* for general, errors.* for API codes)
     'error.loading': 'Error al cargar los datos',
     'error.saving': 'Error al guardar los cambios',
     'error.deleting': 'Error al eliminar',
@@ -118,7 +140,10 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'error.forbidden': 'No tiene permisos para realizar esta acción',
     'error.notFound': 'No se encontró el recurso solicitado',
     'error.server': 'Error del servidor. Inténtelo de nuevo más tarde.',
-    
+    'errors.INVALID_CREDENTIALS': 'Credenciales incorrectas',
+    'errors.LOADING_ERROR': 'Error al cargar. Inténtalo de nuevo.',
+    'errors.SERVER_ERROR': 'Error interno del servidor',
+
     // Settings
     'settings.title': 'Configuración',
     'settings.general': 'General',
@@ -133,6 +158,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
   en: {
     // Common
     'common.loading': 'Loading...',
+    'common.logging_in': 'Signing in...',
     'common.save': 'Save',
     'common.cancel': 'Cancel',
     'common.delete': 'Delete',
@@ -147,6 +173,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'common.confirm': 'Confirm',
     'common.yes': 'Yes',
     'common.no': 'No',
+    'common.active': 'Active',
+    'common.inactive': 'Inactive',
     'common.error': 'Error',
     'common.success': 'Success',
     'common.warning': 'Warning',
@@ -163,7 +191,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'common.default': 'Default',
     'common.from': 'From',
     'common.to': 'To',
-    
+
     // Auth
     'auth.login': 'Login',
     'auth.login.username': 'Username',
@@ -172,7 +200,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'auth.login.submit': 'Sign In',
     'auth.login.error': 'Login error',
     'auth.login.success': 'Login successful',
-    
+
     // Dashboard
     'dashboard.title': 'Dashboard',
     'dashboard.stats.today': 'Today',
@@ -188,17 +216,25 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'dashboard.popularDishes': 'Popular Dishes',
     'dashboard.loading': 'Loading dashboard data...',
     'dashboard.error': 'Error loading dashboard data',
-    
-    // Admin Menu
+
+    // Admin
+    'admin.title': 'Administration',
     'admin.menu.dashboard': 'Dashboard',
     'admin.menu.orders': 'Orders',
     'admin.menu.dishes': 'Menu',
     'admin.menu.categories': 'Categories',
     'admin.menu.staff': 'Staff',
     'admin.menu.totems': 'Totems',
+    'admin.menu.logs': 'Logs',
     'admin.menu.settings': 'Settings',
     'admin.menu.reports': 'Reports',
-    
+
+    // Dish
+    'dish.new_dish': 'New Dish',
+    'dish.no_description': 'No description',
+    'dish.no_dishes': 'No dishes created yet',
+    'dish.toggle_status_error': 'Error changing dish status',
+
     // TAS (Table Assistance)
     'tas.title': 'Table Service',
     'tas.tables': 'Tables',
@@ -211,24 +247,35 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'tas.order.add': 'Add Order',
     'tas.order.send': 'Send to Kitchen',
     'tas.order.pay': 'Pay',
-    
+
     // POS
-    'pos.title': 'Point of Sale Terminal',
+    'pos.title': 'Point of Sale',
+    'pos.tables': 'Tables',
+    'pos.no_active_sessions': 'No active sessions',
+    'pos.new_table': 'New Table',
+    'pos.select_table': 'Select a table to view orders',
+    'pos.ticket': 'Ticket',
+    'pos.empty_cart': 'Empty cart',
     'pos.checkout': 'Checkout',
+    'pos.charge': 'Charge',
     'pos.total': 'Total',
-    'pos.subtotal': 'Subtotal',
+    'pos.subtotal': 'Subtotal (excl. tax)',
     'pos.tax': 'Tax',
     'pos.discount': 'Discount',
     'pos.tip': 'Tip',
-    
+
     // KDS
     'kds.title': 'Kitchen Display',
-    'kds.pending': 'Pending',
+    'kds.pending': 'pending',
+    'kds.new_orders': 'New',
+    'kds.prepare': 'Prepare',
+    'kds.in_preparation': 'In preparation',
+    'kds.serve': 'Served',
     'kds.preparing': 'Preparing',
     'kds.ready': 'Ready',
     'kds.served': 'Served',
-    
-    // Errors
+
+    // Errors (error.* for general, errors.* for API codes)
     'error.loading': 'Error loading data',
     'error.saving': 'Error saving changes',
     'error.deleting': 'Error deleting',
@@ -237,7 +284,10 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'error.forbidden': 'You do not have permission to perform this action',
     'error.notFound': 'Requested resource not found',
     'error.server': 'Server error. Please try again later.',
-    
+    'errors.INVALID_CREDENTIALS': 'Invalid credentials',
+    'errors.LOADING_ERROR': 'Loading error. Please try again.',
+    'errors.SERVER_ERROR': 'Internal server error',
+
     // Settings
     'settings.title': 'Settings',
     'settings.general': 'General',
@@ -252,6 +302,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
   fr: {
     // Common
     'common.loading': 'Chargement...',
+    'common.logging_in': 'Connexion...',
     'common.save': 'Enregistrer',
     'common.cancel': 'Annuler',
     'common.delete': 'Supprimer',
@@ -266,6 +317,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'common.confirm': 'Confirmer',
     'common.yes': 'Oui',
     'common.no': 'Non',
+    'common.active': 'Actif',
+    'common.inactive': 'Inactif',
     'common.error': 'Erreur',
     'common.success': 'Succès',
     'common.warning': 'Attention',
@@ -282,16 +335,16 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'common.default': 'Par défaut',
     'common.from': 'De',
     'common.to': 'À',
-    
+
     // Auth
     'auth.login': 'Connexion',
     'auth.login.username': "Nom d'utilisateur",
     'auth.login.password': 'Mot de passe',
     'auth.login.pin': 'PIN',
     'auth.login.submit': 'Se connecter',
-    'auth.login.error': "Erreur de connexion",
+    'auth.login.error': 'Erreur de connexion',
     'auth.login.success': 'Connexion réussie',
-    
+
     // Dashboard
     'dashboard.title': 'Tableau de bord',
     'dashboard.stats.today': "Aujourd'hui",
@@ -305,19 +358,27 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'dashboard.chart.orders': 'Commandes',
     'dashboard.recentOrders': 'Commandes récentes',
     'dashboard.popularDishes': 'Plats populaires',
-    'dashboard.loading': 'Chargement des données du tableau de bord...',
-    'dashboard.error': 'Erreur lors du chargement des données du tableau de bord',
-    
-    // Admin Menu
+    'dashboard.loading': 'Chargement du tableau de bord...',
+    'dashboard.error': 'Erreur lors du chargement du tableau de bord',
+
+    // Admin
+    'admin.title': 'Administration',
     'admin.menu.dashboard': 'Tableau de bord',
     'admin.menu.orders': 'Commandes',
     'admin.menu.dishes': 'Carte',
     'admin.menu.categories': 'Catégories',
     'admin.menu.staff': 'Personnel',
     'admin.menu.totems': 'Totems',
+    'admin.menu.logs': 'Logs',
     'admin.menu.settings': 'Paramètres',
     'admin.menu.reports': 'Rapports',
-    
+
+    // Dish
+    'dish.new_dish': 'Nouveau Plat',
+    'dish.no_description': 'Sans description',
+    'dish.no_dishes': 'Aucun plat créé',
+    'dish.toggle_status_error': 'Erreur lors du changement de statut du plat',
+
     // TAS (Table Assistance)
     'tas.title': 'Service de table',
     'tas.tables': 'Tables',
@@ -330,24 +391,35 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'tas.order.add': 'Ajouter commande',
     'tas.order.send': 'Envoyer en cuisine',
     'tas.order.pay': 'Payer',
-    
+
     // POS
-    'pos.title': 'Terminal point de vente',
+    'pos.title': 'Point de vente',
+    'pos.tables': 'Tables',
+    'pos.no_active_sessions': 'Aucune session active',
+    'pos.new_table': 'Nouvelle Table',
+    'pos.select_table': 'Sélectionnez une table pour voir les commandes',
+    'pos.ticket': 'Ticket',
+    'pos.empty_cart': 'Panier vide',
     'pos.checkout': 'Caisse',
+    'pos.charge': 'Encaisser',
     'pos.total': 'Total',
-    'pos.subtotal': 'Sous-total',
-    'pos.tax': 'Taxes',
+    'pos.subtotal': 'Sous-total (HT)',
+    'pos.tax': 'TVA',
     'pos.discount': 'Réduction',
     'pos.tip': 'Pourboire',
-    
+
     // KDS
-    'kds.title': "Écran cuisine",
-    'kds.pending': 'En attente',
+    'kds.title': 'Écran cuisine',
+    'kds.pending': 'en attente',
+    'kds.new_orders': 'Nouveaux',
+    'kds.prepare': 'Préparer',
+    'kds.in_preparation': 'En préparation',
+    'kds.serve': 'Servi',
     'kds.preparing': 'En préparation',
     'kds.ready': 'Prêt',
     'kds.served': 'Servi',
-    
-    // Errors
+
+    // Errors (error.* for general, errors.* for API codes)
     'error.loading': 'Erreur lors du chargement des données',
     'error.saving': "Erreur lors de l'enregistrement des modifications",
     'error.deleting': 'Erreur lors de la suppression',
@@ -356,7 +428,10 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'error.forbidden': "Vous n'avez pas la permission d'effectuer cette action",
     'error.notFound': 'Ressource demandée non trouvée',
     'error.server': 'Erreur serveur. Veuillez réessayer plus tard.',
-    
+    'errors.INVALID_CREDENTIALS': 'Identifiants invalides',
+    'errors.LOADING_ERROR': 'Erreur de chargement. Veuillez réessayer.',
+    'errors.SERVER_ERROR': 'Erreur interne du serveur',
+
     // Settings
     'settings.title': 'Paramètres',
     'settings.general': 'Général',
@@ -455,17 +530,25 @@ export class I18nService {
   }
   
   translate(key: string): string {
-    const keys = key.split('.');
-    let value: unknown = TRANSLATIONS[this._currentLang()];
-    
-    for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
-        value = (value as Translations)[k];
+    const translations = TRANSLATIONS[this._currentLang()];
+
+    // TRANSLATIONS stores flat keys like 'dashboard.title' as literal strings —
+    // try direct lookup first before attempting dot-navigation.
+    const direct = translations[key];
+    if (typeof direct === 'string') {
+      return direct;
+    }
+
+    // Fallback: navigate nested objects for any future nested structure
+    const parts = key.split('.');
+    let value: unknown = translations;
+    for (const part of parts) {
+      if (value && typeof value === 'object' && part in value) {
+        value = (value as Translations)[part];
       } else {
-        return key; // Return key if translation not found
+        return key;
       }
     }
-    
     return typeof value === 'string' ? value : key;
   }
   
