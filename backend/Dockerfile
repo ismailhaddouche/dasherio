@@ -15,6 +15,9 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Instalar herramientas necesarias para healthchecks
+RUN apk add --no-cache wget curl
+
 # Copiar archivos necesarios para producción
 COPY backend/package*.json ./
 RUN npm install --omit=dev

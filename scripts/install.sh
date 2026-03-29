@@ -525,17 +525,23 @@ build_and_start() {
   
   echo ""
   log "=== FASE 1: Iniciando MongoDB ==="
-  docker compose up -d mongo --wait 2>&1 | tee -a "$LOG_FILE" || err "No se pudo iniciar MongoDB"
+  docker compose up -d mongo --wait --wait-timeout 120 2>&1 | tee -a "$LOG_FILE" || err "No se pudo iniciar MongoDB"
   ok "MongoDB iniciado y saludable"
   
   echo ""
-  log "=== FASE 2: Iniciando Backend y Frontend ==="
-  docker compose up -d backend frontend --wait 2>&1 | tee -a "$LOG_FILE" || err "No se pudieron iniciar Backend y Frontend"
-  ok "Backend y Frontend iniciados y saludables"
+  log "=== FASE 2: Iniciando Backend ==="
+  log "  (Este proceso puede tardar 3-5 minutos en la primera ejecución)"
+  docker compose up -d backend --wait --wait-timeout 420 2>&1 | tee -a "$LOG_FILE" || err "No se pudo iniciar Backend"
+  ok "Backend iniciado y saludable"
   
   echo ""
-  log "=== FASE 3: Iniciando Caddy (Proxy) ==="
-  docker compose up -d caddy --wait 2>&1 | tee -a "$LOG_FILE" || err "No se pudo iniciar Caddy"
+  log "=== FASE 3: Iniciando Frontend ==="
+  docker compose up -d frontend --wait --wait-timeout 120 2>&1 | tee -a "$LOG_FILE" || err "No se pudo iniciar Frontend"
+  ok "Frontend iniciado y saludable"
+  
+  echo ""
+  log "=== FASE 4: Iniciando Caddy (Proxy) ==="
+  docker compose up -d caddy --wait --wait-timeout 120 2>&1 | tee -a "$LOG_FILE" || err "No se pudo iniciar Caddy"
   ok "Caddy iniciado y saludable"
   
   ok "Todos los servicios iniciados correctamente"
