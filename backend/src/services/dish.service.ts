@@ -1,3 +1,4 @@
+import { ErrorCode } from '@disherio/shared';
 import { DishRepository, CategoryRepository } from '../repositories/dish.repository';
 import { IDish, ICategory } from '../models/dish.model';
 import { cache, CacheKeys } from './cache.service';
@@ -44,6 +45,20 @@ export async function getDishesByRestaurant(restaurantId: string, _lang: string 
     CacheKeys.dishByRestaurant(restaurantId),
     () => dishRepo.findActiveByRestaurantId(restaurantId)
   );
+}
+
+export async function getDishesByRestaurantPaginated(
+  restaurantId: string,
+  _lang: string = 'es',
+  skip: number = 0,
+  limit: number = 50
+): Promise<{ dishes: IDish[]; total: number }> {
+  // Note: Pagination bypasses cache for consistency
+  const [dishes, total] = await Promise.all([
+    dishRepo.findActiveByRestaurantIdPaginated(restaurantId, skip, limit),
+    dishRepo.countActiveByRestaurantId(restaurantId),
+  ]);
+  return { dishes, total };
 }
 
 export async function getDishById(dishId: string): Promise<IDish | null> {
@@ -129,7 +144,7 @@ export async function deleteCategory(id: string): Promise<ICategory | null> {
   // Verificar que no haya platos usando esta categoria
   const dishesInCategory = await dishRepo.countByCategory(id);
   if (dishesInCategory > 0) {
-    throw new Error('CATEGORY_HAS_DISHES');
+    throw new Error(ErrorCode.CATEGORY_HAS_DISHES);
   }
   
   const deleted = await categoryRepo.deleteCategory(id);

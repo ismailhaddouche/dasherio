@@ -4,8 +4,10 @@ import { logger } from './logger';
 import { registerKdsHandlers } from '../sockets/kds.handler';
 import { registerPosHandlers } from '../sockets/pos.handler';
 import { socketAuthMiddleware, AuthenticatedSocket } from '../middlewares/socketAuth';
+import { cleanupRateLimiters } from '../middlewares/socketRateLimit';
 
 let io: SocketServer;
+let rateLimitCleanupInterval: NodeJS.Timeout | null = null;
 
 // Build allowed origins for Socket.IO
 function getAllowedOrigins(): string[] {
@@ -55,7 +57,28 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     });
   });
 
+  // Setup rate limit cleanup interval (every 5 minutes)
+  if (rateLimitCleanupInterval) {
+    clearInterval(rateLimitCleanupInterval);
+  }
+  rateLimitCleanupInterval = setInterval(() => {
+    cleanupRateLimiters();
+  }, 5 * 60 * 1000);
+  logger.info('Socket rate limiter cleanup scheduled every 5 minutes');
+
   return io;
+}
+
+/**
+ * Cleanup function to stop rate limiter cleanup interval
+ * Call this before shutting down the server
+ */
+export function cleanupSocketServer(): void {
+  if (rateLimitCleanupInterval) {
+    clearInterval(rateLimitCleanupInterval);
+    rateLimitCleanupInterval = null;
+    logger.info('Socket rate limiter cleanup stopped');
+  }
 }
 
 export function getIO(): SocketServer {

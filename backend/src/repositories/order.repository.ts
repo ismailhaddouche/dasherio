@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import { Types, ClientSession } from 'mongoose';
 import { Order, IOrder, ItemOrder, IItemOrder, Payment, IPayment } from '../models/order.model';
 import { BaseRepository, validateObjectId, validateObjectIdOptional } from './base.repository';
 
@@ -12,7 +12,8 @@ export class OrderRepository extends BaseRepository<IOrder> {
   async createOrder(
     sessionId: string,
     staffId?: string,
-    customerId?: string
+    customerId?: string,
+    session?: ClientSession
   ): Promise<IOrder> {
     validateObjectId(sessionId, 'session_id');
     validateObjectIdOptional(staffId, 'staff_id');
@@ -23,7 +24,7 @@ export class OrderRepository extends BaseRepository<IOrder> {
       staff_id: staffId ? new Types.ObjectId(staffId) : undefined,
       customer_id: customerId ? new Types.ObjectId(customerId) : undefined,
       order_date: new Date(),
-    });
+    }, session);
   }
 
   async findBySessionId(sessionId: string): Promise<IOrder[]> {
@@ -37,31 +38,37 @@ export class ItemOrderRepository extends BaseRepository<IItemOrder> {
     super(ItemOrder);
   }
 
-  async createItem(data: {
-    order_id: string;
-    session_id: string;
-    item_dish_id: string;
-    customer_id?: string;
-    customer_name?: string;
-    item_disher_type: 'KITCHEN' | 'SERVICE';
-    item_name_snapshot: { es: string; en: string; fr: string; ar: string };
-    item_base_price: number;
-    item_disher_variant?: { variant_id: string; name: object; price: number } | null;
-    item_disher_extras: { extra_id: string; name: object; price: number }[];
-  }): Promise<IItemOrder> {
+  async createItem(
+    data: {
+      order_id: string;
+      session_id: string;
+      item_dish_id: string;
+      customer_id?: string;
+      customer_name?: string;
+      item_disher_type: 'KITCHEN' | 'SERVICE';
+      item_name_snapshot: { es: string; en: string; fr: string; ar: string };
+      item_base_price: number;
+      item_disher_variant?: { variant_id: string; name: object; price: number } | null;
+      item_disher_extras: { extra_id: string; name: object; price: number }[];
+    },
+    session?: ClientSession
+  ): Promise<IItemOrder> {
     validateObjectId(data.order_id, 'order_id');
     validateObjectId(data.session_id, 'session_id');
     validateObjectId(data.item_dish_id, 'item_dish_id');
     validateObjectIdOptional(data.customer_id, 'customer_id');
 
-    return this.create({
-      ...data,
-      order_id: new Types.ObjectId(data.order_id),
-      session_id: new Types.ObjectId(data.session_id),
-      item_dish_id: new Types.ObjectId(data.item_dish_id),
-      customer_id: data.customer_id ? new Types.ObjectId(data.customer_id) : undefined,
-      item_state: 'ORDERED',
-    });
+    return this.create(
+      {
+        ...data,
+        order_id: new Types.ObjectId(data.order_id),
+        session_id: new Types.ObjectId(data.session_id),
+        item_dish_id: new Types.ObjectId(data.item_dish_id),
+        customer_id: data.customer_id ? new Types.ObjectId(data.customer_id) : undefined,
+        item_state: 'ORDERED',
+      },
+      session
+    );
   }
 
   async findBySessionId(sessionId: string): Promise<IItemOrder[]> {
@@ -119,13 +126,17 @@ export class ItemOrderRepository extends BaseRepository<IItemOrder> {
       .exec();
   }
 
-  async deleteItem(itemId: string): Promise<IItemOrder | null> {
+  async deleteItem(itemId: string, session?: ClientSession): Promise<IItemOrder | null> {
     validateObjectId(itemId, 'item_id');
     // Only allow deletion if item is in ORDERED state
-    return this.model.findOneAndDelete({
-      _id: new Types.ObjectId(itemId),
-      item_state: 'ORDERED',
-    }).exec();
+    const options = session ? { session } : {};
+    return this.model.findOneAndDelete(
+      {
+        _id: new Types.ObjectId(itemId),
+        item_state: 'ORDERED',
+      },
+      options
+    ).exec();
   }
 
   async assignItemToCustomer(itemId: string, customerId: string | null, customerName?: string | null): Promise<IItemOrder | null> {
@@ -171,24 +182,30 @@ export class PaymentRepository extends BaseRepository<IPayment> {
     super(Payment);
   }
 
-  async createPayment(data: {
-    session_id: string;
-    payment_type: 'ALL' | 'BY_USER' | 'SHARED';
-    payment_total: number;
-    tickets: {
-      ticket_part: number;
-      ticket_total_parts: number;
-      ticket_amount: number;
-      ticket_customer_name?: string;
-      paid: boolean;
-    }[];
-  }): Promise<IPayment> {
+  async createPayment(
+    data: {
+      session_id: string;
+      payment_type: 'ALL' | 'BY_USER' | 'SHARED';
+      payment_total: number;
+      tickets: {
+        ticket_part: number;
+        ticket_total_parts: number;
+        ticket_amount: number;
+        ticket_customer_name?: string;
+        paid: boolean;
+      }[];
+    },
+    session?: ClientSession
+  ): Promise<IPayment> {
     validateObjectId(data.session_id, 'session_id');
-    return this.create({
-      ...data,
-      session_id: new Types.ObjectId(data.session_id),
-      payment_date: new Date(),
-    });
+    return this.create(
+      {
+        ...data,
+        session_id: new Types.ObjectId(data.session_id),
+        payment_date: new Date(),
+      },
+      session
+    );
   }
 
   async findBySessionId(sessionId: string): Promise<IPayment[]> {
@@ -196,12 +213,12 @@ export class PaymentRepository extends BaseRepository<IPayment> {
     return this.model.find({ session_id: new Types.ObjectId(sessionId) }).exec();
   }
 
-  async markTicketPaid(paymentId: string, ticketPart: number): Promise<IPayment | null> {
+  async markTicketPaid(paymentId: string, ticketPart: number, session?: ClientSession): Promise<IPayment | null> {
     validateObjectId(paymentId, 'payment_id');
     return this.model.findOneAndUpdate(
       { _id: new Types.ObjectId(paymentId), 'tickets.ticket_part': ticketPart },
       { $set: { 'tickets.$.paid': true } },
-      { new: true }
+      { new: true, session }
     ).exec();
   }
 }

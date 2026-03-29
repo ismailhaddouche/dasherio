@@ -1,4 +1,4 @@
-import { Types, UpdateQuery, Model, Document } from 'mongoose';
+import { Types, UpdateQuery, Model, Document, ClientSession } from 'mongoose';
 import { AppError } from '../utils/async-handler';
 import { logger } from '../config/logger';
 
@@ -116,27 +116,31 @@ export abstract class BaseRepository<T extends Document> {
     }
   }
 
-  async create(data: Partial<T>): Promise<T> {
+  async create(data: Partial<T>, session?: ClientSession): Promise<T> {
     try {
+      if (session) {
+        const docs = await this.model.create([data as any], { session });
+        return docs[0];
+      }
       return await this.model.create(data);
     } catch (err: any) {
       handleMongoError(err, 'create');
     }
   }
 
-  async update(id: string, data: UpdateQuery<T>): Promise<T | null> {
+  async update(id: string, data: UpdateQuery<T>, session?: ClientSession): Promise<T | null> {
     try {
       this.validateId(id);
-      return await this.model.findByIdAndUpdate(id, data, { new: true }).exec();
+      return await this.model.findByIdAndUpdate(id, data, { new: true, session }).exec();
     } catch (err: any) {
       handleMongoError(err, 'update');
     }
   }
 
-  async delete(id: string): Promise<T | null> {
+  async delete(id: string, session?: ClientSession): Promise<T | null> {
     try {
       this.validateId(id);
-      return await this.model.findByIdAndDelete(id).exec();
+      return await this.model.findByIdAndDelete(id, { session }).exec();
     } catch (err: any) {
       handleMongoError(err, 'delete');
     }

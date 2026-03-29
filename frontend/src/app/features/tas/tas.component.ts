@@ -632,6 +632,9 @@ export class TasComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit() {
+    // Acquire store reference (auto-clears on destroy for memory optimization)
+    tasStore.acquireReference();
+    
     this.loadData();
     this.setupSocketListeners();
   }
@@ -643,7 +646,10 @@ export class TasComponent implements OnInit, OnDestroy {
     this.socketService.off('item:state_changed');
     this.socketService.off('item:deleted');
     this.socketService.off('item:customer_assigned');
-    this.socketService.disconnect();
+    
+    // Release references (store auto-clears when count reaches 0)
+    tasStore.releaseReference();
+    this.socketService.releaseConnection();
   }
 
   private loadData() {
@@ -678,8 +684,8 @@ export class TasComponent implements OnInit, OnDestroy {
         error: (err) => console.error('[TAS] Error loading dishes:', err),
       });
 
-    // Connect socket
-    this.socketService.connect();
+    // Acquire socket connection reference
+    this.socketService.acquireConnection();
   }
 
   private setupSocketListeners() {

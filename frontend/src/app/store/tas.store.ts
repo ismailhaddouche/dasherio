@@ -42,6 +42,12 @@ export interface TasStore {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
+  /** Acquire a reference to the store. Must be paired with releaseReference(). */
+  acquireReference: () => void;
+  /** Release a reference. When all references are released, store is cleared. */
+  releaseReference: () => void;
+  /** Check if store has active references */
+  hasActiveReferences: () => boolean;
 }
 
 // State signals
@@ -54,6 +60,7 @@ const _dishes = signal<Dish[]>([]);
 const _categories = signal<Array<{ _id: string; category_name: LocalizedString }>>([]);
 const _isLoading = signal<boolean>(false);
 const _error = signal<string | null>(null);
+let _referenceCount = 0;
 
 export const tasStore: TasStore = {
   // State
@@ -173,5 +180,35 @@ export const tasStore: TasStore = {
 
   clearError() {
     _error.set(null);
+  },
+
+  acquireReference() {
+    _referenceCount++;
+    console.log(`[TAS Store] Reference acquired. Count: ${_referenceCount}`);
+  },
+
+  releaseReference() {
+    if (_referenceCount > 0) {
+      _referenceCount--;
+      console.log(`[TAS Store] Reference released. Count: ${_referenceCount}`);
+
+      // Clear store when no more references (memory optimization)
+      if (_referenceCount === 0) {
+        console.log('[TAS Store] No active references, clearing store');
+        _sessions.set([]);
+        _selectedSession.set(null);
+        _sessionItems.set([]);
+        _serviceItems.set([]);
+        _customers.set([]);
+        _dishes.set([]);
+        _categories.set([]);
+        _isLoading.set(false);
+        _error.set(null);
+      }
+    }
+  },
+
+  hasActiveReferences() {
+    return _referenceCount > 0;
   },
 };

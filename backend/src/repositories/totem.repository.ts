@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import { Types, ClientSession } from 'mongoose';
 import { Totem, ITotem, TotemSession, ITotemSession, Customer, ICustomer } from '../models/totem.model';
 import { BaseRepository, validateObjectId, validateObjectIdOptional } from './base.repository';
 import { CreateTotemData, UpdateTotemData } from '@disherio/shared';
@@ -120,11 +120,12 @@ export class TotemSessionRepository extends BaseRepository<ITotemSession> {
 
   async updateState(
     id: string,
-    state: 'STARTED' | 'COMPLETE' | 'PAID'
+    state: 'STARTED' | 'COMPLETE' | 'PAID',
+    session?: ClientSession
   ): Promise<ITotemSession | null> {
     validateObjectId(id, 'session_id');
     return this.model
-      .findByIdAndUpdate(id, { totem_state: state }, { new: true })
+      .findByIdAndUpdate(id, { totem_state: state }, { new: true, session })
       .exec();
   }
 

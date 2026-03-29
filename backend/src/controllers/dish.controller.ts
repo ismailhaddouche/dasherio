@@ -1,10 +1,17 @@
 import { Request, Response } from 'express';
 import { asyncHandler, createError } from '../utils/async-handler';
+import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
 import * as DishService from '../services/dish.service';
 
 export const listDishes = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const dishes = await DishService.getDishesByRestaurant(req.user!.restaurantId, req.lang);
-  res.json(dishes);
+  const { page, limit, skip } = getPaginationParams(req);
+  const { dishes, total } = await DishService.getDishesByRestaurantPaginated(
+    req.user!.restaurantId, 
+    req.lang,
+    skip,
+    limit
+  );
+  res.json(createPaginatedResponse(dishes, total, page, limit));
 });
 
 export const createDish = asyncHandler(async (req: Request, res: Response): Promise<void> => {

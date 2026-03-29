@@ -1,5 +1,7 @@
+import { ErrorCode } from '@disherio/shared';
 import { getIO } from '../config/socket';
 import * as TaxUtils from '../utils/tax';
+import { withTransaction } from '../utils/transactions';
 import { IVariant, IExtra } from '../models/dish.model';
 import {
   OrderRepository,
@@ -69,7 +71,7 @@ function validateStateTransition(currentState: string, newState: string, itemTyp
     : KITCHEN_STATE_TRANSITIONS;
   const validTransitions = transitions[currentState];
   if (!validTransitions?.includes(newState)) {
-    throw new Error('INVALID_STATE_TRANSITION');
+    throw new Error(ErrorCode.INVALID_STATE_TRANSITION);
   }
 }
 
@@ -105,12 +107,12 @@ export async function createOrder(sessionId: string, staffId?: string, customerI
   try {
     const session = await totemSessionRepo.findById(sessionId);
     if (!session || session.totem_state !== 'STARTED') {
-      throw new Error('SESSION_NOT_ACTIVE');
+      throw new Error(ErrorCode.SESSION_NOT_ACTIVE);
     }
     return orderRepo.createOrder(sessionId, staffId, customerId);
   } catch (err) {
     if (err instanceof ValidationError) throw err;
-    throw new Error('SESSION_NOT_ACTIVE');
+    throw new Error(ErrorCode.SESSION_NOT_ACTIVE);
   }
 }
 
@@ -123,11 +125,11 @@ export async function addItemToOrder(
   extras: string[] = []
 ) {
   const order = await orderRepo.findById(orderId);
-  if (!order) throw new Error('ORDER_NOT_FOUND');
+  if (!order) throw new Error(ErrorCode.ORDER_NOT_FOUND);
 
   const dish = await dishRepo.findById(dishId);
-  if (!dish) throw new Error('DISH_NOT_FOUND');
-  if (dish.disher_status !== 'ACTIVATED') throw new Error('DISH_NOT_AVAILABLE');
+  if (!dish) throw new Error(ErrorCode.DISH_NOT_FOUND);
+  if (dish.disher_status !== 'ACTIVATED') throw new Error(ErrorCode.DISH_NOT_AVAILABLE);
 
   const variant = variantId
     ? dish.variants.find((v: IVariant) => v._id.toString() === variantId)
@@ -181,13 +183,13 @@ export async function updateItemState(
   requesterPerms: string[]
 ) {
   const item = await itemOrderRepo.findById(itemId);
-  if (!item) throw new Error('ITEM_NOT_FOUND');
+  if (!item) throw new Error(ErrorCode.ITEM_NOT_FOUND);
 
   validateStateTransition(item.item_state, newState, item.item_disher_type);
 
   if (newState === 'CANCELED' && item.item_state === 'ON_PREPARE') {
     if (!canForceCancel(requesterPerms)) {
-      throw new Error('REQUIRES_POS_AUTHORIZATION');
+      throw new Error(ErrorCode.REQUIRES_POS_AUTHORIZATION);
     }
   }
 
@@ -219,13 +221,13 @@ export async function calculateSessionTotal(
   customTip?: number
 ): Promise<{ subtotal: number; tax: number; tips: number; total: number }> {
   const session = await totemSessionRepo.findById(sessionId);
-  if (!session) throw new Error('SESSION_NOT_FOUND');
+  if (!session) throw new Error(ErrorCode.SESSION_NOT_FOUND);
 
   const totem = await totemRepo.findById(session.totem_id.toString());
-  if (!totem) throw new Error('TOTEM_NOT_FOUND');
+  if (!totem) throw new Error(ErrorCode.TOTEM_NOT_FOUND);
 
   const restaurant = await restaurantRepo.findById(totem.restaurant_id.toString());
-  if (!restaurant) throw new Error('RESTAURANT_NOT_FOUND');
+  if (!restaurant) throw new Error(ErrorCode.RESTAURANT_NOT_FOUND);
 
   const items = await itemOrderRepo.findActiveBySessionId(sessionId);
 
@@ -272,22 +274,28 @@ export async function createPayment(
 
   // Validar que haya items en la sesión antes de crear el pago
   if (total <= 0) {
-    throw new Error('NO_ITEMS_TO_PAY');
+    throw new Error(ErrorCode.NO_ITEMS_TO_PAY);
   }
 
   const tickets = paymentType === 'BY_USER'
     ? await buildByUserTickets(sessionId)
     : buildSharedTickets(total, parts);
 
-  const payment = await paymentRepo.createPayment({
-    session_id: sessionId,
-    payment_type: paymentType,
-    payment_total: total,
-    tickets,
-  });
+  // Use transaction to ensure payment creation and session update are atomic
+  return withTransaction(async (session) => {
+    const payment = await paymentRepo.createPayment(
+      {
+        session_id: sessionId,
+        payment_type: paymentType,
+        payment_total: total,
+        tickets,
+      },
+      session
+    );
 
-  await totemSessionRepo.updateState(sessionId, 'COMPLETE');
-  return payment;
+    await totemSessionRepo.updateState(sessionId, 'COMPLETE', session);
+    return payment;
+  });
 }
 
 function buildSharedTickets(total: number, parts: number) {
@@ -332,34 +340,37 @@ function calculateCustomerTotals(items: Array<{
 
 export async function markTicketPaid(paymentId: string, ticketPart: number) {
   const payment = await paymentRepo.findById(paymentId);
-  if (!payment) throw new Error('PAYMENT_NOT_FOUND');
+  if (!payment) throw new Error(ErrorCode.PAYMENT_NOT_FOUND);
 
-  const updated = await paymentRepo.markTicketPaid(paymentId, ticketPart);
-  if (!updated) throw new Error('TICKET_NOT_FOUND');
+  // Use transaction to ensure payment update and session state change are atomic
+  return withTransaction(async (session) => {
+    const updated = await paymentRepo.markTicketPaid(paymentId, ticketPart, session);
+    if (!updated) throw new Error(ErrorCode.TICKET_NOT_FOUND);
 
-  const allPaid = updated.tickets.every((t) => t.paid);
-  if (allPaid) {
-    await totemSessionRepo.updateState(updated.session_id.toString(), 'PAID');
-    emitSessionPaid(updated.session_id.toString());
-  }
+    const allPaid = updated.tickets.every((t) => t.paid);
+    if (allPaid) {
+      await totemSessionRepo.updateState(updated.session_id.toString(), 'PAID', session);
+      emitSessionPaid(updated.session_id.toString());
+    }
 
-  return updated;
+    return updated;
+  });
 }
 
 export async function deleteItem(itemId: string, requesterPerms: string[]) {
   const item = await itemOrderRepo.findById(itemId);
-  if (!item) throw new Error('ITEM_NOT_FOUND');
+  if (!item) throw new Error(ErrorCode.ITEM_NOT_FOUND);
   
   if (item.item_state !== 'ORDERED') {
-    throw new Error('CANNOT_DELETE_ITEM_NOT_ORDERED');
+    throw new Error(ErrorCode.CANNOT_DELETE_ITEM_NOT_ORDERED);
   }
   
   if (!canDelete(requesterPerms)) {
-    throw new Error('REQUIRES_AUTHORIZATION');
+    throw new Error(ErrorCode.REQUIRES_AUTHORIZATION);
   }
 
   const deleted = await itemOrderRepo.deleteItem(itemId);
-  if (!deleted) throw new Error('ITEM_NOT_FOUND_OR_ALREADY_PROCESSED');
+  if (!deleted) throw new Error(ErrorCode.ITEM_NOT_FOUND_OR_ALREADY_PROCESSED);
 
   emitItemDeleted(item.session_id.toString(), item._id.toString());
 
@@ -368,7 +379,7 @@ export async function deleteItem(itemId: string, requesterPerms: string[]) {
 
 export async function assignItemToCustomer(itemId: string, customerId: string | null) {
   const item = await itemOrderRepo.findById(itemId);
-  if (!item) throw new Error('ITEM_NOT_FOUND');
+  if (!item) throw new Error(ErrorCode.ITEM_NOT_FOUND);
 
   // Get customer name if customerId is provided
   let customerName: string | null = null;
@@ -378,7 +389,7 @@ export async function assignItemToCustomer(itemId: string, customerId: string | 
   }
 
   const updated = await itemOrderRepo.assignItemToCustomer(itemId, customerId, customerName);
-  if (!updated) throw new Error('UPDATE_FAILED');
+  if (!updated) throw new Error(ErrorCode.UPDATE_FAILED);
 
   emitCustomerAssigned(item.session_id.toString(), item._id.toString(), customerId);
 

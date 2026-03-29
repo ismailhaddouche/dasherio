@@ -28,9 +28,16 @@ export interface KdsStore {
   addItem: (item: KdsItem) => void;
   updateItemState: (itemId: string, newState: ItemState) => void;
   removeItem: (itemId: string) => void;
+  /** Acquire a reference to the store. Must be paired with releaseReference(). */
+  acquireReference: () => void;
+  /** Release a reference. When all references are released, store is cleared. */
+  releaseReference: () => void;
+  /** Check if store has active references */
+  hasActiveReferences: () => boolean;
 }
 
 const _items = signal<KdsItem[]>([]);
+let _referenceCount = 0;
 
 function filterByState(items: KdsItem[], state: ItemState): KdsItem[] {
   return items.filter((item) => item.item_state === state);
@@ -52,11 +59,11 @@ function removeItemFromList(items: KdsItem[], itemId: string): KdsItem[] {
 
 export const kdsStore: KdsStore = {
   items: _items.asReadonly(),
-  
+
   ordered: computed(() => filterByState(_items(), 'ORDERED')),
-  
+
   onPrepare: computed(() => filterByState(_items(), 'ON_PREPARE')),
-  
+
   served: computed(() => filterByState(_items(), 'SERVED')),
 
   setItems(items: KdsItem[]) {
@@ -73,5 +80,27 @@ export const kdsStore: KdsStore = {
 
   removeItem(itemId: string) {
     _items.update((current) => removeItemFromList(current, itemId));
+  },
+
+  acquireReference() {
+    _referenceCount++;
+    console.log(`[KDS Store] Reference acquired. Count: ${_referenceCount}`);
+  },
+
+  releaseReference() {
+    if (_referenceCount > 0) {
+      _referenceCount--;
+      console.log(`[KDS Store] Reference released. Count: ${_referenceCount}`);
+
+      // Clear store when no more references (memory optimization)
+      if (_referenceCount === 0) {
+        console.log('[KDS Store] No active references, clearing store');
+        _items.set([]);
+      }
+    }
+  },
+
+  hasActiveReferences() {
+    return _referenceCount > 0;
   },
 };

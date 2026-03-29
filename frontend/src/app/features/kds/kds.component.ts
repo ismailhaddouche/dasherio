@@ -94,13 +94,16 @@ export class KdsComponent implements OnInit, OnDestroy {
   onPrepare = kdsStore.onPrepare;
 
   ngOnInit() {
-    this.socketService.connect();
+    // Acquire store reference to prevent cleanup while component is active
+    kdsStore.acquireReference();
+    // Acquire socket connection for real-time updates
+    this.socketService.acquireConnection();
     // BUG-12: was only listening to WS — existing items were invisible on page load
     this.http.get<any[]>(`${environment.apiUrl}/orders/kitchen`)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (items) => kdsStore.setItems(items),
-        error: (err) => { 
+        error: (err) => {
           console.error('[KDS] Error loading kitchen items:', err);
         },
       });
@@ -109,7 +112,10 @@ export class KdsComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
-    this.socketService.disconnect();
+    // Release socket connection
+    this.socketService.releaseConnection();
+    // Release store reference (clears store when all components destroyed)
+    kdsStore.releaseReference();
   }
 
   prepareItem(itemId: string) {

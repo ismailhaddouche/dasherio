@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { ErrorCode } from '@disherio/shared';
 import { UserRepository, RoleRepository } from '../repositories/user.repository';
 import { Restaurant } from '../models/restaurant.model';
 
@@ -10,7 +11,7 @@ const JWT_SECRET: string = process.env.JWT_SECRET || '';
 const JWT_EXPIRES: string = process.env.JWT_EXPIRES || '8h';
 
 if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
+  throw new Error(ErrorCode.SERVER_CONFIGURATION_ERROR);
 }
 
 interface TokenPayload {
@@ -66,12 +67,12 @@ async function buildAuthResult(
 export async function loginWithUsername(username: string, password: string): Promise<AuthResult> {
   const staff = await userRepo.findByUsername(username.toLowerCase());
   if (!staff) {
-    throw new Error('INVALID_CREDENTIALS');
+    throw new Error(ErrorCode.INVALID_CREDENTIALS);
   }
 
   const isPasswordValid = await bcrypt.compare(password, staff.password_hash);
   if (!isPasswordValid) {
-    throw new Error('INVALID_CREDENTIALS');
+    throw new Error(ErrorCode.INVALID_CREDENTIALS);
   }
 
   const restaurant = await Restaurant.findById(staff.restaurant_id);
@@ -89,7 +90,7 @@ export async function loginWithPin(pin: string, restaurantId: string): Promise<A
     }
   }
 
-  throw new Error('INVALID_PIN');
+  throw new Error(ErrorCode.INVALID_PIN);
 }
 
 export async function hashPassword(password: string): Promise<string> {

@@ -33,6 +33,35 @@ export class DishRepository extends BaseRepository<IDish> {
     return this.findByRestaurantId(restaurantId, { onlyActive: true });
   }
 
+  async findActiveByRestaurantIdPaginated(
+    restaurantId: string,
+    skip: number,
+    limit: number
+  ): Promise<IDish[]> {
+    validateObjectId(restaurantId, 'restaurant_id');
+    return this.model
+      .find({
+        restaurant_id: new Types.ObjectId(restaurantId),
+        disher_status: 'ACTIVATED',
+      })
+      .populate('category_id')
+      .populate('disher_alergens')
+      .skip(skip)
+      .limit(limit)
+      .lean()
+      .exec();
+  }
+
+  async countActiveByRestaurantId(restaurantId: string): Promise<number> {
+    validateObjectId(restaurantId, 'restaurant_id');
+    return this.model
+      .countDocuments({
+        restaurant_id: new Types.ObjectId(restaurantId),
+        disher_status: 'ACTIVATED',
+      })
+      .exec();
+  }
+
   async findByIdWithDetails(id: string): Promise<IDish | null> {
     validateObjectId(id, 'dish_id');
     return this.model

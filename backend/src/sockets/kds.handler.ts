@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import { ItemOrder } from '../models/order.model';
 import { logger } from '../config/logger';
 import { AuthenticatedSocket } from '../middlewares/socketAuth';
+import { createSocketRateLimiter, rateLimitWrapper } from '../middlewares/socketRateLimit';
 
 export function registerKdsHandlers(io: Server, socket: AuthenticatedSocket): void {
   // Verify user has kitchen permissions (KTS = Kitchen Table Service)
@@ -13,7 +14,10 @@ export function registerKdsHandlers(io: Server, socket: AuthenticatedSocket): vo
     return;
   }
 
-  socket.on('kds:join', (sessionId: string) => {
+  // Create rate limiter for this socket connection
+  const rateLimiter = createSocketRateLimiter();
+
+  socket.on('kds:join', rateLimitWrapper(rateLimiter, socket, 'kds:join', (sessionId: string) => {
     // Validate sessionId format
     if (!sessionId || typeof sessionId !== 'string') {
       socket.emit('kds:error', { message: 'INVALID_SESSION_ID' });
@@ -23,9 +27,9 @@ export function registerKdsHandlers(io: Server, socket: AuthenticatedSocket): vo
     socket.join(`session:${sessionId}`);
     logger.info({ socketId: socket.id, userId: user.staffId, sessionId }, 'KDS joined session room');
     socket.emit('kds:joined', { sessionId });
-  });
+  }));
 
-  socket.on('kds:item_prepare', async ({ itemId }: { itemId: string }) => {
+  socket.on('kds:item_prepare', rateLimitWrapper(rateLimiter, socket, 'kds:item_prepare', async ({ itemId }: { itemId: string }) => {
     try {
       // Validate itemId
       if (!itemId || typeof itemId !== 'string') {
@@ -82,9 +86,9 @@ export function registerKdsHandlers(io: Server, socket: AuthenticatedSocket): vo
         details: err.message 
       });
     }
-  });
+  }));
 
-  socket.on('kds:item_serve', async ({ itemId }: { itemId: string }) => {
+  socket.on('kds:item_serve', rateLimitWrapper(rateLimiter, socket, 'kds:item_serve', async ({ itemId }: { itemId: string }) => {
     try {
       // Validate itemId
       if (!itemId || typeof itemId !== 'string') {
@@ -136,5 +140,5 @@ export function registerKdsHandlers(io: Server, socket: AuthenticatedSocket): vo
         details: err.message 
       });
     }
-  });
+  }));
 }

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { asyncHandler, createError } from '../utils/async-handler';
+import { getPaginationParams, createPaginatedResponse } from '../utils/pagination';
 import { Types } from 'mongoose';
 import { Staff, Role } from '../models/staff.model';
 import bcrypt from 'bcryptjs';
@@ -7,13 +8,19 @@ import bcrypt from 'bcryptjs';
 // Get all staff for the restaurant
 export const listStaff = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const restaurantId = req.user!.restaurantId;
+  const { page, limit, skip } = getPaginationParams(req);
   
-  const staff = await Staff.find({ restaurant_id: new Types.ObjectId(restaurantId) })
-    .populate('role_id', 'role_name permissions')
-    .select('-password_hash -pin_code_hash')
-    .lean();
+  const [staff, total] = await Promise.all([
+    Staff.find({ restaurant_id: new Types.ObjectId(restaurantId) })
+      .populate('role_id', 'role_name permissions')
+      .select('-password_hash -pin_code_hash')
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Staff.countDocuments({ restaurant_id: new Types.ObjectId(restaurantId) })
+  ]);
 
-  res.json(staff);
+  res.json(createPaginatedResponse(staff, total, page, limit));
 });
 
 // Get single staff member
