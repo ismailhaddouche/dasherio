@@ -36,10 +36,11 @@ DEFAULT_CURRENCY="EUR"   # EUR | USD | GBP
 # ── Utilidades ───────────────────────────────────────────────────────────────
 [[ $EUID -eq 0 ]] || { echo -e "${RED}Ejecuta como root: sudo ./scripts/install.sh${NC}"; exit 1; }
 
-err() { echo -e "${RED}❌ $*${NC}" | tee -a "$LOG_FILE"; exit 1; }
-ok()  { echo -e "${GREEN}✓${NC} $*" | tee -a "$LOG_FILE"; }
-log() { echo -e "${BLUE}▶${NC} $*" | tee -a "$LOG_FILE"; }
-warn() { echo -e "${YELLOW}⚠ $*${NC}" | tee -a "$LOG_FILE"; }
+err() { echo -e "${RED}[ERROR]${NC} $*" | tee -a "$LOG_FILE"; exit 1; }
+ok()  { echo -e "${GREEN}[OK]${NC} $*" | tee -a "$LOG_FILE"; }
+log() { echo -e "${BLUE}[INFO]${NC} $*" | tee -a "$LOG_FILE"; }
+warn() { echo -e "${YELLOW}[ADVERTENCIA]${NC} $*" | tee -a "$LOG_FILE"; }
+step() { echo -e "\n${CYAN}=== PASO $1 ===${NC}\n" | tee -a "$LOG_FILE"; }
 
 banner() {
   echo -e "${CYAN}"
@@ -112,45 +113,54 @@ detect_ips() {
 
 # ── Paso 1: Configuración de Acceso ──────────────────────────────────────────
 configure_access() {
-  echo -e "${CYAN}[1/7] Configuración de acceso${NC}"
+  step "1/7: CONFIGURACIÓN DE ACCESO"
   detect_ips
   
   echo ""
-  echo "  Selecciona el tipo de instalación:"
-  echo ""
-  echo "  1) Dominio público con HTTPS"
-  echo "     Ejemplo: restaurante.com / app.tudominio.com"
-  echo "     • Certificados SSL automáticos (Let's Encrypt)"
-  echo "     • Acceso desde internet"
-  echo ""
-  echo "  2) Dominio local (sin HTTPS externo)"
-  echo "     Ejemplo: disherio.local / restaurante.lan"
-  echo "     • Para red local con DNS local"
-  echo ""
-  if [[ -n "$PUBLIC_IP" ]]; then
-    echo "  3) IP Pública"
-    echo "     Detectada: $PUBLIC_IP"
-    echo "     • Acceso directo por IP"
-    echo "     • Sin dominio"
-  else
-    echo "  3) IP Pública (no detectada)"
-    echo "     • Se te pedirá introducirla manualmente"
-  fi
-  echo ""
-  echo "  4) IP Local (recomendado para pruebas)"
-  echo "     Detectada: $LOCAL_IP"
-  echo "     • Solo acceso desde la red local"
+  echo "============================================================"
+  echo "  SELECCIONA EL TIPO DE INSTALACIÓN"
+  echo "============================================================"
   echo ""
   
+  echo ""
+  echo "------------------------------------------------------------"
+  echo "  OPCIONES DE INSTALACIÓN:"
+  echo "------------------------------------------------------------"
+  echo ""
+  echo "  [1] Dominio público con HTTPS"
+  echo "      - Ejemplo: restaurante.com / app.tudominio.com"
+  echo "      - Certificados SSL automáticos (Let's Encrypt)"
+  echo "      - Acceso desde internet"
+  echo ""
+  echo "  [2] Dominio local (sin HTTPS externo)"
+  echo "      - Ejemplo: disherio.local / restaurante.lan"
+  echo "      - Para red local con DNS local"
+  echo ""
+  if [[ -n "$PUBLIC_IP" ]]; then
+    echo "  [3] IP Pública"
+    echo "      - Detectada: $PUBLIC_IP"
+    echo "      - Acceso directo por IP"
+    echo "      - Sin dominio"
+  else
+    echo "  [3] IP Pública (no detectada)"
+    echo "      - Se te pedirá introducirla manualmente"
+  fi
+  echo ""
+  echo "  [4] IP Local (recomendado para pruebas)"
+  echo "      - Detectada: $LOCAL_IP"
+  echo "      - Solo acceso desde la red local"
+  echo ""
+  
+  echo "------------------------------------------------------------"
   while true; do
-    read -rp "  Opción [4]: " choice
+    read -rp "  Introduce tu opción (1-4) [por defecto: 4]: " choice
     choice="${choice:-4}"
     case "$choice" in
-      1) INSTALL_MODE="domain-public"; IS_DOMAIN=true; break;;
-      2) INSTALL_MODE="domain-local"; IS_DOMAIN=true; break;;
-      3) INSTALL_MODE="ip-public"; IS_DOMAIN=false; break;;
-      4) INSTALL_MODE="ip-local"; IS_DOMAIN=false; break;;
-      *) echo "Opción inválida";;
+      1) INSTALL_MODE="domain-public"; IS_DOMAIN=true; log "Seleccionado: Dominio público con HTTPS"; break;;
+      2) INSTALL_MODE="domain-local"; IS_DOMAIN=true; log "Seleccionado: Dominio local"; break;;
+      3) INSTALL_MODE="ip-public"; IS_DOMAIN=false; log "Seleccionado: IP Pública"; break;;
+      4) INSTALL_MODE="ip-local"; IS_DOMAIN=false; log "Seleccionado: IP Local"; break;;
+      *) echo "  Opción inválida. Por favor, introduce 1, 2, 3 o 4.";;
     esac
   done
   
@@ -188,18 +198,25 @@ configure_access() {
   
   # Configurar puertos
   echo ""
-  log "Configuración de puertos (ENTER para valores por defecto):"
+  echo "============================================================"
+  echo "  CONFIGURACIÓN DE PUERTOS"
+  echo "  (Presiona ENTER para usar los valores por defecto)"
+  echo "============================================================"
+  echo ""
   
   read -rp "  Puerto HTTP [80]: " http_port
   HTTP_PORT="${http_port:-80}"
+  ok "Puerto HTTP: $HTTP_PORT"
   
   if [[ "$INSTALL_MODE" == "domain-public" ]]; then
     read -rp "  Puerto HTTPS [443]: " https_port
     HTTPS_PORT="${https_port:-443}"
+    ok "Puerto HTTPS: $HTTPS_PORT"
   fi
   
   read -rp "  Puerto interno backend [3000]: " backend_port
   BACKEND_PORT="${backend_port:-3000}"
+  ok "Puerto backend: $BACKEND_PORT"
   
   # Validar puertos
   for port in "$HTTP_PORT" "$HTTPS_PORT" "$BACKEND_PORT"; do
@@ -210,69 +227,80 @@ configure_access() {
   
   # Configurar preferencias de localización
   echo ""
-  log "Configuración de idioma y tema:"
+  echo "============================================================"
+  echo "  CONFIGURACIÓN DE IDIOMA Y TEMA"
+  echo "============================================================"
+  echo ""
   
   # Selección de idioma
+  echo "------------------------------------------------------------"
+  echo "  SELECCIONA EL IDIOMA POR DEFECTO:"
+  echo "------------------------------------------------------------"
   echo ""
-  echo "  Selecciona el idioma por defecto:"
-  echo "    1) Español (ES)"
-  echo "    2) English (EN)"
+  echo "  [1] Español (ES)"
+  echo "  [2] English (EN)"
   echo ""
   while true; do
-    read -rp "  Opción [1]: " lang_choice
+    read -rp "  Introduce tu opción (1-2) [por defecto: 1]: " lang_choice
     lang_choice="${lang_choice:-1}"
     case "$lang_choice" in
-      1) DEFAULT_LANGUAGE="es"; break;;
-      2) DEFAULT_LANGUAGE="en"; break;;
-      *) echo "Opción inválida";;
+      1) DEFAULT_LANGUAGE="es"; log "Idioma seleccionado: Español"; break;;
+      2) DEFAULT_LANGUAGE="en"; log "Idioma seleccionado: English"; break;;
+      *) echo "  Opción inválida. Por favor, introduce 1 o 2.";;
     esac
   done
-  ok "Idioma seleccionado: $DEFAULT_LANGUAGE"
   
   # Selección de tema
   echo ""
-  echo "  Selecciona el tema por defecto:"
-  echo "    1) Claro (Light)"
-  echo "    2) Oscuro (Dark)"
+  echo "------------------------------------------------------------"
+  echo "  SELECCIONA EL TEMA POR DEFECTO:"
+  echo "------------------------------------------------------------"
+  echo ""
+  echo "  [1] Claro (Light)"
+  echo "  [2] Oscuro (Dark)"
   echo ""
   while true; do
-    read -rp "  Opción [2]: " theme_choice
+    read -rp "  Introduce tu opción (1-2) [por defecto: 2]: " theme_choice
     theme_choice="${theme_choice:-2}"
     case "$theme_choice" in
-      1) DEFAULT_THEME="light"; break;;
-      2) DEFAULT_THEME="dark"; break;;
-      *) echo "Opción inválida";;
+      1) DEFAULT_THEME="light"; log "Tema seleccionado: Claro"; break;;
+      2) DEFAULT_THEME="dark"; log "Tema seleccionado: Oscuro"; break;;
+      *) echo "  Opción inválida. Por favor, introduce 1 o 2.";;
     esac
   done
-  ok "Tema seleccionado: $DEFAULT_THEME"
   
   # Configurar impuestos y moneda
   echo ""
-  log "Configuración de impuestos y moneda:"
+  echo "============================================================"
+  echo "  CONFIGURACIÓN DE IMPUESTOS Y MONEDA"
+  echo "============================================================"
+  echo ""
   
   # Tax rate
   read -rp "  Tasa de impuestos por defecto [%] [10]: " tax_rate
   DEFAULT_TAX_RATE="${tax_rate:-10}"
-  ok "Impuestos: ${DEFAULT_TAX_RATE}%"
+  ok "Tasa de impuestos: ${DEFAULT_TAX_RATE}%"
   
   # Currency
   echo ""
-  echo "  Selecciona la moneda por defecto:"
-  echo "    1) EUR (€) - Euro"
-  echo "    2) USD ($) - Dólar"
-  echo "    3) GBP (£) - Libra"
+  echo "------------------------------------------------------------"
+  echo "  SELECCIONA LA MONEDA POR DEFECTO:"
+  echo "------------------------------------------------------------"
+  echo ""
+  echo "  [1] EUR (€) - Euro"
+  echo "  [2] USD ($) - Dólar"
+  echo "  [3] GBP (£) - Libra"
   echo ""
   while true; do
-    read -rp "  Opción [1]: " currency_choice
+    read -rp "  Introduce tu opción (1-3) [por defecto: 1]: " currency_choice
     currency_choice="${currency_choice:-1}"
     case "$currency_choice" in
-      1) DEFAULT_CURRENCY="EUR"; break;;
-      2) DEFAULT_CURRENCY="USD"; break;;
-      3) DEFAULT_CURRENCY="GBP"; break;;
-      *) echo "Opción inválida";;
+      1) DEFAULT_CURRENCY="EUR"; log "Moneda seleccionada: EUR (€)"; break;;
+      2) DEFAULT_CURRENCY="USD"; log "Moneda seleccionada: USD ($)"; break;;
+      3) DEFAULT_CURRENCY="GBP"; log "Moneda seleccionada: GBP (£)"; break;;
+      *) echo "  Opción inválida. Por favor, introduce 1, 2 o 3.";;
     esac
   done
-  ok "Moneda seleccionada: $DEFAULT_CURRENCY"
   
   # Verificar que los puertos no estén en uso
   for port in "$HTTP_PORT" "$HTTPS_PORT"; do
@@ -301,15 +329,14 @@ configure_access() {
 
 # ── Paso 2: Dependencias ─────────────────────────────────────────────────────
 install_dependencies() {
-  echo ""
-  echo -e "${CYAN}[2/7] Instalando dependencias${NC}"
+  step "2/7: INSTALANDO DEPENDENCIAS"
   
   # Verificar si Docker ya está instalado
   if command -v docker &>/dev/null && docker compose version &>/dev/null; then
     ok "Docker ya instalado: $(docker --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
   else
-    log "Instalando Docker..."
-    apt-get update -qq >/dev/null 2>&1 || err "apt-get update falló"
+    log "Actualizando repositorios..."
+    apt-get update -qq 2>&1 | tee -a "$LOG_FILE" || err "apt-get update falló"
     
     # Instalar dependencias previas
     for pkg in curl wget ca-certificates gnupg lsb-release; do
@@ -355,8 +382,7 @@ https://download.docker.com/linux/${distro:-ubuntu} ${codename:-jammy} stable" \
 
 # ── Paso 3: Generar Secretos ─────────────────────────────────────────────────
 generate_secrets() {
-  echo ""
-  echo -e "${CYAN}[3/7] Generando secretos seguros${NC}"
+  step "3/7: GENERANDO SECRETOS SEGUROS"
   
   # JWT Secret - 64 caracteres alfanuméricos
   JWT_SECRET=$(openssl rand -base64 48 | tr -dc 'a-zA-Z0-9' | head -c 64)
@@ -372,8 +398,7 @@ generate_secrets() {
 
 # ── Paso 4: Escribir Configuración ───────────────────────────────────────────
 write_config() {
-  echo ""
-  echo -e "${CYAN}[4/7] Configurando archivos${NC}"
+  step "4/7: CONFIGURANDO ARCHIVOS"
   
   # Limpiar archivos previos
   rm -f "$ENV_FILE" "$CADDYFILE"
@@ -470,38 +495,43 @@ EOF
 
 # ── Paso 5: Build e Inicio ───────────────────────────────────────────────────
 build_and_start() {
-  echo ""
-  echo -e "${CYAN}[5/7] Construyendo e iniciando servicios${NC}"
+  step "5/7: CONSTRUYENDO E INICIANDO SERVICIOS"
   cd "$ROOT_DIR"
   
-  log "Descargando imágenes base..."
-  docker compose pull --quiet >> "$LOG_FILE" 2>&1 || true
+  log "Descargando imágenes base de Docker..."
+  log "  (Este proceso puede tardar unos minutos)"
+  docker compose pull 2>&1 | tee -a "$LOG_FILE" || true
+  ok "Imágenes descargadas"
   
-  log "Construyendo imágenes (esto puede tardar varios minutos)..."
-  docker compose build --no-cache >> "$LOG_FILE" 2>&1 || err "Build fallido. Ver $LOG_FILE"
-  ok "Imágenes construidas"
+  echo ""
+  log "Construyendo imágenes personalizadas..."
+  log "  (Backend y Frontend - puede tardar 3-5 minutos)"
+  docker compose build --no-cache 2>&1 | tee -a "$LOG_FILE" || err "Build fallido. Ver $LOG_FILE"
+  ok "Imágenes construidas correctamente"
   
+  echo ""
   log "Iniciando servicios..."
-  docker compose up -d >> "$LOG_FILE" 2>&1 || err "No se pudieron iniciar los servicios"
+  docker compose up -d 2>&1 | tee -a "$LOG_FILE" || err "No se pudieron iniciar los servicios"
   ok "Servicios iniciados"
   
   # Esperar a que MongoDB esté listo
-  log "Esperando a MongoDB..."
+  echo ""
+  log "Esperando a que MongoDB esté listo..."
   local count=0
   until docker compose exec -T mongo mongosh --quiet --eval "db.adminCommand('ping')" >/dev/null 2>&1; do
     sleep 2
     count=$((count + 1))
+    echo -e "  ${BLUE}⏳ Esperando MongoDB... ($count segundos)${NC}"
     if [[ $count -gt 30 ]]; then
-      err "MongoDB no respondió a tiempo"
+      err "MongoDB no respondió tras 60 segundos"
     fi
   done
-  ok "MongoDB listo"
+  ok "MongoDB está listo y respondiendo"
 }
 
 # ── Paso 6: Healthcheck y Verificación ───────────────────────────────────────
 verify_installation() {
-  echo ""
-  echo -e "${CYAN}[6/7] Verificando instalación${NC}"
+  step "6/7: VERIFICANDO INSTALACIÓN"
   
   cd "$ROOT_DIR"
   
@@ -525,7 +555,7 @@ verify_installation() {
   while [[ $attempts -lt $max_attempts ]]; do
     sleep 5
     attempts=$((attempts + 1))
-    echo -ne "  Intento $attempts/$max_attempts...\r"
+    echo -e "  ${BLUE}⏳ Esperando backend... intento ${attempts}/${max_attempts}${NC}"
     
     # Verificar usando docker exec (el puerto no está expuesto al host, todo pasa por Caddy)
     if docker exec disherio_backend wget -qO- http://localhost:3000/health >/dev/null 2>&1; then
@@ -533,7 +563,6 @@ verify_installation() {
       break
     fi
   done
-  echo ""
   
   if [[ "$backend_ok" == "true" ]]; then
     ok "Backend respondiendo correctamente (interno puerto ${BACKEND_PORT})"
@@ -558,8 +587,7 @@ verify_installation() {
 
 # ── Paso 7: Seed de Datos ────────────────────────────────────────────────────
 seed_database() {
-  echo ""
-  echo -e "${CYAN}[7/7] Creando usuario administrador${NC}"
+  step "7/7: CREANDO USUARIO ADMINISTRADOR"
   
   cd "$ROOT_DIR"
   
