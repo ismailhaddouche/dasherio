@@ -42,6 +42,9 @@ log() { echo -e "${BLUE}[INFO]${NC} $*" | tee -a "$LOG_FILE"; }
 warn() { echo -e "${YELLOW}[ADVERTENCIA]${NC} $*" | tee -a "$LOG_FILE"; }
 step() { echo -e "\n${CYAN}=== PASO $1 ===${NC}\n" | tee -a "$LOG_FILE"; }
 
+# Forzar flush del output
+flush_output() { true; }
+
 banner() {
   echo -e "${CYAN}"
   echo "  ██████╗ ██╗███████╗██╗  ██╗███████╗██████╗ ██╗ ██████╗"
@@ -113,54 +116,65 @@ detect_ips() {
 
 # ── Paso 1: Configuración de Acceso ──────────────────────────────────────────
 configure_access() {
-  step "1/7: CONFIGURACIÓN DE ACCESO"
+  step "1/7: CONFIGURACION DE ACCESO"
   detect_ips
   
-  echo ""
-  echo "============================================================"
-  echo "  SELECCIONA EL TIPO DE INSTALACIÓN"
-  echo "============================================================"
-  echo ""
+  # Pequeña pausa para asegurar que el output se muestre
+  sleep 0.5
   
-  echo ""
-  echo "------------------------------------------------------------"
-  echo "  OPCIONES DE INSTALACIÓN:"
-  echo "------------------------------------------------------------"
-  echo ""
-  echo "  [1] Dominio público con HTTPS"
-  echo "      - Ejemplo: restaurante.com / app.tudominio.com"
-  echo "      - Certificados SSL automáticos (Let's Encrypt)"
-  echo "      - Acceso desde internet"
-  echo ""
-  echo "  [2] Dominio local (sin HTTPS externo)"
-  echo "      - Ejemplo: disherio.local / restaurante.lan"
-  echo "      - Para red local con DNS local"
-  echo ""
+  cat << 'MENUTXT'
+
+============================================================
+  SELECCIONA EL TIPO DE INSTALACION
+============================================================
+
+OPCIONES DISPONIBLES:
+
+[1] Dominio publico con HTTPS
+    - Ejemplo: restaurante.com / app.tudominio.com
+    - Certificados SSL automaticos (Let's Encrypt)
+    - Acceso desde internet
+
+[2] Dominio local (sin HTTPS externo)
+    - Ejemplo: disherio.local / restaurante.lan
+    - Para red local con DNS local
+
+MENUTXT
+
   if [[ -n "$PUBLIC_IP" ]]; then
-    echo "  [3] IP Pública"
-    echo "      - Detectada: $PUBLIC_IP"
-    echo "      - Acceso directo por IP"
-    echo "      - Sin dominio"
+    cat << MENUTXT2
+[3] IP Publica
+    - Detectada: $PUBLIC_IP
+    - Acceso directo por IP
+    - Sin dominio
+
+MENUTXT2
   else
-    echo "  [3] IP Pública (no detectada)"
-    echo "      - Se te pedirá introducirla manualmente"
+    cat << 'MENUTXT2'
+[3] IP Publica (no detectada)
+    - Se te pedira introducirla manualmente
+
+MENUTXT2
   fi
-  echo ""
-  echo "  [4] IP Local (recomendado para pruebas)"
-  echo "      - Detectada: $LOCAL_IP"
-  echo "      - Solo acceso desde la red local"
-  echo ""
-  
-  echo "------------------------------------------------------------"
+
+  cat << MENUTXT3
+[4] IP Local (recomendado para pruebas)
+    - Detectada: $LOCAL_IP
+    - Solo acceso desde la red local
+
+------------------------------------------------------------
+MENUTXT3
+
   while true; do
-    read -rp "  Introduce tu opción (1-4) [por defecto: 4]: " choice
+    echo ""
+    read -rp "Introduce tu opcion (1-4) [por defecto: 4]: " choice
     choice="${choice:-4}"
     case "$choice" in
-      1) INSTALL_MODE="domain-public"; IS_DOMAIN=true; log "Seleccionado: Dominio público con HTTPS"; break;;
+      1) INSTALL_MODE="domain-public"; IS_DOMAIN=true; log "Seleccionado: Dominio publico con HTTPS"; break;;
       2) INSTALL_MODE="domain-local"; IS_DOMAIN=true; log "Seleccionado: Dominio local"; break;;
-      3) INSTALL_MODE="ip-public"; IS_DOMAIN=false; log "Seleccionado: IP Pública"; break;;
+      3) INSTALL_MODE="ip-public"; IS_DOMAIN=false; log "Seleccionado: IP Publica"; break;;
       4) INSTALL_MODE="ip-local"; IS_DOMAIN=false; log "Seleccionado: IP Local"; break;;
-      *) echo "  Opción inválida. Por favor, introduce 1, 2, 3 o 4.";;
+      *) echo "Opcion invalida. Por favor, introduce 1, 2, 3 o 4.";;
     esac
   done
   
