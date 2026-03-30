@@ -725,7 +725,7 @@ async function seed() {
     // Update existing admin password and PIN
     await mongoose.connection.collection('staffs').updateOne(
       { _id: staff._id },
-      { $set: { 
+      { \$set: {
         password_hash: passwordHash, 
         pin_code_hash: pinHash,
         updatedAt: new Date()
