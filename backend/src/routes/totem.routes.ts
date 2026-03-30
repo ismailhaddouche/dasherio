@@ -12,6 +12,14 @@ router.get('/menu/:qr/dishes', qrLimiter, TotemController.getMenuDishes);
 router.post('/menu/:qr/session', qrLimiter, TotemController.getOrCreateSessionByQR);
 router.post('/menu/:qr/order', qrLimiter, TotemController.createPublicOrder);
 
+// Public customer routes (for totem users without auth)
+router.post('/session/:sessionId/customers', qrLimiter, TotemController.createCustomer);
+router.get('/session/:sessionId/customers', qrLimiter, TotemController.getSessionCustomers);
+
+// Public order routes for totem views
+router.get('/session/:sessionId/orders', qrLimiter, TotemController.getSessionOrders);
+router.get('/customer/:customerId/orders', qrLimiter, TotemController.getCustomerOrders);
+
 // Protected routes require authentication
 router.use(authMiddleware);
 

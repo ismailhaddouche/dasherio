@@ -93,7 +93,7 @@ export const createPublicOrder = asyncHandler(async (req: Request, res: Response
     throw createError.badRequest('SESSION_NOT_ACTIVE');
   }
 
-  const { items } = req.body as { items: Array<{ dishId: string; quantity: number; variantId?: string; extras?: string[] }> };
+  const { items, customer_id } = req.body as { items: Array<{ dishId: string; quantity: number; variantId?: string; extras?: string[] }>; customer_id?: string };
   if (!items || !items.length) {
     throw createError.badRequest('NO_ITEMS');
   }
@@ -107,7 +107,7 @@ export const createPublicOrder = asyncHandler(async (req: Request, res: Response
         order._id.toString(),
         session._id.toString(),
         item.dishId,
-        undefined,
+        customer_id,
         item.variantId,
         item.extras ?? []
       );
@@ -116,4 +116,45 @@ export const createPublicOrder = asyncHandler(async (req: Request, res: Response
   }
 
   res.status(201).json({ order_id: order._id, items: createdItems });
+});
+
+// Public: create a customer for a session
+export const createCustomer = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { sessionId } = req.params;
+  const { customer_name } = req.body;
+
+  if (!customer_name || typeof customer_name !== 'string' || customer_name.trim().length < 2) {
+    throw createError.badRequest('CUSTOMER_NAME_REQUIRED');
+  }
+
+  const customer = await TotemService.createCustomer(String(sessionId), customer_name.trim());
+  res.status(201).json({
+    customer_id: customer._id,
+    customer_name: customer.customer_name,
+    session_id: customer.session_id,
+  });
+});
+
+// Public: get customers for a session
+export const getSessionCustomers = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { sessionId } = req.params;
+  const customers = await TotemService.getCustomersBySession(String(sessionId));
+  res.json(customers.map(c => ({
+    customer_id: c._id,
+    customer_name: c.customer_name,
+  })));
+});
+
+// Public: get all items for a session (all orders)
+export const getSessionOrders = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { sessionId } = req.params;
+  const items = await TotemService.getSessionItems(String(sessionId));
+  res.json(items);
+});
+
+// Public: get items for a specific customer (my orders)
+export const getCustomerOrders = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { customerId } = req.params;
+  const items = await TotemService.getCustomerItems(String(customerId));
+  res.json(items);
 });

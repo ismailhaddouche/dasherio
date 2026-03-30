@@ -6,7 +6,7 @@ import { logger } from '../config/logger';
 
 interface LogEntry {
   id: string;
-  type: 'KDS' | 'POS' | 'TAS';
+  type: 'KDS' | 'POS' | 'TAS' | 'CUSTOMER';
   timestamp: Date;
   userId?: string;
   userName?: string;
@@ -68,9 +68,11 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
     const rawLogs = items.map((item: IItemOrder & { createdAt?: Date; updatedAt?: Date }) => {
       const dish = dishes.find(d => d._id.equals(item.item_dish_id));
       
-      // Determine log type based on dish type
-      let logType: 'KDS' | 'POS' | 'TAS' = 'POS';
-      if (item.item_disher_type === 'KITCHEN') {
+      // Determine log type: if it has a customer_id, it's a CUSTOMER order
+      let logType: 'KDS' | 'POS' | 'TAS' | 'CUSTOMER' = 'POS';
+      if (item.customer_id) {
+        logType = 'CUSTOMER';
+      } else if (item.item_disher_type === 'KITCHEN') {
         logType = 'KDS';
       } else if (item.session_id) {
         // TAS items are typically ordered through totem
@@ -96,6 +98,7 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
         type: logType,
         timestamp: timestamp,
         userId: item.customer_id?.toString(),
+        userName: item.customer_name || undefined,
         action: getActionFromState(item.item_state),
         details: {
           dishType: item.item_disher_type,
@@ -120,7 +123,7 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
       logs,
       filters: {
         users: userIds,
-        types: ['KDS', 'POS', 'TAS']
+        types: ['KDS', 'POS', 'TAS', 'CUSTOMER']
       },
       total: logs.length
     });

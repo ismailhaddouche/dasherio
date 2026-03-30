@@ -126,6 +126,17 @@ export class ItemOrderRepository extends BaseRepository<IItemOrder> {
       .exec();
   }
 
+  async findByCustomerId(customerId: string): Promise<IItemOrder[]> {
+    validateObjectId(customerId, 'customer_id');
+    return this.model
+      .find({
+        customer_id: new Types.ObjectId(customerId),
+      })
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+  }
+
   async deleteItem(itemId: string, session?: ClientSession): Promise<IItemOrder | null> {
     validateObjectId(itemId, 'item_id');
     // Only allow deletion if item is in ORDERED state

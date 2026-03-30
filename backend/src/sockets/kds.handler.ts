@@ -172,6 +172,93 @@ export function registerKdsHandlers(_io: Server, socket: AuthenticatedSocket): v
   }));
 
   /**
+   * Cancel an item (only if in ORDERED state)
+   * Payload: { itemId: string, reason?: string }
+   */
+  socket.on('kds:item_cancel', rateLimitWrapper(rateLimiter, socket, 'kds:item_cancel', async ({ itemId, reason }: { itemId: string; reason?: string }) => {
+    try {
+      if (!itemId || typeof itemId !== 'string') {
+        socket.emit('kds:error', { message: 'INVALID_ITEM_ID', itemId });
+        return;
+      }
+
+      // Get item to verify state
+      const itemToCancel = await ItemOrder.findById(itemId);
+      if (!itemToCancel) {
+        socket.emit('kds:error', { message: 'ITEM_NOT_FOUND', itemId });
+        return;
+      }
+
+      // Only allow cancellation if item is in ORDERED state
+      if (itemToCancel.item_state !== 'ORDERED') {
+        socket.emit('kds:error', { 
+          message: 'CANNOT_CANCEL', 
+          itemId,
+          details: `Cannot cancel item in ${itemToCancel.item_state} state. Only ORDERED items can be cancelled.`
+        });
+        return;
+      }
+
+      // Update item state to CANCELED
+      const item = await ItemOrder.findOneAndUpdate(
+        { _id: itemId, item_state: 'ORDERED' },
+        { item_state: 'CANCELED' },
+        { new: true }
+      );
+
+      if (!item) {
+        socket.emit('kds:error', { 
+          message: 'ITEM_NOT_FOUND_OR_INVALID_STATE', 
+          itemId,
+          details: 'Item may have been updated by another user'
+        });
+        return;
+      }
+
+      const sessionId = item.session_id.toString();
+
+      // Emit to general session
+      emitToSession(sessionId, 'item:state_changed', {
+        itemId: item._id,
+        newState: 'CANCELED',
+        updatedBy: 'KDS',
+        updatedByStaffId: staffId,
+        reason: reason || 'Cancelled by kitchen',
+      });
+
+      // Notify TAS (waiters) about cancellation
+      emitToTAS(sessionId, 'tas:kitchen_item_update', {
+        itemId: item._id,
+        itemName: item.item_name_snapshot,
+        newState: 'CANCELED',
+        updatedBy: staffId,
+        updatedByName: user.name,
+        reason: reason || 'Cancelled by kitchen',
+        timestamp: new Date().toISOString(),
+      });
+
+      // Notify customers
+      emitToCustomers(sessionId, 'order:item_update', {
+        itemId: item._id,
+        itemName: item.item_name_snapshot,
+        newState: 'CANCELED',
+        reason: reason || 'Cancelled by kitchen',
+        timestamp: new Date().toISOString(),
+      });
+
+      socket.emit('kds:item_canceled', { itemId, newState: 'CANCELED' });
+      logger.info({ itemId, staffId, sessionId, reason }, 'Item marked as CANCELED by KDS');
+    } catch (err: any) {
+      logger.error({ err, itemId, staffId }, 'kds:item_cancel error');
+      socket.emit('kds:error', { 
+        message: 'INTERNAL_ERROR', 
+        itemId,
+        details: err.message 
+      });
+    }
+  }));
+
+  /**
    * Mark item as served/ready
    * Payload: { itemId: string }
    */

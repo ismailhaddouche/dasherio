@@ -7,7 +7,7 @@ import { I18nService } from '../../../core/services/i18n.service';
 
 interface LogEntry {
   id: string;
-  type: 'KDS' | 'POS' | 'TAS';
+  type: 'KDS' | 'POS' | 'TAS' | 'CUSTOMER';
   timestamp: string;
   userId?: string;
   userName?: string;
@@ -72,6 +72,7 @@ interface LogUser {
             <option value="KDS">Kitchen (KDS)</option>
             <option value="POS">Point of Sale (POS)</option>
             <option value="TAS">Table Service (TAS)</option>
+            <option value="CUSTOMER">{{ 'logs.customer_orders' | translate }}</option>
           </select>
         </div>
 
@@ -135,10 +136,14 @@ interface LogUser {
                         [class]="{
                           'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800': log.type === 'KDS',
                           'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800': log.type === 'POS',
-                          'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800': log.type === 'TAS'
+                          'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800': log.type === 'TAS',
+                          'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800': log.type === 'CUSTOMER'
                         }">
-                        {{ log.type }}
+                        {{ log.type === 'CUSTOMER' ? 'CLIENTE' : log.type }}
                       </span>
+                      @if (log.userName) {
+                        <span class="block text-xs text-gray-500 mt-1">{{ log.userName }}</span>
+                      }
                     </td>
                     <td class="admin-td font-medium">
                       {{ log.action }}

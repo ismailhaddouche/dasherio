@@ -1,11 +1,15 @@
 import crypto from 'crypto';
-import { TotemRepository, TotemSessionRepository } from '../repositories/totem.repository';
-import { ITotem, ITotemSession } from '../models/totem.model';
+import { TotemRepository, TotemSessionRepository, CustomerRepository } from '../repositories/totem.repository';
+import { ItemOrderRepository } from '../repositories/order.repository';
+import { ITotem, ITotemSession, ICustomer } from '../models/totem.model';
+import { IItemOrder } from '../models/order.model';
 import { CreateTotemData, UpdateTotemData } from '@disherio/shared';
 
 // Repository instances
 const totemRepo = new TotemRepository();
 const totemSessionRepo = new TotemSessionRepository();
+const customerRepo = new CustomerRepository();
+const itemOrderRepo = new ItemOrderRepository();
 
 export async function getTotemByQR(qrToken: string): Promise<ITotem | null> {
   return totemRepo.findByQR(qrToken);
@@ -74,4 +78,35 @@ export async function getOrCreateSessionByQR(qrToken: string): Promise<{ session
 
   const session = await totemSessionRepo.createSession(totem._id.toString());
   return { session: session!, totem };
+}
+
+/**
+ * Create a customer for a session
+ */
+export async function createCustomer(sessionId: string, customerName: string): Promise<ICustomer> {
+  return customerRepo.createCustomer({
+    session_id: sessionId,
+    customer_name: customerName,
+  } as any);
+}
+
+/**
+ * Get customers by session ID
+ */
+export async function getCustomersBySession(sessionId: string): Promise<ICustomer[]> {
+  return customerRepo.findBySessionId(sessionId);
+}
+
+/**
+ * Get all items for a session (public - for totem view)
+ */
+export async function getSessionItems(sessionId: string): Promise<IItemOrder[]> {
+  return itemOrderRepo.findActiveBySessionId(sessionId);
+}
+
+/**
+ * Get items for a specific customer (public - for "My Orders" view)
+ */
+export async function getCustomerItems(customerId: string): Promise<IItemOrder[]> {
+  return itemOrderRepo.findByCustomerId(customerId);
 }
