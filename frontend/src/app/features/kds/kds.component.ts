@@ -102,7 +102,7 @@ import { I18nService } from '../../core/services/i18n.service';
                   <!-- Price & Extras -->
                   <div class="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
                     <span class="font-bold text-primary">{{ item.item_base_price | currency:'EUR' }}</span>
-                    @if (item.item_disher_extras?.length > 0) {
+                    @if (item.item_disher_extras && item.item_disher_extras.length > 0) {
                       <span class="text-xs">+ {{ item.item_disher_extras.length }} extras</span>
                     }
                   </div>
@@ -204,7 +204,7 @@ import { I18nService } from '../../core/services/i18n.service';
                   <!-- Price & Extras -->
                   <div class="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
                     <span class="font-bold text-primary">{{ item.item_base_price | currency:'EUR' }}</span>
-                    @if (item.item_disher_extras?.length > 0) {
+                    @if (item.item_disher_extras && item.item_disher_extras.length > 0) {
                       <span class="text-xs">+ {{ item.item_disher_extras.length }} extras</span>
                     }
                   </div>

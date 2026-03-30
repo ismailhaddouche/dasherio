@@ -17,6 +17,8 @@ export interface KdsItem {
   createdAt: string;
   order_id: string;
   session_id: string;
+  customer_name?: string;
+  item_disher_extras?: { extra_id: string; name: LocalizedName; price: number }[];
 }
 
 export interface KdsStore {

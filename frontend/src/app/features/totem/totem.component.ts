@@ -173,7 +173,7 @@ type ViewTab = 'menu' | 'my-orders' | 'all-orders';
                     <p class="text-sm text-gray-500 dark:text-gray-400"
                        [class.opacity-60]="item.item_state === 'CANCELED'">
                       {{ item.item_base_price | currencyFormat }}
-                      @if (item.item_disher_extras?.length > 0) {
+                      @if (item.item_disher_extras && item.item_disher_extras.length > 0) {
                         <span class="text-xs"> + {{ item.item_disher_extras.length }} extras</span>
                       }
                     </p>
@@ -230,7 +230,7 @@ type ViewTab = 'menu' | 'my-orders' | 'all-orders';
                     <p class="font-semibold text-gray-900 dark:text-white">{{ item.item_name_snapshot | localize }}</p>
                     <p class="text-sm text-gray-500 dark:text-gray-400">
                       {{ item.item_base_price | currencyFormat }}
-                      @if (item.item_disher_extras?.length > 0) {
+                      @if (item.item_disher_extras && item.item_disher_extras.length > 0) {
                         <span class="text-xs"> + {{ item.item_disher_extras.length }} extras</span>
                       }
                     </p>
@@ -588,7 +588,7 @@ export class TotemComponent implements OnInit, OnDestroy {
           this.saveCustomerToStorage(customer, session.session_id);
           this.savingName.set(false);
           this.showNameModal.set(false);
-          this.notify.success(this.i18n.translate('totem.welcome_message', { name: customer.customer_name }));
+          this.notify.success(`${this.i18n.translate('totem.welcome_message').replace('{{name}}', customer.customer_name)}`);
         },
         error: (err) => {
           console.error('[Totem] Error creating customer:', err);
