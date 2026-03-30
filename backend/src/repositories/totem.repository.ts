@@ -53,13 +53,13 @@ export class TotemRepository extends BaseRepository<ITotem> {
     return this.model.findByIdAndDelete(id).exec();
   }
 
-  async findByRestaurantIdSelectId(restaurantId: string): Promise<Array<{ _id: Types.ObjectId }>> {
+  async findByRestaurantIdSelectId(restaurantId: string): Promise<Array<{ _id: Types.ObjectId; totem_name: string }>> {
     validateObjectId(restaurantId, 'restaurant_id');
     return this.model
       .find({ restaurant_id: new Types.ObjectId(restaurantId) })
-      .select('_id')
+      .select('_id totem_name')
       .lean()
-      .exec() as Promise<Array<{ _id: Types.ObjectId }>>;
+      .exec() as Promise<Array<{ _id: Types.ObjectId; totem_name: string }>>;
   }
 }
 
@@ -132,7 +132,7 @@ export class TotemSessionRepository extends BaseRepository<ITotemSession> {
   async findByTotemIdsAndState(
     totemIds: string[],
     state: 'STARTED' | 'COMPLETE' | 'PAID'
-  ): Promise<Array<{ _id: Types.ObjectId }>> {
+  ): Promise<Array<{ _id: Types.ObjectId; totem_id: Types.ObjectId }>> {
     const validIds = totemIds.filter((id) => Types.ObjectId.isValid(id));
     if (validIds.length === 0) return [];
 
@@ -141,9 +141,9 @@ export class TotemSessionRepository extends BaseRepository<ITotemSession> {
         totem_id: { $in: validIds.map((id) => new Types.ObjectId(id)) },
         totem_state: state,
       })
-      .select('_id')
+      .select('_id totem_id')
       .lean()
-      .exec() as Promise<Array<{ _id: Types.ObjectId }>>;
+      .exec() as Promise<Array<{ _id: Types.ObjectId; totem_id: Types.ObjectId }>>;
   }
 }
 

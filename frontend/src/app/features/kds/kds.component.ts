@@ -71,78 +71,68 @@ import { I18nService } from '../../core/services/i18n.service';
             </h2>
           </div>
           
-          <div class="flex-1 overflow-y-auto space-y-3 pr-2">
+          <div class="flex-1 overflow-y-auto space-y-2 pr-2">
             @for (item of ordered(); track item._id) {
               <div class="admin-card border-l-4 border-l-yellow-400"
                    [class.opacity-60]="processingItem() === item._id">
-                <div class="p-4">
+                <div class="p-3">
                   <!-- Item Header -->
-                  <div class="flex items-start justify-between gap-3">
+                  <div class="flex items-center justify-between gap-2">
                     <div class="flex-1 min-w-0">
-                      <h3 class="font-bold text-lg text-gray-900 dark:text-white truncate">
+                      <h3 class="font-bold text-sm text-gray-900 dark:text-white truncate">
                         {{ item.item_name_snapshot | localize }}
                       </h3>
-                      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {{ item.createdAt | date:'HH:mm:ss' }}
-                      </p>
+                      <div class="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        @if (item.totem_name) {
+                          <span class="flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
+                            <span class="material-symbols-outlined text-xs" style="font-size:13px">table_restaurant</span>
+                            {{ item.totem_name }}
+                          </span>
+                          <span>·</span>
+                        }
+                        @if (item.customer_name) {
+                          <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs" style="font-size:13px">person</span>
+                            {{ item.customer_name }}
+                          </span>
+                          <span>·</span>
+                        }
+                        <span>{{ item.createdAt | date:'HH:mm' }}</span>
+                      </div>
                     </div>
-                    <span class="px-2.5 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs font-bold rounded-full whitespace-nowrap">
-                      {{ 'order_state.ordered' | translate }}
-                    </span>
-                  </div>
-                  
-                  <!-- Customer Info -->
-                  @if (item.customer_name) {
-                    <div class="flex items-center gap-2 mt-3 text-sm text-primary">
-                      <span class="material-symbols-outlined text-base">person</span>
-                      <span class="font-medium">{{ item.customer_name }}</span>
-                    </div>
-                  }
-                  
-                  <!-- Price & Extras -->
-                  <div class="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    <span class="font-bold text-primary">{{ item.item_base_price | currency:'EUR' }}</span>
                     @if (item.item_disher_extras && item.item_disher_extras.length > 0) {
-                      <span class="text-xs">+ {{ item.item_disher_extras.length }} extras</span>
+                      <span class="text-xs text-gray-500">+{{ item.item_disher_extras.length }}</span>
                     }
                   </div>
-                  
+
                   <!-- Action Buttons -->
-                  <div class="flex gap-2 mt-4">
+                  <div class="flex gap-1.5 mt-2">
                     <button
                       (click)="prepareItem(item._id!)"
                       [disabled]="processingItem() === item._id || !isConnected()"
-                      class="flex-1 btn-admin justify-center"
-                      [class.btn-primary]="processingAction() !== 'prepare'"
-                      [class.bg-yellow-500]="processingAction() !== 'prepare'"
-                      [class.hover:bg-yellow-600]="processingAction() !== 'prepare'"
-                      [class.text-black]="processingAction() !== 'prepare'"
-                      [class.opacity-70]="processingItem() === item._id && processingAction() !== 'prepare'">
+                      class="flex-1 btn-admin btn-primary justify-center py-1 text-xs">
                       @if (processingItem() === item._id && processingAction() === 'prepare') {
-                        <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24">
                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
                           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                         </svg>
-                        {{ 'kds.processing' | translate }}
                       } @else {
-                        <span class="material-symbols-outlined">play_arrow</span>
+                        <span class="material-symbols-outlined text-sm">play_arrow</span>
                         {{ 'kds.prepare' | translate }}
                       }
                     </button>
-                    
                     <button
                       (click)="cancelItem(item._id!)"
                       [disabled]="processingItem() === item._id || !isConnected()"
-                      class="btn-admin btn-danger"
-                      [class.opacity-70]="processingItem() === item._id && processingAction() !== 'cancel'"
+                      class="btn-admin btn-danger py-1"
                       title="{{ 'kds.cancel' | translate }}">
                       @if (processingItem() === item._id && processingAction() === 'cancel') {
-                        <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24">
                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
                           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                         </svg>
                       } @else {
-                        <span class="material-symbols-outlined">close</span>
+                        <span class="material-symbols-outlined text-sm">close</span>
                       }
                     </button>
                   </div>
@@ -173,56 +163,52 @@ import { I18nService } from '../../core/services/i18n.service';
             </h2>
           </div>
           
-          <div class="flex-1 overflow-y-auto space-y-3 pr-2">
+          <div class="flex-1 overflow-y-auto space-y-2 pr-2">
             @for (item of onPrepare(); track item._id) {
               <div class="admin-card border-l-4 border-l-blue-400"
                    [class.opacity-60]="processingItem() === item._id">
-                <div class="p-4">
+                <div class="p-3">
                   <!-- Item Header -->
-                  <div class="flex items-start justify-between gap-3">
+                  <div class="flex items-center justify-between gap-2">
                     <div class="flex-1 min-w-0">
-                      <h3 class="font-bold text-lg text-gray-900 dark:text-white truncate">
+                      <h3 class="font-bold text-sm text-gray-900 dark:text-white truncate">
                         {{ item.item_name_snapshot | localize }}
                       </h3>
-                      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {{ item.createdAt | date:'HH:mm:ss' }}
-                      </p>
+                      <div class="flex items-center gap-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        @if (item.totem_name) {
+                          <span class="flex items-center gap-1 font-medium text-blue-600 dark:text-blue-400">
+                            <span class="material-symbols-outlined" style="font-size:13px">table_restaurant</span>
+                            {{ item.totem_name }}
+                          </span>
+                          <span>·</span>
+                        }
+                        @if (item.customer_name) {
+                          <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined" style="font-size:13px">person</span>
+                            {{ item.customer_name }}
+                          </span>
+                          <span>·</span>
+                        }
+                        <span>{{ item.createdAt | date:'HH:mm' }}</span>
+                      </div>
                     </div>
-                    <span class="px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold rounded-full whitespace-nowrap">
-                      {{ 'order_state.preparing' | translate }}
-                    </span>
-                  </div>
-                  
-                  <!-- Customer Info -->
-                  @if (item.customer_name) {
-                    <div class="flex items-center gap-2 mt-3 text-sm text-primary">
-                      <span class="material-symbols-outlined text-base">person</span>
-                      <span class="font-medium">{{ item.customer_name }}</span>
-                    </div>
-                  }
-                  
-                  <!-- Price & Extras -->
-                  <div class="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    <span class="font-bold text-primary">{{ item.item_base_price | currency:'EUR' }}</span>
                     @if (item.item_disher_extras && item.item_disher_extras.length > 0) {
-                      <span class="text-xs">+ {{ item.item_disher_extras.length }} extras</span>
+                      <span class="text-xs text-gray-500">+{{ item.item_disher_extras.length }}</span>
                     }
                   </div>
-                  
+
                   <!-- Action Button -->
                   <button
                     (click)="serveItem(item._id!)"
                     [disabled]="processingItem() === item._id || !isConnected()"
-                    class="w-full btn-admin btn-primary justify-center mt-4"
-                    [class.opacity-70]="processingItem() === item._id && processingAction() !== 'serve'">
+                    class="w-full btn-admin btn-primary justify-center mt-2 py-1 text-xs">
                     @if (processingItem() === item._id && processingAction() === 'serve') {
-                      <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                       </svg>
-                      {{ 'kds.processing' | translate }}
                     } @else {
-                      <span class="material-symbols-outlined">done_all</span>
+                      <span class="material-symbols-outlined text-sm">done_all</span>
                       {{ 'kds.serve' | translate }}
                     }
                   </button>
@@ -278,9 +264,7 @@ export class KdsComponent implements OnInit, OnDestroy {
   }
 
   private checkConnection() {
-    // @ts-ignore
-    const connected = this.socketService['socket']?.connected ?? false;
-    this.isConnected.set(connected);
+    this.isConnected.set(this.socketService.isConnected());
   }
 
   loadItems() {

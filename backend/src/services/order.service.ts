@@ -226,7 +226,16 @@ export async function getKitchenItems(restaurantId: string) {
   const sessions = await totemSessionRepo.findByTotemIdsAndState(totemIds, 'STARTED');
   const sessionIds = sessions.map((s) => s._id.toString());
 
-  return itemOrderRepo.findKitchenItemsBySessionIds(sessionIds);
+  const totemNameMap = new Map(totems.map(t => [t._id.toString(), t.totem_name]));
+  const sessionTotemMap = new Map(
+    sessions.map(s => [s._id.toString(), totemNameMap.get(s.totem_id.toString()) ?? ''])
+  );
+
+  const items = await itemOrderRepo.findKitchenItemsBySessionIds(sessionIds);
+  return items.map(item => ({
+    ...item,
+    totem_name: sessionTotemMap.get(item.session_id.toString()) ?? '',
+  }));
 }
 
 export async function calculateSessionTotal(
