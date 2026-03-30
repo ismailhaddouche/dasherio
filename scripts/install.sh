@@ -698,12 +698,12 @@ async function seed() {
     }
   }
   
-  // Create admin user
+  // Create or update admin user
   let staff = await mongoose.connection.collection('staffs').findOne({ username: 'admin' });
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
+  const pinHash = await bcrypt.hash(adminPin, 12);
+  
   if (!staff) {
-    const passwordHash = await bcrypt.hash(adminPassword, 12);
-    const pinHash = await bcrypt.hash(adminPin, 12);
-    
     await mongoose.connection.collection('staffs').insertOne({
       restaurant_id: restaurant._id,
       role_id: adminRole._id,
@@ -718,7 +718,16 @@ async function seed() {
     });
     console.log('Usuario admin creado');
   } else {
-    console.log('Usuario admin ya existe');
+    // Update existing admin password and PIN
+    await mongoose.connection.collection('staffs').updateOne(
+      { _id: staff._id },
+      { $set: { 
+        password_hash: passwordHash, 
+        pin_code_hash: pinHash,
+        updatedAt: new Date()
+      }}
+    );
+    console.log('Usuario admin actualizado (nueva contraseña aplicada)');
   }
   
   await mongoose.disconnect();
