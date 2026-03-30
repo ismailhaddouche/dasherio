@@ -616,7 +616,7 @@ seed_database() {
   log "Instalando dependencias para seed..."
   
   # Create temporary directory for seed
-  local seed_dir=$(mktemp -d)
+  seed_dir=$(mktemp -d)
   
   # Create temporary package.json
   cat > "$seed_dir/package.json" <<'PKG'
