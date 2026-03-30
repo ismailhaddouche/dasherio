@@ -11,91 +11,92 @@ import { NotificationService } from '../../../core/services/notification.service
   standalone: true,
   imports: [CommonModule, RouterModule, TranslatePipe],
   template: `
-    <div class="p-6">
-      <header class="flex justify-between items-center mb-6">
+    <div class="admin-container">
+      <header class="admin-header">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ 'staff.title' | translate }}</h1>
-          <p class="text-gray-600 dark:text-gray-400">{{ 'staff.subtitle' | translate }}</p>
+          <h1 class="admin-title">{{ 'staff.title' | translate }}</h1>
+          <p class="admin-subtitle">{{ 'staff.subtitle' | translate }}</p>
         </div>
-        <a
-          routerLink="new"
-          class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors flex items-center gap-2"
-        >
+        <a routerLink="new" class="btn-admin btn-primary">
           <span class="material-symbols-outlined text-sm">add</span>
           {{ 'staff.new' | translate }}
         </a>
       </header>
 
       <!-- Loading State -->
-      <div *ngIf="loading()" class="text-center py-8">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p class="mt-2 text-gray-600 dark:text-gray-400">{{ 'common.loading' | translate }}</p>
-      </div>
+      @if (loading()) {
+        <div class="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+          <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent"></div>
+          <p class="mt-4 text-gray-600 dark:text-gray-400 font-medium">{{ 'common.loading' | translate }}</p>
+        </div>
+      }
 
       <!-- Empty State -->
-      <div *ngIf="!loading() && !error() && staff().length === 0" class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
-        <span class="material-symbols-outlined text-6xl text-gray-300 mb-4">badge</span>
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{{ 'staff.no_staff' | translate }}</h3>
-        <p class="text-gray-600 dark:text-gray-400 mb-4">{{ 'staff.no_staff_desc' | translate }}</p>
-        <a routerLink="new" class="text-primary hover:underline">{{ 'staff.create' | translate }} →</a>
-      </div>
+      @if (!loading() && !error() && staff().length === 0) {
+        <div class="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+          <span class="material-symbols-outlined text-7xl text-gray-200 dark:text-gray-700 mb-4 opacity-50">badge</span>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">{{ 'staff.no_staff' | translate }}</h3>
+          <p class="text-gray-500 dark:text-gray-400 mb-6">{{ 'staff.no_staff_desc' | translate }}</p>
+          <a routerLink="new" class="btn-admin btn-primary mx-auto inline-flex">{{ 'staff.create' | translate }}</a>
+        </div>
+      }
 
       <!-- Staff Table -->
-      <div *ngIf="!loading() && !error() && staff().length > 0" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'common.name' | translate }}</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'staff.column_username' | translate }}</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'staff.column_role' | translate }}</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'common.actions' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr *ngFor="let member of staff()" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="flex items-center">
-                    <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                      {{ getInitials(member.staff_name) }}
-                    </div>
-                    <div class="ml-4">
-                      <div class="text-sm font-medium text-gray-900 dark:text-white">{{ member.staff_name }}</div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
-                  {{ member.username }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                    {{ getRoleName(member) }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div class="flex items-center gap-2">
-                    <a
-                      [routerLink]="[member._id]"
-                      class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
-                      [title]="'common.edit' | translate"
-                    >
-                      <span class="material-symbols-outlined text-sm">edit</span>
-                    </a>
-                    <button
-                      (click)="deleteStaff(member._id!, member.staff_name)"
-                      [disabled]="deleting() === member._id"
-                      class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30"
-                      [title]="'common.delete' | translate"
-                    >
-                      <span class="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      @if (!loading() && !error() && staff().length > 0) {
+        <div class="admin-table-container">
+          <div class="overflow-x-auto">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th class="admin-th">{{ 'common.name' | translate }}</th>
+                  <th class="admin-th">{{ 'staff.column_username' | translate }}</th>
+                  <th class="admin-th">{{ 'staff.column_role' | translate }}</th>
+                  <th class="admin-th text-right">{{ 'common.actions' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                @for (member of staff(); track member._id) {
+                  <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group">
+                    <td class="admin-td">
+                      <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-sm border border-primary/5">
+                          {{ getInitials(member.staff_name) }}
+                        </div>
+                        <span class="font-bold text-gray-900 dark:text-white">{{ member.staff_name }}</span>
+                      </div>
+                    </td>
+                    <td class="admin-td">
+                      <span class="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono text-xs text-gray-600 dark:text-gray-400">
+                        {{ member.username }}
+                      </span>
+                    </td>
+                    <td class="admin-td">
+                      <span class="px-2.5 py-1 inline-flex text-xs font-bold rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-100 dark:border-blue-800">
+                        {{ getRoleName(member) }}
+                      </span>
+                    </td>
+                    <td class="admin-td">
+                      <div class="flex items-center justify-end gap-2">
+                        <a [routerLink]="[member._id]" class="btn-icon btn-secondary hover:text-primary" [title]="'common.edit' | translate">
+                          <span class="material-symbols-outlined text-lg">edit</span>
+                        </a>
+                        <button
+                          (click)="deleteStaff(member._id!, member.staff_name)"
+                          [disabled]="deleting() === member._id"
+                          class="btn-icon btn-secondary hover:text-red-500"
+                          [title]="'common.delete' | translate"
+                        >
+                          <span class="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      }
     </div>
   `
 })

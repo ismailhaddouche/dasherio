@@ -14,21 +14,27 @@ import { NotificationService } from '../../../core/services/notification.service
   standalone: true,
   imports: [CommonModule, FormsModule, ImageUploaderComponent, TranslatePipe],
   template: `
-    <div class="max-w-3xl mx-auto flex flex-col gap-6">
-      <header class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ isEdit ? ('category.edit' | translate) : ('category.new' | translate) }}</h1>
-        <div class="flex gap-2">
-          <button (click)="cancel()" class="px-4 py-2 text-gray-500 dark:text-gray-400 font-medium hover:text-gray-700 dark:hover:text-gray-200">{{ 'common.cancel' | translate }}</button>
-          <button (click)="save()" class="bg-primary text-white rounded-lg px-6 py-2 font-bold active:scale-95 transition-transform">
+    <div class="admin-container max-w-4xl">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-title">{{ isEdit ? ('category.edit' | translate) : ('category.new' | translate) }}</h1>
+          <p class="admin-subtitle">{{ isEdit ? ('category.edit_subtitle' | translate) : ('category.new_subtitle' | translate) }}</p>
+        </div>
+        <div class="flex gap-3">
+          <button (click)="cancel()" class="btn-admin btn-secondary">
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button (click)="save()" class="btn-admin btn-primary">
+            <span class="material-symbols-outlined text-sm">save</span>
             {{ 'common.save' | translate }}
           </button>
         </div>
       </header>
 
-      <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm flex flex-col gap-6">
+      <div class="admin-card p-6 flex flex-col gap-6">
         <!-- Image Section -->
         <section class="flex flex-col gap-2">
-          <label class="font-bold">{{ 'category.image' | translate }}</label>
+          <label class="admin-label text-base font-bold">{{ 'category.image' | translate }}</label>
           <app-image-uploader
             folder="categories"
             [currentImage]="category().category_image_url"
@@ -37,26 +43,24 @@ import { NotificationService } from '../../../core/services/notification.service
         </section>
 
         <!-- Basic Info -->
-        <div class="grid grid-cols-1 gap-4">
-          <div class="flex flex-col gap-1">
-            <label class="text-sm text-gray-500 dark:text-gray-400">{{ 'category.name_es' | translate }}</label>
-            <input [(ngModel)]="category().category_name.es" class="input-style" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="admin-label">{{ 'category.name_es' | translate }} *</label>
+            <input [(ngModel)]="category().category_name.es" class="admin-input" [placeholder]="'category.name_es' | translate" />
           </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-sm text-gray-500 dark:text-gray-400">{{ 'category.display_order' | translate }}</label>
-            <input type="number" [(ngModel)]="category().category_order" class="input-style" />
+          <div>
+            <label class="admin-label">{{ 'category.display_order' | translate }}</label>
+            <input type="number" [(ngModel)]="category().category_order" class="admin-input" min="0" />
           </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-sm text-gray-500 dark:text-gray-400">{{ 'category.description_es' | translate }}</label>
-            <textarea [(ngModel)]="category().category_description.es" class="input-style" rows="3"></textarea>
-          </div>
+        </div>
+
+        <div>
+          <label class="admin-label">{{ 'category.description_es' | translate }}</label>
+          <textarea [(ngModel)]="category().category_description.es" class="admin-input" rows="3" [placeholder]="'category.description_es' | translate"></textarea>
         </div>
       </div>
     </div>
-  `,
-  styles: [`
-    .input-style { @apply bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 outline-none focus:border-primary; }
-  `]
+  `
 })
 export class CategoryFormComponent implements OnInit {
   private http = inject(HttpClient);

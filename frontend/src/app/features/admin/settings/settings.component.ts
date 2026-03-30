@@ -24,59 +24,60 @@ interface RestaurantSettings {
   standalone: true,
   imports: [CommonModule, FormsModule, TranslatePipe],
   template: `
-    <div class="p-4 lg:p-6 max-w-4xl mx-auto">
-      <header class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ 'settings.title' | translate }}
-        </h1>
-        <div class="flex items-center gap-3">
-          <button
-            (click)="saveSettings()"
-            [disabled]="saving()"
-            class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {{ saving() ? ('common.loading' | translate) : ('common.save' | translate) }}
-          </button>
+    <div class="admin-container max-w-5xl">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-title">{{ 'settings.title' | translate }}</h1>
+          <p class="admin-subtitle">{{ 'settings.subtitle' | translate }}</p>
         </div>
+        <button
+          (click)="saveSettings()"
+          [disabled]="saving()"
+          class="btn-admin btn-primary"
+        >
+          @if (saving()) {
+            <span class="material-symbols-outlined animate-spin text-sm">refresh</span>
+          } @else {
+            <span class="material-symbols-outlined text-sm">save</span>
+          }
+          {{ saving() ? ('common.saving' | translate) : ('common.save' | translate) }}
+        </button>
       </header>
 
       @if (loading()) {
-        <div class="flex justify-center py-10">
-          <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-            <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>{{ 'common.loading' | translate }}</span>
-          </div>
+        <div class="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+          <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent"></div>
+          <p class="mt-4 text-gray-600 dark:text-gray-400 font-medium">{{ 'common.loading' | translate }}</p>
         </div>
       } @else {
         <div class="space-y-6">
           <!-- Restaurant Info -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div class="admin-card p-6">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">store</span>
               {{ 'settings.restaurant' | translate }}
             </h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {{ 'settings.restaurant' | translate }}
+                <label class="admin-label">
+                  {{ 'settings.restaurant_name' | translate }}
                 </label>
                 <input
                   type="text"
                   [(ngModel)]="settings().restaurant_name"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  class="admin-input"
+                  [placeholder]="'settings.restaurant_name' | translate"
                 />
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label class="admin-label">
                   {{ 'settings.currency' | translate }}
                 </label>
                 <select
                   [(ngModel)]="settings().currency"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  class="admin-select"
                 >
                   <option value="EUR">EUR (€)</option>
                   <option value="USD">USD ($)</option>
@@ -85,7 +86,7 @@ interface RestaurantSettings {
               </div>
               
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label class="admin-label">
                   {{ 'settings.tax' | translate }} (%)
                 </label>
                 <input
@@ -93,30 +94,31 @@ interface RestaurantSettings {
                   [(ngModel)]="settings().tax_rate"
                   min="0"
                   max="100"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  class="admin-input"
                 />
               </div>
             </div>
           </div>
 
           <!-- Default Preferences -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              {{ 'settings.general' | translate }} - {{ 'common.settings' | translate }} {{ 'settings.restaurant' | translate }}
+          <div class="admin-card p-6">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">tune</span>
+              {{ 'settings.general' | translate }}
             </h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
               {{ 'settings.staff_defaults' | translate }}
             </p>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <!-- Default Language -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label class="admin-label">
                   {{ 'common.language' | translate }} ({{ 'common.default' | translate }})
                 </label>
                 <select
                   [(ngModel)]="settings().default_language"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  class="admin-select"
                 >
                   @for (lang of availableLanguages; track lang.code) {
                     <option [value]="lang.code">{{ lang.flag }} {{ lang.name }}</option>
@@ -126,12 +128,12 @@ interface RestaurantSettings {
               
               <!-- Default Theme -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label class="admin-label">
                   {{ 'common.theme' | translate }} ({{ 'common.default' | translate }})
                 </label>
                 <select
                   [(ngModel)]="settings().default_theme"
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  class="admin-select"
                 >
                   <option value="light">☀️ {{ 'common.light' | translate }}</option>
                   <option value="dark">🌙 {{ 'common.dark' | translate }}</option>

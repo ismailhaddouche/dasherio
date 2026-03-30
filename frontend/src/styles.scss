@@ -42,3 +42,89 @@ body {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   vertical-align: middle;
 }
+
+/* Admin UI Consistency Utility Classes */
+@layer components {
+  /* Common Button Style */
+  .btn-admin {
+    @apply px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white hover:brightness-110;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600;
+  }
+
+  .btn-danger {
+    @apply bg-red-500 text-white hover:bg-red-600;
+  }
+
+  .btn-icon {
+    @apply w-10 h-10 flex items-center justify-center rounded-lg transition-colors;
+  }
+
+  /* Admin Layout */
+  .admin-container {
+    @apply p-6 max-w-[1600px] mx-auto flex flex-col gap-6;
+  }
+
+  .admin-header {
+    @apply flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2;
+  }
+
+  .admin-title {
+    @apply text-2xl font-bold text-gray-900 dark:text-white;
+  }
+
+  .admin-subtitle {
+    @apply text-gray-600 dark:text-gray-400 -mt-1;
+  }
+
+  /* Filters Area */
+  .admin-filters {
+    @apply bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm flex flex-wrap items-end gap-4;
+  }
+
+  /* Cards Grid */
+  .admin-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6;
+  }
+
+  /* Forms & Inputs */
+  .admin-label {
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5;
+  }
+
+  .admin-input {
+    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all;
+  }
+
+  .admin-select {
+    @apply admin-input pr-8 appearance-none bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.5em_1.5em];
+  }
+
+  /* Content Card */
+  .admin-card {
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col;
+  }
+
+  /* Table Style */
+  .admin-table-container {
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden;
+  }
+
+  .admin-table {
+    @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700;
+  }
+
+  .admin-th {
+    @apply px-6 py-4 bg-gray-50 dark:bg-gray-700/50 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider;
+  }
+
+  .admin-td {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700;
+  }
+}

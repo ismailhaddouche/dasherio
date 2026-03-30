@@ -28,144 +28,172 @@ interface LogUser {
   standalone: true,
   imports: [CommonModule, FormsModule, DatePipe, TranslatePipe],
   template: `
-    <div class="p-6">
-      <header class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ 'logs.title' | translate }}</h1>
-        <p class="text-gray-600 dark:text-gray-400">{{ 'logs.subtitle' | translate }}</p>
+    <div class="admin-container">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-title">{{ 'logs.title' | translate }}</h1>
+          <p class="admin-subtitle">{{ 'logs.subtitle' | translate }}</p>
+        </div>
       </header>
 
       <!-- Filters -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- Date From -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ 'common.from' | translate }}</label>
-            <input 
-              type="date" 
-              [ngModel]="dateFrom()"
-              (ngModelChange)="dateFrom.set($event); loadLogs()"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
+      <div class="admin-filters">
+        <!-- Date From -->
+        <div>
+          <label class="admin-label">{{ 'common.from' | translate }}</label>
+          <input 
+            type="date" 
+            [ngModel]="dateFrom()"
+            (ngModelChange)="dateFrom.set($event); loadLogs()"
+            class="admin-input"
+          />
+        </div>
 
-          <!-- Date To -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ 'common.to' | translate }}</label>
-            <input 
-              type="date" 
-              [ngModel]="dateTo()"
-              (ngModelChange)="dateTo.set($event); loadLogs()"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
+        <!-- Date To -->
+        <div>
+          <label class="admin-label">{{ 'common.to' | translate }}</label>
+          <input 
+            type="date" 
+            [ngModel]="dateTo()"
+            (ngModelChange)="dateTo.set($event); loadLogs()"
+            class="admin-input"
+          />
+        </div>
 
-          <!-- Type Filter -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ 'logs.system_type' | translate }}</label>
-            <select
-              [ngModel]="filterType()"
-              (ngModelChange)="filterType.set($event); loadLogs()"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="ALL">{{ 'logs.all_systems' | translate }}</option>
-              <option value="KDS">Kitchen (KDS)</option>
-              <option value="POS">Point of Sale (POS)</option>
-              <option value="TAS">Table Service (TAS)</option>
-            </select>
-          </div>
+        <!-- Type Filter -->
+        <div>
+          <label class="admin-label">{{ 'logs.system_type' | translate }}</label>
+          <select
+            [ngModel]="filterType()"
+            (ngModelChange)="filterType.set($event); loadLogs()"
+            class="admin-select"
+          >
+            <option value="ALL">{{ 'logs.all_systems' | translate }}</option>
+            <option value="KDS">Kitchen (KDS)</option>
+            <option value="POS">Point of Sale (POS)</option>
+            <option value="TAS">Table Service (TAS)</option>
+          </select>
+        </div>
 
-          <!-- User Filter -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ 'common.profile' | translate }}</label>
-            <select
-              [ngModel]="filterUser()"
-              (ngModelChange)="filterUser.set($event); loadLogs()"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="">{{ 'logs.all_users' | translate }}</option>
-              <option *ngFor="let user of users()" [value]="user.id">{{ user.name }} ({{ user.type }})</option>
-            </select>
-          </div>
+        <!-- User Filter -->
+        <div>
+          <label class="admin-label">{{ 'common.profile' | translate }}</label>
+          <select
+            [ngModel]="filterUser()"
+            (ngModelChange)="filterUser.set($event); loadLogs()"
+            class="admin-select"
+          >
+            <option value="">{{ 'logs.all_users' | translate }}</option>
+            @for (user of users(); track user.id) {
+              <option [value]="user.id">{{ user.name }} ({{ user.type }})</option>
+            }
+          </select>
         </div>
       </div>
 
       <!-- Loading State -->
-      <div *ngIf="loading()" class="text-center py-8">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p class="mt-2 text-gray-600 dark:text-gray-400">{{ 'common.loading' | translate }}</p>
-      </div>
+      @if (loading()) {
+        <div class="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+          <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent"></div>
+          <p class="mt-4 text-gray-600 dark:text-gray-400 font-medium">{{ 'common.loading' | translate }}</p>
+        </div>
+      }
 
       <!-- Error State -->
-      <div *ngIf="error()" class="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 px-4 py-3 rounded mb-4">
-        {{ error() }}
-      </div>
+      @if (error()) {
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-4 rounded-xl mb-4">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined">error</span>
+            {{ error() }}
+          </div>
+        </div>
+      }
 
       <!-- Logs Table -->
-      <div *ngIf="!loading() && !error()" class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.time' | translate }}</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.system_type' | translate }}</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.action' | translate }}</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.item' | translate }}</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.status' | translate }}</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ 'logs.details' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr *ngFor="let log of logs()" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {{ log.timestamp | date:'short' }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                    [class]="{
-                      'bg-blue-100 text-blue-800': log.type === 'KDS',
-                      'bg-green-100 text-green-800': log.type === 'POS',
-                      'bg-purple-100 text-purple-800': log.type === 'TAS'
-                    }">
-                    {{ log.type }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {{ log.action }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {{ log.dishName || '-' }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                    [class]="{
-                      'bg-yellow-100 text-yellow-800': log.status === 'ORDERED',
-                      'bg-blue-100 text-blue-800': log.status === 'ON_PREPARE',
-                      'bg-green-100 text-green-800': log.status === 'SERVED',
-                      'bg-red-100 text-red-800': log.status === 'CANCELED'
-                    }">
-                    {{ log.status }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  <div *ngIf="log.details">
-                    <div *ngIf="log.details.basePrice">Price: {{ log.details.basePrice | currency:'EUR' }}</div>
-                    <div *ngIf="log.details.extras">Extras: {{ log.details.extras }}</div>
-                    <div *ngIf="log.details.variant">Variant: {{ log.details.variant }}</div>
-                  </div>
-                </td>
-              </tr>
-              <tr *ngIf="logs().length === 0">
-                <td colspan="6" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                  {{ 'logs.no_logs' | translate }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      @if (!loading() && !error()) {
+        <div class="admin-table-container">
+          <div class="overflow-x-auto">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th class="admin-th">{{ 'logs.time' | translate }}</th>
+                  <th class="admin-th">{{ 'logs.system_type' | translate }}</th>
+                  <th class="admin-th">{{ 'logs.action' | translate }}</th>
+                  <th class="admin-th">{{ 'logs.item' | translate }}</th>
+                  <th class="admin-th">{{ 'logs.status' | translate }}</th>
+                  <th class="admin-th">{{ 'logs.details' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                @for (log of logs(); track log.id) {
+                  <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                    <td class="admin-td text-gray-500 dark:text-gray-400">
+                      {{ log.timestamp | date:'short' }}
+                    </td>
+                    <td class="admin-td">
+                      <span class="px-2.5 py-1 inline-flex text-xs font-bold rounded-full border"
+                        [class]="{
+                          'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800': log.type === 'KDS',
+                          'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800': log.type === 'POS',
+                          'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800': log.type === 'TAS'
+                        }">
+                        {{ log.type }}
+                      </span>
+                    </td>
+                    <td class="admin-td font-medium">
+                      {{ log.action }}
+                    </td>
+                    <td class="admin-td">
+                      {{ log.dishName || '-' }}
+                    </td>
+                    <td class="admin-td">
+                      @if (log.status) {
+                        <span class="px-2.5 py-1 inline-flex text-xs font-bold rounded-full border"
+                          [class]="{
+                            'bg-yellow-50 text-yellow-700 border-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800': log.status === 'ORDERED',
+                            'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800': log.status === 'ON_PREPARE',
+                            'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800': log.status === 'SERVED',
+                            'bg-red-50 text-red-700 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800': log.status === 'CANCELED'
+                          }">
+                          {{ log.status }}
+                        </span>
+                      } @else {
+                        -
+                      }
+                    </td>
+                    <td class="admin-td text-gray-500 dark:text-gray-400">
+                      @if (log.details) {
+                        <div class="text-sm">
+                          @if (log.details.basePrice) {
+                            <div>Price: {{ log.details.basePrice | currency:'EUR' }}</div>
+                          }
+                          @if (log.details.extras) {
+                            <div>Extras: {{ log.details.extras }}</div>
+                          }
+                          @if (log.details.variant) {
+                            <div>Variant: {{ log.details.variant }}</div>
+                          }
+                        </div>
+                      }
+                    </td>
+                  </tr>
+                }
+                @if (logs().length === 0) {
+                  <tr>
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                      <span class="material-symbols-outlined text-5xl mb-3 opacity-30">history</span>
+                      <p>{{ 'logs.no_logs' | translate }}</p>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="px-6 py-3 bg-gray-50 dark:bg-gray-700/50 text-sm text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700">
+            {{ 'logs.showing' | translate }} {{ logs().length }} {{ 'logs.entries' | translate }}
+          </div>
         </div>
-        <div class="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-sm text-gray-500 dark:text-gray-400">
-          {{ 'logs.showing' | translate }} {{ logs().length }} {{ 'logs.entries' | translate }}
-        </div>
-      </div>
+      }
     </div>
   `
 })

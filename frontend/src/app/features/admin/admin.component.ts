@@ -46,7 +46,7 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
       </aside>
 
       <!-- Content -->
-      <main class="flex-1 overflow-auto p-6">
+      <main class="flex-1 overflow-auto">
         <router-outlet />
       </main>
     </div>

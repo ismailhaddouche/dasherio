@@ -52,21 +52,27 @@ const INITIAL_EXTRA: ExtraForm = { extra_name: { es: '', en: '', fr: '', ar: '' 
   standalone: true,
   imports: [CommonModule, FormsModule, ImageUploaderComponent, DishOptionListComponent, TranslatePipe],
   template: `
-    <div class="max-w-3xl mx-auto flex flex-col gap-6">
-      <header class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ isEdit ? ('dish.edit_dish' | translate) : ('dish.new_dish' | translate) }}</h1>
-        <div class="flex gap-2">
-          <button (click)="cancel()" class="px-4 py-2 text-gray-500 dark:text-gray-400 font-medium hover:text-gray-700 dark:hover:text-gray-200">{{ 'common.cancel' | translate }}</button>
-          <button (click)="save()" class="bg-primary text-white rounded-lg px-6 py-2 font-bold active:scale-95 transition-transform">
+    <div class="admin-container max-w-4xl">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-title">{{ isEdit ? ('dish.edit_dish' | translate) : ('dish.new_dish' | translate) }}</h1>
+          <p class="admin-subtitle">{{ isEdit ? ('dish.edit_subtitle' | translate) : ('dish.new_subtitle' | translate) }}</p>
+        </div>
+        <div class="flex gap-3">
+          <button (click)="cancel()" class="btn-admin btn-secondary">
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button (click)="save()" class="btn-admin btn-primary">
+            <span class="material-symbols-outlined text-sm">save</span>
             {{ 'common.save' | translate }}
           </button>
         </div>
       </header>
 
-      <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm flex flex-col gap-6">
+      <div class="admin-card p-6 flex flex-col gap-6">
         <!-- Image Section -->
         <section class="flex flex-col gap-2">
-          <label class="font-bold text-gray-900 dark:text-white">{{ 'dish.image' | translate }}</label>
+          <label class="admin-label text-base font-bold">{{ 'dish.image' | translate }}</label>
           <app-image-uploader
             folder="dishes"
             [currentImage]="dish().disher_url_image ?? null"
@@ -75,30 +81,31 @@ const INITIAL_EXTRA: ExtraForm = { extra_name: { es: '', en: '', fr: '', ar: '' 
         </section>
 
         <!-- Basic Info -->
-        <div class="grid grid-cols-2 gap-4">
-          <div class="flex flex-col gap-1">
-            <label class="text-sm text-gray-500 dark:text-gray-400">{{ 'category.name_es' | translate }}</label>
-            <input [(ngModel)]="dish().disher_name.es" class="input-style" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="admin-label">{{ 'category.name_es' | translate }} *</label>
+            <input [(ngModel)]="dish().disher_name.es" class="admin-input" [placeholder]="'category.name_es' | translate" />
           </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-sm text-gray-500 dark:text-gray-400">{{ 'dish.base_price' | translate }} *</label>
+          <div>
+            <label class="admin-label">{{ 'dish.base_price' | translate }} *</label>
             <input
               type="number"
               [(ngModel)]="dish().disher_price"
               min="0"
               step="0.01"
-              class="input-style"
+              class="admin-input"
               [class.border-red-500]="dish().disher_price < 0"
             />
             @if (dish().disher_price <= 0) {
-              <span class="text-xs text-red-500">{{ 'dish.price_negative' | translate }}</span>
+              <span class="text-xs text-red-500 mt-1 block">{{ 'dish.price_negative' | translate }}</span>
             }
           </div>
         </div>
 
-        <div class="flex flex-col gap-1">
-          <label class="text-sm text-gray-500 dark:text-gray-400">{{ 'dish.category' | translate }}</label>
-          <select [(ngModel)]="dish().category_id" class="input-style">
+        <div>
+          <label class="admin-label">{{ 'dish.category' | translate }} *</label>
+          <select [(ngModel)]="dish().category_id" class="admin-select">
+            <option value="">{{ 'dish.select_category' | translate }}</option>
             @for (cat of categories(); track cat._id) {
               <option [value]="cat._id">{{ cat.category_name.es }}</option>
             }
@@ -106,11 +113,14 @@ const INITIAL_EXTRA: ExtraForm = { extra_name: { es: '', en: '', fr: '', ar: '' 
         </div>
 
         <!-- Allergens Section -->
-        <section class="border-t border-gray-100 dark:border-gray-700 pt-4">
-          <h2 class="font-bold text-gray-900 dark:text-white mb-3">{{ 'dish.allergens' | translate }}</h2>
+        <section class="border-t border-gray-100 dark:border-gray-700 pt-6">
+          <h2 class="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-500">warning</span>
+            {{ 'dish.allergens' | translate }}
+          </h2>
           <div class="flex flex-wrap gap-2">
             @for (code of allergenCodes; track code) {
-              <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border cursor-pointer text-sm transition-colors"
+              <label class="flex items-center gap-1.5 px-3 py-2 rounded-lg border cursor-pointer text-sm transition-all"
                 [class.bg-amber-100]="hasAllergen(code)"
                 [class.dark:bg-amber-900]="hasAllergen(code)"
                 [class.border-amber-400]="hasAllergen(code)"
@@ -120,6 +130,7 @@ const INITIAL_EXTRA: ExtraForm = { extra_name: { es: '', en: '', fr: '', ar: '' 
                 [class.dark:bg-gray-700]="!hasAllergen(code)"
                 [class.border-gray-200]="!hasAllergen(code)"
                 [class.dark:border-gray-600]="!hasAllergen(code)"
+                [class.hover:border-gray-300]="!hasAllergen(code)"
               >
                 <input type="checkbox" class="hidden" [checked]="hasAllergen(code)" (change)="toggleAllergen(code)" />
                 {{ 'allergen.' + code | translate }}
@@ -149,10 +160,7 @@ const INITIAL_EXTRA: ExtraForm = { extra_name: { es: '', en: '', fr: '', ar: '' 
         />
       </div>
     </div>
-  `,
-  styles: [`
-    .input-style { @apply bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 outline-none focus:border-primary; }
-  `]
+  `
 })
 export class DishFormComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);

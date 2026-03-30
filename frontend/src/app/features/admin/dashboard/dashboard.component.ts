@@ -46,110 +46,116 @@ interface DashboardData {
   standalone: true,
   imports: [CommonModule, CurrencyPipe, TranslatePipe],
   template: `
-    <div class="flex flex-col gap-6 p-4 lg:p-6">
-      <header class="flex items-center justify-between flex-wrap gap-4">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          {{ 'dashboard.title' | translate }}
-        </h1>
+    <div class="admin-container">
+      <header class="admin-header">
+        <div>
+          <h1 class="admin-title">{{ 'dashboard.title' | translate }}</h1>
+          <p class="admin-subtitle">{{ 'dashboard.subtitle' | translate }}</p>
+        </div>
         
-        <div class="flex gap-2 items-center">
-          <label class="text-sm text-gray-600 dark:text-gray-400">
-            {{ 'common.from' | translate }}:
-          </label>
+        <div class="flex items-center gap-3">
+          <label class="admin-label mb-0 text-sm">{{ 'common.from' | translate }}</label>
           <input 
             type="date" 
             [value]="dateFrom()"
             (change)="onDateFromChange($event)"
-            class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            class="admin-input w-auto py-1.5 text-sm"
           />
-          <label class="text-sm text-gray-600 dark:text-gray-400">
-            {{ 'common.to' | translate }}:
-          </label>
+          <label class="admin-label mb-0 text-sm">{{ 'common.to' | translate }}</label>
           <input 
             type="date" 
             [value]="dateTo()"
             (change)="onDateToChange($event)"
-            class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            class="admin-input w-auto py-1.5 text-sm"
           />
           
           <button 
             (click)="loadData()"
-            class="bg-blue-600 text-white px-4 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+            class="btn-admin btn-primary py-1.5 text-sm"
           >
+            <span class="material-symbols-outlined text-sm">refresh</span>
             {{ 'common.refresh' | translate }}
           </button>
         </div>
       </header>
 
       @if (loading()) {
-        <div class="flex justify-center py-10">
-          <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-            <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>{{ 'common.loading' | translate }}</span>
-          </div>
+        <div class="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+          <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent"></div>
+          <p class="mt-4 text-gray-600 dark:text-gray-400 font-medium">{{ 'common.loading' | translate }}</p>
         </div>
       } @else {
         <!-- KPI Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              {{ 'dashboard.stats.revenue' | translate }}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="admin-card p-5">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <span class="material-symbols-outlined text-blue-600 dark:text-blue-400">payments</span>
+              </div>
+              <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'dashboard.stats.revenue' | translate }}</span>
             </div>
-            <div class="text-2xl font-bold text-blue-600">{{ data()?.paymentStats?.totalRevenue | currency:'EUR' }}</div>
+            <div class="text-2xl font-black text-blue-600">{{ data()?.paymentStats?.totalRevenue | currency:'EUR' }}</div>
           </div>
           
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              {{ 'dashboard.stats.orders' | translate }}
+          <div class="admin-card p-5">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                <span class="material-symbols-outlined text-gray-600 dark:text-gray-400">receipt</span>
+              </div>
+              <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'dashboard.stats.orders' | translate }}</span>
             </div>
-            <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ data()?.paymentStats?.totalTransactions }}</div>
+            <div class="text-2xl font-black text-gray-900 dark:text-white">{{ data()?.paymentStats?.totalTransactions }}</div>
           </div>
           
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              {{ 'dashboard.stats.avgTicket' | translate }}
+          <div class="admin-card p-5">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <span class="material-symbols-outlined text-purple-600 dark:text-purple-400">trending_up</span>
+              </div>
+              <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'dashboard.stats.avgTicket' | translate }}</span>
             </div>
-            <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ data()?.paymentStats?.averageTicket | currency:'EUR' }}</div>
+            <div class="text-2xl font-black text-purple-600">{{ data()?.paymentStats?.averageTicket | currency:'EUR' }}</div>
           </div>
           
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              {{ 'dashboard.stats.customers' | translate }}
+          <div class="admin-card p-5">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <span class="material-symbols-outlined text-green-600 dark:text-green-400">check_circle</span>
+              </div>
+              <span class="text-sm text-gray-500 dark:text-gray-400">{{ 'dashboard.stats.customers' | translate }}</span>
             </div>
-            <div class="text-2xl font-bold text-green-600">{{ data()?.orderStatus?.served }}</div>
+            <div class="text-2xl font-black text-green-600">{{ data()?.orderStatus?.served }}</div>
           </div>
         </div>
 
-        <!-- Order Status Chart -->
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-          <h2 class="font-bold mb-4 text-gray-900 dark:text-white">
+        <!-- Order Status -->
+        <div class="admin-card p-5">
+          <h2 class="font-bold text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+            <span class="material-symbols-outlined">kitchen</span>
             {{ 'kds.title' | translate }}
           </h2>
-          <div class="flex gap-4 flex-wrap">
-            <div class="flex items-center gap-2">
+          <div class="flex gap-6 flex-wrap">
+            <div class="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 px-4 py-2 rounded-lg border border-yellow-100 dark:border-yellow-800">
               <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span class="text-sm text-gray-700 dark:text-gray-300">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {{ 'kds.pending' | translate }}: {{ data()?.orderStatus?.ordered }}
               </span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg border border-blue-100 dark:border-blue-800">
               <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span class="text-sm text-gray-700 dark:text-gray-300">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {{ 'kds.preparing' | translate }}: {{ data()?.orderStatus?.onPrepare }}
               </span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg border border-green-100 dark:border-green-800">
               <div class="w-3 h-3 rounded-full bg-green-500"></div>
-              <span class="text-sm text-gray-700 dark:text-gray-300">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {{ 'kds.ready' | translate }}: {{ data()?.orderStatus?.served }}
               </span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-lg border border-red-100 dark:border-red-800">
               <div class="w-3 h-3 rounded-full bg-red-500"></div>
-              <span class="text-sm text-gray-700 dark:text-gray-300">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {{ 'common.cancel' | translate }}: {{ data()?.orderStatus?.canceled }}
               </span>
             </div>
@@ -158,22 +164,23 @@ interface DashboardData {
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Top Dishes -->
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-            <h2 class="font-bold mb-4 text-gray-900 dark:text-white">
+          <div class="admin-card p-5">
+            <h2 class="font-bold text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+              <span class="material-symbols-outlined">restaurant</span>
               {{ 'dashboard.popularDishes' | translate }}
             </h2>
             <div class="flex flex-col gap-3">
               @for (dish of data()?.salesByDish; track dish.dishId) {
-                <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex justify-between items-center py-3 border-b border-gray-100 dark:border-gray-700 last:border-0">
                   <div>
-                    <div class="font-medium text-gray-900 dark:text-white">{{ dish.dishName }}</div>
+                    <div class="font-bold text-gray-900 dark:text-white">{{ dish.dishName }}</div>
                     <div class="text-sm text-gray-500 dark:text-gray-400">{{ dish.quantity }} {{ 'dashboard.chart.orders' | translate | lowercase }}</div>
                   </div>
-                  <div class="font-bold text-blue-600">{{ dish.revenue | currency:'EUR' }}</div>
+                  <div class="font-black text-primary">{{ dish.revenue | currency:'EUR' }}</div>
                 </div>
               }
               @if (!data()?.salesByDish?.length) {
-                <p class="text-gray-500 dark:text-gray-400 text-center py-4">
+                <p class="text-gray-500 dark:text-gray-400 text-center py-8">
                   {{ 'error.notFound' | translate }}
                 </p>
               }
@@ -181,22 +188,23 @@ interface DashboardData {
           </div>
 
           <!-- Sales by Category -->
-          <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
-            <h2 class="font-bold mb-4 text-gray-900 dark:text-white">
+          <div class="admin-card p-5">
+            <h2 class="font-bold text-lg mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+              <span class="material-symbols-outlined">category</span>
               {{ 'admin.menu.categories' | translate }}
             </h2>
             <div class="flex flex-col gap-3">
               @for (cat of data()?.salesByCategory; track cat.categoryId) {
-                <div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex justify-between items-center py-3 border-b border-gray-100 dark:border-gray-700 last:border-0">
                   <div>
-                    <div class="font-medium text-gray-900 dark:text-white">{{ cat.categoryName }}</div>
+                    <div class="font-bold text-gray-900 dark:text-white">{{ cat.categoryName }}</div>
                     <div class="text-sm text-gray-500 dark:text-gray-400">{{ cat.quantity }} {{ 'dashboard.chart.orders' | translate | lowercase }}</div>
                   </div>
-                  <div class="font-bold text-blue-600">{{ cat.revenue | currency:'EUR' }}</div>
+                  <div class="font-black text-primary">{{ cat.revenue | currency:'EUR' }}</div>
                 </div>
               }
               @if (!data()?.salesByCategory?.length) {
-                <p class="text-gray-500 dark:text-gray-400 text-center py-4">
+                <p class="text-gray-500 dark:text-gray-400 text-center py-8">
                   {{ 'error.notFound' | translate }}
                 </p>
               }
