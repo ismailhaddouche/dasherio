@@ -3,6 +3,8 @@ import { Server as SocketServer } from 'socket.io';
 import { logger } from './logger';
 import { registerKdsHandlers } from '../sockets/kds.handler';
 import { registerPosHandlers } from '../sockets/pos.handler';
+import { registerTasHandlers } from '../sockets/tas.handler';
+import { registerTotemHandlers } from '../sockets/totem.handler';
 import { socketAuthMiddleware, AuthenticatedSocket } from '../middlewares/socketAuth';
 import { cleanupRateLimiters } from '../middlewares/socketRateLimit';
 
@@ -51,6 +53,8 @@ export function initSocket(httpServer: HttpServer): SocketServer {
 
     registerKdsHandlers(io, socket);
     registerPosHandlers(io, socket);
+    registerTasHandlers(io, socket);
+    registerTotemHandlers(io, socket);
 
     socket.on('disconnect', () => {
       logger.info({ socketId: socket.id, userId: socket.user?.staffId }, 'Client disconnected');

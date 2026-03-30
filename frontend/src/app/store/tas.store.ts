@@ -31,6 +31,7 @@ export interface TasStore {
   setSessions: (sessions: TotemSession[]) => void;
   selectSession: (session: TotemSession | null) => void;
   setSessionItems: (items: ItemOrder[]) => void;
+  loadSessionItems: (items: any[]) => void;
   setServiceItems: (items: ItemOrder[]) => void;
   addItem: (item: ItemOrder) => void;
   updateItemState: (itemId: string, newState: ItemOrder['item_state']) => void;
@@ -122,6 +123,10 @@ export const tasStore: TasStore = {
   },
 
   setSessionItems(items: ItemOrder[]) {
+    _sessionItems.set(items);
+  },
+
+  loadSessionItems(items: ItemOrder[]) {
     _sessionItems.set(items);
   },
 

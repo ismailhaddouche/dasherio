@@ -10,6 +10,7 @@ import { ImageUploaderComponent } from '../../../shared/components/image-uploade
 import { DishOptionListComponent, OptionItem } from './dish-option-list.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../core/services/i18n.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { Dish, Variant, Extra, Category } from '../../../types';
 
 // Form-specific types matching backend requirements (es, en, fr, ar supported)
@@ -158,6 +159,7 @@ export class DishFormComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private i18n = inject(I18nService);
+  private notify = inject(NotificationService);
   private destroy$ = new Subject<void>();
 
   readonly allergenCodes = ALLERGEN_CODES;
@@ -198,7 +200,7 @@ export class DishFormComponent implements OnInit, OnDestroy {
         next: (dish) => this.dish.set(dish),
         error: (err) => {
           console.error('[DishForm] Error loading dish:', err);
-          alert(this.i18n.translate('errors.LOADING_ERROR'));
+          this.notify.error(this.i18n.translate('errors.LOADING_ERROR'));
           this.router.navigate(['/admin/dishes']);
         }
       });
@@ -266,10 +268,13 @@ export class DishFormComponent implements OnInit, OnDestroy {
     
     request$.pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => this.router.navigate(['/admin/dishes']),
+        next: () => {
+          this.notify.success(this.i18n.translate(this.isEdit ? 'dish.updated' : 'dish.created'));
+          this.router.navigate(['/admin/dishes']);
+        },
         error: (err) => {
           console.error('[DishForm] Error saving dish:', err);
-          alert(this.i18n.translate('errors.SERVER_ERROR') + ': ' + (err.error?.message || ''));
+          this.notify.error(this.i18n.translate('errors.SERVER_ERROR') + ': ' + (err.error?.message || ''));
         }
       });
   }

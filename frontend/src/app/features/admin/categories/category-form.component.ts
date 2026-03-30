@@ -6,6 +6,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ImageUploaderComponent } from '../../../shared/components/image-uploader/image-uploader.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { I18nService } from '../../../core/services/i18n.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-category-form',
@@ -60,6 +62,8 @@ export class CategoryFormComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private i18n = inject(I18nService);
+  private notify = inject(NotificationService);
 
   isEdit = false;
   category = signal<any>({
@@ -91,7 +95,15 @@ export class CategoryFormComponent implements OnInit {
       ? this.http.patch(`${environment.apiUrl}/dishes/categories/${this.category()._id}`, this.category())
       : this.http.post(`${environment.apiUrl}/dishes/categories`, this.category());
     
-    obs.subscribe(() => this.router.navigate(['/admin/categories']));
+    obs.subscribe({
+      next: () => {
+        this.notify.success(this.i18n.translate(this.isEdit ? 'category.updated' : 'category.created'));
+        this.router.navigate(['/admin/categories']);
+      },
+      error: (err) => {
+        this.notify.error(err.error?.message || this.i18n.translate('errors.SERVER_ERROR'));
+      }
+    });
   }
 
   cancel() {

@@ -7,6 +7,7 @@ import { authStore, AuthUser } from '../../store/auth.store';
 import { environment } from '../../../environments/environment';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { I18nService } from '../../core/services/i18n.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-login',
@@ -36,10 +37,6 @@ import { I18nService } from '../../core/services/i18n.service';
             />
           </div>
 
-          @if (error()) {
-            <p class="text-red-500 text-sm text-center">{{ error() }}</p>
-          }
-
           <button
             type="submit"
             [disabled]="loading()"
@@ -56,15 +53,14 @@ export class LoginComponent {
   private http = inject(HttpClient);
   private router = inject(Router);
   protected i18n = inject(I18nService);
+  private notify = inject(NotificationService);
 
   username = '';
   password = '';
-  error = signal('');
   loading = signal(false);
 
   login() {
     this.loading.set(true);
-    this.error.set('');
     this.http
       .post<{ user: AuthUser }>(
         `${environment.apiUrl}/auth/login`,
@@ -80,7 +76,7 @@ export class LoginComponent {
           this.loading.set(false);
         },
         error: (err) => {
-          this.error.set(err.status === 401 ? this.i18n.translate('errors.INVALID_CREDENTIALS') : this.i18n.translate('errors.SERVER_ERROR'));
+          this.notify.error(err.status === 401 ? this.i18n.translate('errors.INVALID_CREDENTIALS') : this.i18n.translate('errors.SERVER_ERROR'));
           this.loading.set(false);
         },
       });

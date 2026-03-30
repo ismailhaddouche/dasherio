@@ -9,6 +9,8 @@ const router = Router();
 // Public routes: QR menu access with rate limiting to prevent abuse
 router.get('/menu/:qr', qrBruteForceLimiter, TotemController.getMenuByQR);
 router.get('/menu/:qr/dishes', qrLimiter, TotemController.getMenuDishes);
+router.post('/menu/:qr/session', qrLimiter, TotemController.getOrCreateSessionByQR);
+router.post('/menu/:qr/order', qrLimiter, TotemController.createPublicOrder);
 
 // Protected routes require authentication
 router.use(authMiddleware);

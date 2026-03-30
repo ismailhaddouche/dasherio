@@ -57,3 +57,21 @@ export async function deleteTotem(totemId: string): Promise<ITotem | null> {
 export async function getActiveSessionsByRestaurant(restaurantId: string): Promise<unknown[]> {
   return totemSessionRepo.findActiveByRestaurantId(restaurantId);
 }
+
+/**
+ * Get or create a session for a totem identified by QR.
+ * If there's an active (STARTED) session, return it.
+ * If not (no session, or last is COMPLETE/PAID), create a new one.
+ */
+export async function getOrCreateSessionByQR(qrToken: string): Promise<{ session: ITotemSession; totem: ITotem }> {
+  const totem = await totemRepo.findByQR(qrToken);
+  if (!totem) throw new Error('TOTEM_NOT_FOUND');
+
+  const existing = await totemSessionRepo.findActiveByTotemId(totem._id.toString());
+  if (existing) {
+    return { session: existing, totem };
+  }
+
+  const session = await totemSessionRepo.createSession(totem._id.toString());
+  return { session: session!, totem };
+}

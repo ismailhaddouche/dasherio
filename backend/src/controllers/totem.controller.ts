@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler, createError } from '../utils/async-handler';
 import * as TotemService from '../services/totem.service';
 import * as DishService from '../services/dish.service';
+import * as OrderService from '../services/order.service';
 
 export const listTotems = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const totems = await TotemService.getTotemsByRestaurant(req.user!.restaurantId);
@@ -70,4 +71,49 @@ export const getMenuDishes = asyncHandler(async (req: Request, res: Response): P
 export const getActiveSessions = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const sessions = await TotemService.getActiveSessionsByRestaurant(req.user!.restaurantId);
   res.json(sessions);
+});
+
+// Public: get or create session for a totem via QR
+export const getOrCreateSessionByQR = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { session, totem } = await TotemService.getOrCreateSessionByQR(String(req.params.qr));
+  res.json({
+    session_id: session._id,
+    totem_id: totem._id,
+    totem_name: totem.totem_name,
+    restaurant_id: totem.restaurant_id,
+    totem_state: session.totem_state,
+  });
+});
+
+// Public: create order + items from totem QR page (no auth needed)
+export const createPublicOrder = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { session } = await TotemService.getOrCreateSessionByQR(String(req.params.qr));
+
+  if (session.totem_state !== 'STARTED') {
+    throw createError.badRequest('SESSION_NOT_ACTIVE');
+  }
+
+  const { items } = req.body as { items: Array<{ dishId: string; quantity: number; variantId?: string; extras?: string[] }> };
+  if (!items || !items.length) {
+    throw createError.badRequest('NO_ITEMS');
+  }
+
+  const order = await OrderService.createOrder(session._id.toString());
+  const createdItems = [];
+
+  for (const item of items) {
+    for (let i = 0; i < (item.quantity || 1); i++) {
+      const created = await OrderService.addItemToOrder(
+        order._id.toString(),
+        session._id.toString(),
+        item.dishId,
+        undefined,
+        item.variantId,
+        item.extras ?? []
+      );
+      createdItems.push(created);
+    }
+  }
+
+  res.status(201).json({ order_id: order._id, items: createdItems });
 });

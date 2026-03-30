@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { I18nService, type Language } from '../../../core/services/i18n.service';
 import { ThemeService, type Theme } from '../../../core/services/theme.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { NotificationService } from '../../../core/services/notification.service';
 
 interface RestaurantSettings {
   _id: string;
@@ -29,14 +30,6 @@ interface RestaurantSettings {
           {{ 'settings.title' | translate }}
         </h1>
         <div class="flex items-center gap-3">
-          @if (saveSuccess()) {
-            <span class="text-green-600 dark:text-green-400 flex items-center">
-              <svg class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-              {{ 'settings.preferences.saved' | translate }}
-            </span>
-          }
           <button
             (click)="saveSettings()"
             [disabled]="saving()"
@@ -56,10 +49,6 @@ interface RestaurantSettings {
             </svg>
             <span>{{ 'common.loading' | translate }}</span>
           </div>
-        </div>
-      } @else if (error()) {
-        <div class="bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-4 rounded-lg">
-          {{ error() }}
         </div>
       } @else {
         <div class="space-y-6">
@@ -158,6 +147,7 @@ interface RestaurantSettings {
 export class SettingsComponent implements OnInit {
   private http = inject(HttpClient);
   private i18n = inject(I18nService);
+  private notify = inject(NotificationService);
 
   settings = signal<RestaurantSettings>({
     _id: '',
@@ -172,8 +162,6 @@ export class SettingsComponent implements OnInit {
 
   loading = signal(true);
   saving = signal(false);
-  error = signal('');
-  saveSuccess = signal(false);
 
   readonly availableLanguages = this.i18n.getAvailableLanguages();
 
@@ -190,7 +178,7 @@ export class SettingsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading settings:', err);
-        this.error.set(this.i18n.translate('error.loading'));
+        this.notify.error(this.i18n.translate('error.loading'));
         this.loading.set(false);
       }
     });
@@ -198,7 +186,6 @@ export class SettingsComponent implements OnInit {
 
   saveSettings() {
     this.saving.set(true);
-    this.saveSuccess.set(false);
 
     const s = this.settings();
     const payload = {
@@ -214,13 +201,12 @@ export class SettingsComponent implements OnInit {
     this.http.patch(`${environment.apiUrl}/restaurant/settings`, payload).subscribe({
       next: () => {
         this.saving.set(false);
-        this.saveSuccess.set(true);
-        setTimeout(() => this.saveSuccess.set(false), 3000);
+        this.notify.success(this.i18n.translate('settings.preferences.saved'));
       },
       error: (err) => {
         console.error('Error saving settings:', err);
         this.saving.set(false);
-        this.error.set(this.i18n.translate('error.saving'));
+        this.notify.error(this.i18n.translate('error.saving'));
       }
     });
   }

@@ -2,3 +2,4 @@
 export * from './services/i18n.service';
 export * from './services/theme.service';
 export * from './services/restaurant.service';
+export * from './services/notification.service';

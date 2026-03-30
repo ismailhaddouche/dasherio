@@ -5,6 +5,7 @@ import { environment } from '../../../../environments/environment';
 import { authStore } from '../../../store/auth.store';
 import { I18nService } from '../../../core/services/i18n.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
+import { NotificationService } from '../../../core/services/notification.service';
 
 interface SalesByDish {
   dishId: string;
@@ -79,12 +80,6 @@ interface DashboardData {
           </button>
         </div>
       </header>
-
-      @if (error()) {
-        <div class="bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-4 rounded-lg">
-          {{ error() }}
-        </div>
-      }
 
       @if (loading()) {
         <div class="flex justify-center py-10">
@@ -215,10 +210,10 @@ interface DashboardData {
 export class DashboardComponent implements OnInit {
   private http = inject(HttpClient);
   private i18n = inject(I18nService);
+  private notify = inject(NotificationService);
   
   data = signal<DashboardData | null>(null);
   loading = signal(false);
-  error = signal('');
   dateFrom = signal('');
   dateTo = signal('');
 
@@ -238,7 +233,6 @@ export class DashboardComponent implements OnInit {
 
   loadData() {
     this.loading.set(true);
-    this.error.set('');
     
     const params: Record<string, string> = {};
     if (this.dateFrom()) params['from'] = this.dateFrom();
@@ -254,7 +248,7 @@ export class DashboardComponent implements OnInit {
       },
       error: (err) => {
         console.error(this.i18n.translate('dashboard.error'), err);
-        this.error.set(this.i18n.translate('dashboard.error'));
+        this.notify.error(this.i18n.translate('dashboard.error'));
         this.loading.set(false);
       }
     });

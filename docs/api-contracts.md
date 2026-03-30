@@ -488,3 +488,101 @@ The KDS namespace requires the `KTS` permission.
 |-------|---------|-------------|
 | `pos:join` | `sessionId: string` | Subscribe to session updates |
 | `pos:leave` | `sessionId: string` | Unsubscribe |
+
+---
+
+## WebSocket — Totem (Customer)
+
+For customers using totems or mobile devices to place orders.
+
+### Client-to-server events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `totem:join_session` | `{ sessionId: string, customerName?: string, customerId?: string }` | Join session after QR scan |
+| `totem:leave_session` | - | Leave current session |
+| `totem:place_order` | `{ sessionId, orderId, items: Array, customerId?, customerName?, notes? }` | Place complete order |
+| `totem:add_item` | `{ sessionId, orderId, item, customerId?, customerName? }` | Add single item |
+| `totem:call_waiter` | `{ sessionId, customerName?, customerId?, message? }` | Request help |
+| `totem:request_bill` | `{ sessionId, customerName?, customerId?, splitType? }` | Request bill |
+| `totem:subscribe_items` | `{ sessionId: string }` | Subscribe to item state updates |
+| `totem:get_table_info` | `{ sessionId: string }` | Get info about who's at the table |
+| `totem:get_my_orders` | `{ sessionId: string }` | Get orders placed by this customer |
+
+### Server-to-client events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `totem:session_joined` | `{ sessionId, customerName?, customerId?, otherCustomersAtTable[], timestamp }` | Successfully joined session |
+| `totem:session_left` | `{ sessionId }` | Left session |
+| `totem:order_placed` | `{ success, sessionId, itemCount, customerName?, customerId?, timestamp }` | Order confirmed |
+| `totem:item_added` | `{ success, sessionId, timestamp }` | Item added |
+| `totem:help_request_sent` | `{ success, message, timestamp }` | Help request sent |
+| `totem:bill_request_sent` | `{ success, message, timestamp }` | Bill request sent |
+| `totem:items_subscribed` | `{ sessionId }` | Subscribed to updates |
+| `totem:table_info` | `{ sessionId, customersAtTable[], totalCustomers, myCustomerId?, myCustomerName?, timestamp }` | Table info with all customers |
+| `totem:customer_joined_table` | `{ sessionId, customerId?, customerName, joinedAt }` | Another customer joined |
+| `totem:customer_left_table` | `{ sessionId, customerId?, customerName, leftAt }` | A customer left |
+| `totem:table_order_update` | `{ type, items[], orderedBy, orderedByCustomerId?, totalItemsAtTable, timestamp }` | Any customer at table ordered |
+| `totem:session_closed` | `{ sessionId, closedBy, closedByName?, totalAmount?, reason?, message, timestamp }` | Session closed (bill requested) |
+| `totem:force_disconnect` | `{ reason, message }` | Force disconnect after session closed |
+| `order:item_update` | `{ itemId, newState, itemName?, timestamp }` | Item state changed |
+| `order:items_added` | `{ items[], addedBy, addedByCustomerId?, timestamp }` | New items added to order |
+| `item:state_changed` | `{ itemId, newState }` | Item state changed (generic) |
+| `notification:from_waiter` | `{ message, from, type, timestamp }` | Message from waiter |
+| `totem:error` | `{ message, details?, closedBy?, closedAt? }` | Error occurred (includes SESSION_CLOSED) |
+
+---
+
+## WebSocket — TAS (Table Assistance Service)
+
+Requires the `TAS` permission.
+
+### Client-to-server events
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `tas:join` | `sessionId: string` | Join TAS session room |
+| `tas:leave` | `sessionId: string` | Leave TAS session room |
+| `tas:add_item` | `{ sessionId, orderId, dishId, customerId?, variantId?, extras?, itemData }` | Add item to order |
+| `tas:serve_service_item` | `{ itemId: string }` | Mark SERVICE item as served |
+| `tas:cancel_item` | `{ itemId: string, reason?: string }` | Cancel an item |
+| `tas:request_bill` | `{ sessionId, requestedBy, customerId?, splitType? }` | Request bill |
+| `tas:bill_paid` | `{ sessionId, paymentTotal, paymentType, tickets }` | Mark bill as paid |
+| `tas:call_waiter_response` | `{ sessionId, acknowledged, message? }` | Acknowledge customer call |
+| `tas:notify_customers` | `{ sessionId, message, type? }` | Notify customers at table |
+
+### Server-to-client events (TAS)
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `tas:joined` | `{ sessionId, timestamp }` | Room join confirmed |
+| `tas:item_added` | `{ item, addedBy, addedByName, timestamp }` | Item added by TAS |
+| `tas:service_item_served` | `{ itemId, sessionId, servedBy, timestamp }` | SERVICE item served |
+| `tas:item_canceled` | `{ itemId, sessionId, canceledBy, canceledByName, reason, timestamp }` | Item canceled |
+| `tas:bill_requested` | `{ sessionId, requestedBy, customerId?, splitType?, timestamp }` | Bill requested |
+| `tas:bill_paid` | `{ sessionId, paidBy, paymentTotal, timestamp }` | Bill marked as paid |
+| `tas:new_customer_order` | `{ item, sessionId, timestamp }` | New order from customer |
+| `tas:customer_bill_request` | `{ sessionId, customerName?, timestamp }` | Customer requests bill |
+| `tas:help_requested` | `{ sessionId, customerName?, tableId?, timestamp }` | Customer requests help |
+
+### Server-to-client events (from KDS to TAS)
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `tas:kitchen_item_update` | `{ itemId, itemName, newState, updatedBy, updatedByName, timestamp }` | Kitchen item state changed |
+| `kds:new_item` | item object | New kitchen item (broadcast) |
+| `item:state_changed` | `{ itemId, newState, updatedBy?, updatedByStaffId? }` | Item state changed |
+
+### Server-to-client events (from POS to TAS)
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `tas:session_closed` | `{ sessionId, closedBy?, timestamp }` | Session closed by POS |
+| `tas:session_paid` | `{ sessionId, paymentTotal, paymentType, paidBy?, paidByName?, timestamp }` | Payment received |
+| `tas:session_fully_paid` | `{ sessionId, paymentTotal, paymentType, closedBy?, closedByName?, timestamp }` | Session fully paid and closed |
+| `tas:ticket_paid` | `{ sessionId, ticketPart, ticketAmount, paidBy?, remainingAmount?, timestamp }` | Partial payment (ticket paid) |
+| `pos:item_added` | `{ item, addedBy, waiterName, timestamp }` | Item added by POS/waiter |
+| `pos:item_canceled` | `{ itemId, itemName, itemType, canceledBy, canceledByName, reason, timestamp }` | Item canceled by POS/waiter |
+| `pos:bill_requested` | `{ sessionId, requestedBy, customerId?, splitType?, timestamp }` | Bill requested |
+| `pos:bill_paid` | `{ sessionId, paidBy?, timestamp }` | Bill paid |

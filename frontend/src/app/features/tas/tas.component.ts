@@ -1260,8 +1260,13 @@ export class TasComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('[TAS] Error deleting item:', err);
-          // Revert on error
-          tasStore.loadSessionItems(this.selectedSession()!._id!);
+          // Revert on error - reload session items from server
+          this.tasService.getSessionItems(this.selectedSession()!._id!)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (items) => tasStore.loadSessionItems(items),
+              error: () => this.notify.error(this.i18n.translate('errors.SERVER_ERROR')),
+            });
           this.notify.error(this.i18n.translate('errors.SERVER_ERROR'));
         },
       });

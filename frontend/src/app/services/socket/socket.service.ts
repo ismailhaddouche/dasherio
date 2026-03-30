@@ -166,6 +166,44 @@ export class SocketService implements OnDestroy {
   public tasNotification$ = this.tasNotificationSubject.asObservable();
   public tasError$ = this.tasErrorSubject.asObservable();
 
+  // ==================== TAS LISTENER REGISTRATION (Public API) ====================
+
+  /**
+   * Register TAS-specific listeners.
+   * Called by TAS component when it initializes.
+   */
+  registerTasListeners(): void {
+    // Listeners are already set up in doConnect/setupTasListeners
+    // This method exists for API compatibility with components
+  }
+
+  /**
+   * Unregister TAS-specific listeners.
+   * Called by TAS component when it destroys.
+   */
+  unregisterTasListeners(): void {
+    // Remove TAS-specific listeners
+    this.off('tas:item_added');
+    this.off('tas:service_item_served');
+    this.off('tas:item_canceled');
+    this.off('tas:bill_requested');
+    this.off('tas:bill_paid');
+    this.off('tas:help_requested');
+    this.off('tas:new_customer_order');
+    this.off('tas:customer_bill_request');
+    this.off('notification:from_waiter');
+    this.off('tas:error');
+    this.off('tas:joined');
+    this.off('tas:left');
+    this.off('tas:item_added_confirm');
+    this.off('tas:item_served_confirm');
+    this.off('tas:item_canceled_confirm');
+    this.off('tas:bill_request_confirm');
+    this.off('tas:bill_paid_confirm');
+    this.off('tas:call_acknowledged_confirm');
+    this.off('tas:notify_confirm');
+  }
+
   // ==================== CONNECTION MANAGEMENT ====================
 
   /**

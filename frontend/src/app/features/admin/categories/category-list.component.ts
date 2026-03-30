@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { LocalizePipe } from '../../../shared/pipes/localize.pipe';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../core/services/i18n.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { authStore } from '../../../store/auth.store';
 
 @Component({
@@ -76,8 +77,8 @@ import { authStore } from '../../../store/auth.store';
 export class CategoryListComponent implements OnInit {
   private http = inject(HttpClient);
   private i18n = inject(I18nService);
+  private notify = inject(NotificationService);
   categories = signal<any[]>([]);
-  error = signal<string>('');
 
   ngOnInit() {
     if (!authStore.isAuthenticated()) {
@@ -88,22 +89,27 @@ export class CategoryListComponent implements OnInit {
   }
 
   loadCategories() {
-    this.error.set('');
     this.http.get<any[]>(`${environment.apiUrl}/dishes/categories`).subscribe({
       next: (res) => {
         this.categories.set(res);
       },
       error: (err) => {
         console.error('[CategoryList] Error loading categories:', err);
-        this.error.set(this.i18n.translate('errors.LOADING_ERROR'));
+        this.notify.error(this.i18n.translate('errors.LOADING_ERROR'));
       }
     });
   }
 
   deleteCategory(id: string) {
     if (confirm(this.i18n.translate('category.delete_confirm'))) {
-      this.http.delete(`${environment.apiUrl}/dishes/categories/${id}`).subscribe(() => {
-        this.loadCategories();
+      this.http.delete(`${environment.apiUrl}/dishes/categories/${id}`).subscribe({
+        next: () => {
+          this.notify.success(this.i18n.translate('common.deleted'));
+          this.loadCategories();
+        },
+        error: (err) => {
+          this.notify.error(err.error?.message || this.i18n.translate('errors.SERVER_ERROR'));
+        }
       });
     }
   }

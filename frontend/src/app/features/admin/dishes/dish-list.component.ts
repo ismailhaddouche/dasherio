@@ -9,6 +9,7 @@ import { authStore } from '../../../store/auth.store';
 import { LocalizePipe } from '../../../shared/pipes/localize.pipe';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../core/services/i18n.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-dish-list',
@@ -25,10 +26,6 @@ import { I18nService } from '../../../core/services/i18n.service';
           <span class="material-symbols-outlined">add</span> {{ 'dish.new_dish' | translate }}
         </a>
       </header>
-
-      @if (error()) {
-        <div class="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-4 rounded-lg border border-red-400 dark:border-red-600">{{ error() }}</div>
-      }
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (dish of dishes(); track dish._id) {
@@ -83,9 +80,9 @@ import { I18nService } from '../../../core/services/i18n.service';
 export class DishListComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private i18n = inject(I18nService);
+  private notify = inject(NotificationService);
   private destroy$ = new Subject<void>();
   dishes = signal<any[]>([]);
-  error = signal<string>('');
 
   ngOnInit() {
     if (!authStore.isAuthenticated()) {
@@ -96,7 +93,6 @@ export class DishListComponent implements OnInit, OnDestroy {
   }
 
   loadDishes() {
-    this.error.set('');
     this.http.get<any[]>(`${environment.apiUrl}/dishes`)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -105,7 +101,7 @@ export class DishListComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('[DishList] Error loading dishes:', err);
-          this.error.set(this.i18n.translate('errors.LOADING_ERROR'));
+          this.notify.error(this.i18n.translate('errors.LOADING_ERROR'));
         }
       });
   }
@@ -114,10 +110,13 @@ export class DishListComponent implements OnInit, OnDestroy {
     this.http.patch(`${environment.apiUrl}/dishes/${id}/toggle`, {})
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => this.loadDishes(),
+        next: () => {
+          this.notify.success(this.i18n.translate('dish.status_updated'));
+          this.loadDishes();
+        },
         error: (err) => {
           console.error('[DishList] Error toggling status:', err);
-          alert(this.i18n.translate('dish.toggle_status_error'));
+          this.notify.error(this.i18n.translate('dish.toggle_status_error'));
         }
       });
   }
