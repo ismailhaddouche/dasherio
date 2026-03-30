@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import type { Staff, Role } from '../types';
 export type { Staff, Role };
@@ -29,7 +30,7 @@ export class StaffService {
   private apiUrl = `${environment.apiUrl}/staff`;
 
   getStaff(): Observable<Staff[]> {
-    return this.http.get<Staff[]>(this.apiUrl);
+    return this.http.get<{ data: Staff[] }>(this.apiUrl).pipe(map(res => res.data));
   }
 
   getStaffMember(id: string): Observable<Staff> {
