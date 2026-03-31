@@ -22,6 +22,7 @@ export interface TasStore {
 
   // Computed
   activeSessions: Signal<TotemSession[]>;
+  availableTotems: Signal<Array<{ _id: string; totem_name: string; totem_type: string }>>;
   kitchenItems: Signal<ItemOrder[]>;
   serviceItemsFiltered: Signal<ItemOrder[]>;
   itemsByCustomer: Signal<Record<string, ItemOrder[]>>;
@@ -40,6 +41,9 @@ export interface TasStore {
   setCustomers: (customers: Customer[]) => void;
   addCustomer: (customer: Customer) => void;
   setDishes: (dishes: Dish[], categories: Array<{ _id: string; category_name: LocalizedField }>) => void;
+  setAllTotems: (totems: Array<{ _id: string; totem_name: string; totem_type: string }>) => void;
+  updateSessionState: (sessionId: string, newState: TotemSession['totem_state']) => void;
+  removeSession: (sessionId: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
@@ -59,6 +63,7 @@ const _serviceItems = signal<ItemOrder[]>([]);
 const _customers = signal<Customer[]>([]);
 const _dishes = signal<Dish[]>([]);
 const _categories = signal<Array<{ _id: string; category_name: LocalizedField }>>([]);
+const _allTotems = signal<Array<{ _id: string; totem_name: string; totem_type: string }>>([]);
 const _isLoading = signal<boolean>(false);
 const _error = signal<string | null>(null);
 let _referenceCount = 0;
@@ -77,6 +82,11 @@ export const tasStore: TasStore = {
 
   // Computed
   activeSessions: computed(() => _sessions().filter(s => s.totem_state === 'STARTED')),
+  
+  availableTotems: computed(() => {
+    const activeTotemIds = new Set(_sessions().filter(s => s.totem_state === 'STARTED').map(s => s.totem_id?.toString()));
+    return _allTotems().filter(t => t.totem_type === 'STANDARD' && !activeTotemIds.has(t._id?.toString()));
+  }),
   
   kitchenItems: computed(() => 
     _sessionItems().filter(i => i.item_disher_type === 'KITCHEN' && i.item_state !== 'CANCELED')
@@ -173,6 +183,31 @@ export const tasStore: TasStore = {
   ) {
     _dishes.set(dishes);
     _categories.set(categories);
+  },
+
+  setAllTotems(totems: Array<{ _id: string; totem_name: string; totem_type: string }>) {
+    _allTotems.set(totems);
+  },
+
+  updateSessionState(sessionId: string, newState: TotemSession['totem_state']) {
+    _sessions.update(current =>
+      current.map(s => (s._id === sessionId ? { ...s, totem_state: newState } : s))
+    );
+    // If the updated session is the selected one and it's now closed/paid, deselect it
+    if (_selectedSession()?._id === sessionId && (newState === 'COMPLETE' || newState === 'PAID')) {
+      _selectedSession.set(null);
+      _sessionItems.set([]);
+      _customers.set([]);
+    }
+  },
+
+  removeSession(sessionId: string) {
+    _sessions.update(current => current.filter(s => s._id !== sessionId));
+    if (_selectedSession()?._id === sessionId) {
+      _selectedSession.set(null);
+      _sessionItems.set([]);
+      _customers.set([]);
+    }
   },
 
   setLoading(loading: boolean) {

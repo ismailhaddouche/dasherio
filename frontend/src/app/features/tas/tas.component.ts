@@ -581,7 +581,7 @@ export class TasComponent implements OnInit, OnDestroy {
   assignToCustomerId = signal<string | null>(null);
   selectedCustomerId = signal<string | null>(null);
   isAddingItem = signal(false);
-  allTotems = signal<Array<{ _id: string; totem_name: string; totem_type: string }>>([]);
+
   isConnected = signal(false);
 
   // Store signals
@@ -592,16 +592,13 @@ export class TasComponent implements OnInit, OnDestroy {
   dishes = tasStore.dishes;
   categories = tasStore.categories;
   isLoading = tasStore.isLoading;
+  
+  // Local state for all totems (synced with store)
+  allTotems = signal<Array<{ _id: string; totem_name: string; totem_type: string }>>([]);
 
-  // Computed
-  activeSessions = computed(() => 
-    this.sessions().filter(s => s.totem_state === 'STARTED')
-  );
-
-  availableTotems = computed(() => {
-    const activeTotemIds = new Set(this.sessions().map(s => s.totem_id?.toString()));
-    return this.allTotems().filter(t => t.totem_type === 'STANDARD' && !activeTotemIds.has(t._id?.toString()));
-  });
+  // Computed - Use store computed for consistency
+  activeSessions = tasStore.activeSessions;
+  availableTotems = tasStore.availableTotems;
 
   kitchenItems = computed(() => 
     this.sessionItems().filter(i => i.item_disher_type === 'KITCHEN')
@@ -709,7 +706,10 @@ export class TasComponent implements OnInit, OnDestroy {
     this.tasService.getTotems()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (totems) => this.allTotems.set(totems),
+        next: (totems) => {
+          this.allTotems.set(totems);
+          tasStore.setAllTotems(totems);
+        },
         error: (err) => console.error('[TAS] Error loading totems:', err),
       });
 
@@ -838,6 +838,9 @@ export class TasComponent implements OnInit, OnDestroy {
 
     // Listen for session closed by POS
     this.socketService.on('pos:session_closed', (data: { sessionId: string; closedBy?: string; timestamp: string }) => {
+      // Remove session from active sessions list (makes totem available again)
+      tasStore.removeSession(data.sessionId);
+      
       if (data.sessionId === this.selectedSession()?._id) {
         this.notify.warning(this.i18n.translate('tas.session_closed_by_pos'));
         // Clear selected session as it's been closed
@@ -872,6 +875,9 @@ export class TasComponent implements OnInit, OnDestroy {
       closedByName?: string;
       timestamp: string;
     }) => {
+      // Remove session from active sessions list (makes totem available again)
+      tasStore.removeSession(data.sessionId);
+      
       if (data.sessionId === this.selectedSession()?._id) {
         this.notify.success(
           this.i18n.translate('tas.session_fully_paid')
@@ -1060,6 +1066,7 @@ export class TasComponent implements OnInit, OnDestroy {
     .subscribe({
       next: (totem) => {
         this.allTotems.update(current => [...current, { ...totem, totem_type: 'TEMPORARY' }]);
+        tasStore.setAllTotems([...this.allTotems()]);
         this.newTotemName.set('');
         this.isCreatingTotem.set(false);
         this.notify.success(this.i18n.translate('tas.totem_created'));
@@ -1101,6 +1108,7 @@ export class TasComponent implements OnInit, OnDestroy {
           // Remove from sessions if active
           tasStore.setSessions(this.sessions().filter(s => s.totem_id !== totemId));
           this.allTotems.update(current => current.filter(t => t._id !== totemId));
+          tasStore.setAllTotems([...this.allTotems()]);
 
           if (this.selectedSession()?.totem_id === totemId) {
             tasStore.selectSession(null);
