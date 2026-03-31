@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './header.component';
+import { MenuLanguageService } from '../../services/menu-language.service';
 
 @Component({
   selector: 'app-layout',
@@ -16,4 +17,10 @@ import { HeaderComponent } from './header.component';
     </div>
   `
 })
-export class LayoutComponent {}
+export class LayoutComponent implements OnInit {
+  private menuLangService = inject(MenuLanguageService);
+
+  ngOnInit() {
+    this.menuLangService.load();
+  }
+}

@@ -106,7 +106,7 @@ export async function getDashboardStats(req: Request, res: Response): Promise<vo
       const category = categories.find(c => c._id.equals(catId));
       return {
         categoryId: catId,
-        categoryName: category?.category_name?.es || 'UNCATEGORIZED',
+        categoryName: category?.category_name?.[0]?.value || 'UNCATEGORIZED',
         revenue: data.revenue,
         quantity: data.quantity
       };

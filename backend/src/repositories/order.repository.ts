@@ -46,10 +46,10 @@ export class ItemOrderRepository extends BaseRepository<IItemOrder> {
       customer_id?: string;
       customer_name?: string;
       item_disher_type: 'KITCHEN' | 'SERVICE';
-      item_name_snapshot: { es: string; en: string; fr: string; ar: string };
+      item_name_snapshot: { lang: string; value: string }[];
       item_base_price: number;
-      item_disher_variant?: { variant_id: string; name: object; price: number } | null;
-      item_disher_extras: { extra_id: string; name: object; price: number }[];
+      item_disher_variant?: { variant_id: string; name: { lang: string; value: string }[]; price: number } | null;
+      item_disher_extras: { extra_id: string; name: { lang: string; value: string }[]; price: number }[];
     },
     session?: ClientSession
   ): Promise<IItemOrder> {

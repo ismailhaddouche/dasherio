@@ -3,13 +3,27 @@
 // These are the single source of truth for all models
 // ============================================
 
-import { LocalizedString } from './localized-string.type';
+import { LocalizedString, LocalizedField } from './localized-string.type';
+
+// Localized entry (lang + value pair)
+export type { LocalizedField };
+
+// Menu Language
+export interface MenuLanguage {
+  _id?: string;
+  restaurant_id: string;
+  name: string;
+  code: string;
+  is_default: boolean;
+  linked_app_lang: string | null;
+  order: number;
+}
 
 // Variant
 export interface Variant {
   _id?: string;
-  variant_name: LocalizedString;
-  variant_description?: LocalizedString;
+  variant_name: LocalizedField;
+  variant_description?: LocalizedField;
   variant_price: number;
   variant_url_image?: string;
 }
@@ -17,8 +31,8 @@ export interface Variant {
 // Extra
 export interface Extra {
   _id?: string;
-  extra_name: LocalizedString;
-  extra_description?: LocalizedString;
+  extra_name: LocalizedField;
+  extra_description?: LocalizedField;
   extra_price: number;
   extra_url_image?: string;
 }
@@ -27,8 +41,8 @@ export interface Extra {
 export interface Category {
   _id?: string;
   restaurant_id: string;
-  category_name: LocalizedString;
-  category_description?: LocalizedString;
+  category_name: LocalizedField;
+  category_description?: LocalizedField;
   category_order: number;
   category_image_url?: string;
 }
@@ -38,8 +52,8 @@ export interface Dish {
   _id?: string;
   restaurant_id: string;
   category_id: string;
-  disher_name: LocalizedString;
-  disher_description?: LocalizedString;
+  disher_name: LocalizedField;
+  disher_description?: LocalizedField;
   disher_price: number;
   disher_type: 'KITCHEN' | 'SERVICE';
   disher_status: 'ACTIVATED' | 'DESACTIVATED';
@@ -88,14 +102,14 @@ export interface Order {
 // Item Order Variant Snapshot
 export interface ItemOrderVariant {
   variant_id: string;
-  name: LocalizedString;
+  name: LocalizedField;
   price: number;
 }
 
 // Item Order Extra Snapshot
 export interface ItemOrderExtra {
   extra_id: string;
-  name: LocalizedString;
+  name: LocalizedField;
   price: number;
 }
 
@@ -109,7 +123,7 @@ export interface ItemOrder {
   customer_name?: string;
   item_state: 'ORDERED' | 'ON_PREPARE' | 'SERVED' | 'CANCELED';
   item_disher_type: 'KITCHEN' | 'SERVICE';
-  item_name_snapshot: LocalizedString;
+  item_name_snapshot: LocalizedField;
   item_base_price: number;
   item_disher_variant?: ItemOrderVariant | null;
   item_disher_extras: ItemOrderExtra[];

@@ -1,21 +1,19 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LocalizedInputComponent } from '../../../shared/components/localized-input.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
-
-interface LocalizedName {
-  es: string;
-  en: string;
-}
+import { I18nService } from '../../../core/services/i18n.service';
+import type { LocalizedField } from '../../../types';
 
 export interface OptionItem {
-  [key: string]: string | number | LocalizedName | undefined;
+  [key: string]: any;
 }
 
 @Component({
   selector: 'app-dish-option-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, LocalizedInputComponent, TranslatePipe],
   template: `
     <section class="border-t border-gray-100 dark:border-gray-700 pt-4">
       <div class="flex items-center justify-between mb-3">
@@ -30,16 +28,19 @@ export interface OptionItem {
       <div class="flex flex-col gap-3">
         @for (item of items(); track $index; let i = $index) {
           <div [class]="itemClasses()">
-            <div class="flex-1 flex flex-col gap-1">
-              <label class="text-xs text-gray-400 dark:text-gray-500">{{ 'common.name' | translate }}</label>
-              <input 
-                [ngModel]="getName(item)" 
-                (ngModelChange)="setName(item, $event)"
-                class="input-style-sm" 
-                placeholder="Ej: {{ title() }}" 
+            <div class="flex-1 flex flex-col gap-3">
+              <app-localized-input
+                [label]="'common.name' | translate"
+                [(value)]="item[nameKey()]"
+                [required]="true"
+              />
+              <app-localized-input
+                [label]="'dish.description' | translate"
+                [(value)]="item[descriptionKey()]"
+                [multiline]="true"
               />
             </div>
-            <div class="w-24 flex flex-col gap-1">
+            <div class="w-24 flex flex-col gap-1 self-start pt-1">
               <label class="text-xs text-gray-400 dark:text-gray-500">{{ 'dish.price' | translate }}</label>
               <input 
                 type="number" 
@@ -48,10 +49,10 @@ export interface OptionItem {
                 step="0.01"
                 class="input-style-sm" 
                 placeholder="0.00" 
-                title="Puede ser 0 para extras gratuitos"
+                [title]="i18n.translate('dish.free_extras_hint')"
               />
             </div>
-            <button (click)="remove.emit(i)" class="text-red-500 mb-2">
+            <button (click)="remove.emit(i)" class="text-red-500 mb-2 self-start pt-7">
               <span class="material-symbols-outlined">delete</span>
             </button>
           </div>
@@ -68,16 +69,17 @@ export interface OptionItem {
       @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-2 py-1 text-sm outline-none; 
     }
     .variant-item {
-      @apply flex items-end gap-2 p-3 rounded-xl;
+      @apply flex items-center gap-2 p-3 rounded-xl;
       @apply bg-gray-50 dark:bg-gray-700;
     }
     .variant-item-amber {
-      @apply flex items-end gap-2 p-3 rounded-xl;
+      @apply flex items-center gap-2 p-3 rounded-xl;
       @apply bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800;
     }
   `]
 })
 export class DishOptionListComponent {
+  i18n = inject(I18nService);
   title = input.required<string>();
   subtitle = input<string>('');
   emptyMessage = input.required<string>();
@@ -95,17 +97,11 @@ export class DishOptionListComponent {
     return this.variant() === 'amber' ? 'extra_price' : 'variant_price';
   }
 
+  descriptionKey(): string {
+    return this.variant() === 'amber' ? 'extra_description' : 'variant_description';
+  }
+
   itemClasses(): string {
     return this.variant() === 'amber' ? 'variant-item-amber' : 'variant-item';
-  }
-
-  getName(item: OptionItem): string {
-    const name = item[this.nameKey()] as LocalizedName;
-    return name?.es ?? '';
-  }
-
-  setName(item: OptionItem, value: string): void {
-    const nameKey = this.nameKey();
-    (item[nameKey] as LocalizedName).es = value;
   }
 }

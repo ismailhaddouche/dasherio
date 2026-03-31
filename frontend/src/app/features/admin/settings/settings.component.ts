@@ -7,6 +7,8 @@ import { I18nService, type Language } from '../../../core/services/i18n.service'
 import { ThemeService, type Theme } from '../../../core/services/theme.service';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { NotificationService } from '../../../core/services/notification.service';
+import { MenuLanguageService } from '../../../services/menu-language.service';
+import type { MenuLanguage } from '../../../types';
 
 interface RestaurantSettings {
   _id: string;
@@ -79,9 +81,9 @@ interface RestaurantSettings {
                   [(ngModel)]="settings().currency"
                   class="admin-select"
                 >
-                  <option value="EUR">EUR (€)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="GBP">GBP (£)</option>
+                  <option value="EUR">{{ 'settings.currency_eur' | translate }}</option>
+                  <option value="USD">{{ 'settings.currency_usd' | translate }}</option>
+                  <option value="GBP">{{ 'settings.currency_gbp' | translate }}</option>
                 </select>
               </div>
               
@@ -141,6 +143,140 @@ interface RestaurantSettings {
               </div>
             </div>
           </div>
+
+          <!-- Menu Languages -->
+          <div class="admin-card p-6">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">translate</span>
+              {{ 'settings.menu_languages' | translate }}
+            </h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+              {{ 'settings.menu_languages_desc' | translate }}
+            </p>
+
+            <!-- Existing languages list -->
+            @if (menuLangService.languages().length) {
+              <div class="space-y-3 mb-5">
+                @for (lang of menuLangService.languages(); track lang._id) {
+                  <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                    @if (editingLangId() === lang._id) {
+                      <!-- Edit mode -->
+                      <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <input
+                          type="text"
+                          [(ngModel)]="editLangName"
+                          class="admin-input text-sm"
+                          [placeholder]="'settings.language_name' | translate"
+                        />
+                        <select
+                          [(ngModel)]="editLangLinked"
+                          class="admin-select text-sm"
+                        >
+                          <option [ngValue]="null">{{ 'settings.none_linked' | translate }}</option>
+                          @for (al of availableLanguages; track al.code) {
+                            <option [value]="al.code">{{ al.flag }} {{ al.name }}</option>
+                          }
+                        </select>
+                        <div class="flex gap-2">
+                          <button (click)="saveEditLang(lang)" class="btn-admin btn-primary text-sm px-3 py-1">
+                            <span class="material-symbols-outlined text-sm">check</span>
+                          </button>
+                          <button (click)="cancelEditLang()" class="btn-admin btn-secondary text-sm px-3 py-1">
+                            <span class="material-symbols-outlined text-sm">close</span>
+                          </button>
+                        </div>
+                      </div>
+                    } @else {
+                      <!-- Display mode -->
+                      <div class="flex-1 flex items-center gap-3">
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ lang.name }}</span>
+                        <span class="text-xs font-mono bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">{{ lang.code }}</span>
+                        @if (lang.is_default) {
+                          <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                            {{ 'settings.default_language_badge' | translate }}
+                          </span>
+                        }
+                        @if (lang.linked_app_lang) {
+                          <span class="text-xs text-gray-500 dark:text-gray-400">
+                            → {{ getAppLangName(lang.linked_app_lang) }}
+                          </span>
+                        }
+                      </div>
+                      <div class="flex items-center gap-1">
+                        @if (!lang.is_default) {
+                          <button
+                            (click)="setDefaultLang(lang._id)"
+                            class="p-1.5 text-gray-400 hover:text-primary transition-colors"
+                            [title]="'settings.set_as_default' | translate"
+                          >
+                            <span class="material-symbols-outlined text-lg">star</span>
+                          </button>
+                        }
+                        <button
+                          (click)="startEditLang(lang)"
+                          class="p-1.5 text-gray-400 hover:text-blue-500 transition-colors"
+                        >
+                          <span class="material-symbols-outlined text-lg">edit</span>
+                        </button>
+                        @if (!lang.is_default) {
+                          <button
+                            (click)="deleteLang(lang)"
+                            class="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <span class="material-symbols-outlined text-lg">delete</span>
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Add new language form -->
+            @if (showAddLangForm()) {
+              <div class="p-4 bg-primary/5 dark:bg-primary/10 rounded-xl border border-primary/20 mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <input
+                    type="text"
+                    [(ngModel)]="newLangName"
+                    class="admin-input text-sm"
+                    [placeholder]="'settings.language_name' | translate"
+                  />
+                  <input
+                    type="text"
+                    [(ngModel)]="newLangCode"
+                    class="admin-input text-sm"
+                    [placeholder]="'settings.language_code' | translate"
+                    maxlength="5"
+                  />
+                  <select
+                    [(ngModel)]="newLangLinked"
+                    class="admin-select text-sm"
+                  >
+                    <option [ngValue]="null">{{ 'settings.none_linked' | translate }}</option>
+                    @for (al of availableLanguages; track al.code) {
+                      <option [value]="al.code">{{ al.flag }} {{ al.name }}</option>
+                    }
+                  </select>
+                  <div class="flex gap-2">
+                    <button (click)="addLang()" class="btn-admin btn-primary text-sm flex-1" [disabled]="!newLangName || !newLangCode">
+                      <span class="material-symbols-outlined text-sm">check</span>
+                      {{ 'common.save' | translate }}
+                    </button>
+                    <button (click)="showAddLangForm.set(false)" class="btn-admin btn-secondary text-sm">
+                      <span class="material-symbols-outlined text-sm">close</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <button (click)="showAddLangForm.set(true)" class="btn-admin btn-secondary text-sm">
+                <span class="material-symbols-outlined text-sm">add</span>
+                {{ 'settings.add_language' | translate }}
+              </button>
+            }
+          </div>
         </div>
       }
     </div>
@@ -150,6 +286,7 @@ export class SettingsComponent implements OnInit {
   private http = inject(HttpClient);
   private i18n = inject(I18nService);
   private notify = inject(NotificationService);
+  readonly menuLangService = inject(MenuLanguageService);
 
   settings = signal<RestaurantSettings>({
     _id: '',
@@ -166,6 +303,15 @@ export class SettingsComponent implements OnInit {
   saving = signal(false);
 
   readonly availableLanguages = this.i18n.getAvailableLanguages();
+
+  // Menu language form state
+  showAddLangForm = signal(false);
+  editingLangId = signal<string | null>(null);
+  newLangName = '';
+  newLangCode = '';
+  newLangLinked: string | null = null;
+  editLangName = '';
+  editLangLinked: string | null = null;
 
   ngOnInit() {
     this.loadSettings();
@@ -210,6 +356,81 @@ export class SettingsComponent implements OnInit {
         this.saving.set(false);
         this.notify.error(this.i18n.translate('error.saving'));
       }
+    });
+  }
+
+  // --- Menu Languages ---
+
+  getAppLangName(code: string): string {
+    const lang = this.availableLanguages.find(l => l.code === code);
+    return lang ? `${lang.flag} ${lang.name}` : code;
+  }
+
+  addLang() {
+    if (!this.newLangName || !this.newLangCode) return;
+    this.menuLangService.create({
+      name: this.newLangName,
+      code: this.newLangCode.toLowerCase(),
+      linked_app_lang: this.newLangLinked,
+    }).subscribe({
+      next: () => {
+        this.notify.success(this.i18n.translate('settings.menu_lang_created'));
+        this.menuLangService.refresh();
+        this.newLangName = '';
+        this.newLangCode = '';
+        this.newLangLinked = null;
+        this.showAddLangForm.set(false);
+      },
+      error: () => this.notify.error(this.i18n.translate('error.saving')),
+    });
+  }
+
+  startEditLang(lang: MenuLanguage) {
+    this.editingLangId.set(lang._id);
+    this.editLangName = lang.name;
+    this.editLangLinked = lang.linked_app_lang ?? null;
+  }
+
+  cancelEditLang() {
+    this.editingLangId.set(null);
+  }
+
+  saveEditLang(lang: MenuLanguage) {
+    this.menuLangService.update(lang._id, {
+      name: this.editLangName,
+      linked_app_lang: this.editLangLinked,
+    } as any).subscribe({
+      next: () => {
+        this.notify.success(this.i18n.translate('settings.menu_lang_updated'));
+        this.menuLangService.refresh();
+        this.editingLangId.set(null);
+      },
+      error: () => this.notify.error(this.i18n.translate('error.saving')),
+    });
+  }
+
+  setDefaultLang(id: string) {
+    this.menuLangService.setDefault(id).subscribe({
+      next: () => {
+        this.notify.success(this.i18n.translate('settings.menu_lang_default_set'));
+        this.menuLangService.refresh();
+      },
+      error: () => this.notify.error(this.i18n.translate('error.saving')),
+    });
+  }
+
+  deleteLang(lang: MenuLanguage) {
+    if (lang.is_default) {
+      this.notify.error(this.i18n.translate('settings.cannot_delete_default'));
+      return;
+    }
+    if (!confirm(this.i18n.translate('settings.confirm_delete_lang'))) return;
+    this.menuLangService.remove(lang._id).subscribe({
+      next: () => {
+        this.notify.success(this.i18n.translate('settings.menu_lang_deleted'));
+        this.menuLangService.refresh();
+      },
+      error: () => this.notify.error(this.i18n.translate('error.saving')),
     });
   }
 }

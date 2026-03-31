@@ -5,14 +5,17 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ImageUploaderComponent } from '../../../shared/components/image-uploader/image-uploader.component';
+import { LocalizedInputComponent } from '../../../shared/components/localized-input.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../core/services/i18n.service';
+import { MenuLanguageService } from '../../../services/menu-language.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import type { Category } from '../../../types';
 
 @Component({
   selector: 'app-category-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, ImageUploaderComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, ImageUploaderComponent, LocalizedInputComponent, TranslatePipe],
   template: `
     <div class="admin-container max-w-4xl">
       <header class="admin-header">
@@ -44,20 +47,22 @@ import { NotificationService } from '../../../core/services/notification.service
 
         <!-- Basic Info -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label class="admin-label">{{ 'category.name_es' | translate }} *</label>
-            <input [(ngModel)]="category().category_name.es" class="admin-input" [placeholder]="'category.name_es' | translate" />
-          </div>
+          <app-localized-input
+            [label]="('category.name' | translate) + ' *'"
+            [(value)]="category().category_name"
+            [required]="true"
+          />
           <div>
             <label class="admin-label">{{ 'category.display_order' | translate }}</label>
             <input type="number" [(ngModel)]="category().category_order" class="admin-input" min="0" />
           </div>
         </div>
 
-        <div>
-          <label class="admin-label">{{ 'category.description_es' | translate }}</label>
-          <textarea [(ngModel)]="category().category_description.es" class="admin-input" rows="3" [placeholder]="'category.description_es' | translate"></textarea>
-        </div>
+        <app-localized-input
+          [label]="'category.description' | translate"
+          [(value)]="category().category_description"
+          [multiline]="true"
+        />
       </div>
     </div>
   `
@@ -67,13 +72,14 @@ export class CategoryFormComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private i18n = inject(I18nService);
+  private menuLangService = inject(MenuLanguageService);
   private notify = inject(NotificationService);
 
   isEdit = false;
-  category = signal<any>({
-    category_name: { es: '' },
+  category = signal<Partial<Category>>({
+    category_name: [],
     category_order: 0,
-    category_description: { es: '' },
+    category_description: [],
     category_image_url: ''
   });
 
@@ -94,7 +100,14 @@ export class CategoryFormComponent implements OnInit {
   }
 
   save() {
-    // Note: Assuming these endpoints exist or will be created in the dishes controller
+    const defaultLang = this.menuLangService.defaultLanguage();
+    const nameInDefault = this.category().category_name?.find(e => e.lang === defaultLang?._id)?.value;
+
+    if (!nameInDefault?.trim()) {
+      this.notify.error(this.i18n.translate('validation.default_lang_required'));
+      return;
+    }
+
     const obs = this.isEdit 
       ? this.http.patch(`${environment.apiUrl}/dishes/categories/${this.category()._id}`, this.category())
       : this.http.post(`${environment.apiUrl}/dishes/categories`, this.category());

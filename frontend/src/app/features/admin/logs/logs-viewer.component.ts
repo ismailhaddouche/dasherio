@@ -69,9 +69,9 @@ interface LogUser {
             class="admin-select"
           >
             <option value="ALL">{{ 'logs.all_systems' | translate }}</option>
-            <option value="KDS">Kitchen (KDS)</option>
-            <option value="POS">Point of Sale (POS)</option>
-            <option value="TAS">Table Service (TAS)</option>
+            <option value="KDS">{{ 'logs.kds_label' | translate }}</option>
+            <option value="POS">{{ 'logs.pos_label' | translate }}</option>
+            <option value="TAS">{{ 'logs.tas_label' | translate }}</option>
             <option value="CUSTOMER">{{ 'logs.customer_orders' | translate }}</option>
           </select>
         </div>
@@ -86,7 +86,7 @@ interface LogUser {
           >
             <option value="">{{ 'logs.all_users' | translate }}</option>
             @for (user of users(); track user.id) {
-              <option [value]="user.id">{{ user.name }} ({{ user.type }})</option>
+              <option [value]="user.id">{{ user.name }} ({{ user.type === 'STAFF' ? ('logs.staff_type' | translate) : ('logs.customer_type' | translate) }})</option>
             }
           </select>
         </div>
@@ -139,7 +139,7 @@ interface LogUser {
                           'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800': log.type === 'TAS',
                           'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800': log.type === 'CUSTOMER'
                         }">
-                        {{ log.type === 'CUSTOMER' ? 'CLIENTE' : log.type }}
+                        {{ log.type === 'CUSTOMER' ? ('logs.customer_label' | translate) : log.type }}
                       </span>
                       @if (log.userName) {
                         <span class="block text-xs text-gray-500 mt-1">{{ log.userName }}</span>
@@ -160,7 +160,7 @@ interface LogUser {
                             'bg-green-50 text-green-700 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800': log.status === 'SERVED',
                             'bg-red-50 text-red-700 border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800': log.status === 'CANCELED'
                           }">
-                          {{ log.status }}
+                          {{ getStatusLabel(log.status!) }}
                         </span>
                       } @else {
                         -
@@ -170,13 +170,13 @@ interface LogUser {
                       @if (log.details) {
                         <div class="text-sm">
                           @if (log.details.basePrice) {
-                            <div>Price: {{ log.details.basePrice | currency:'EUR' }}</div>
+                            <div>{{ 'logs.price' | translate }}: {{ log.details.basePrice | currency:'EUR' }}</div>
                           }
                           @if (log.details.extras) {
-                            <div>Extras: {{ log.details.extras }}</div>
+                            <div>{{ 'logs.extras' | translate }}: {{ log.details.extras }}</div>
                           }
                           @if (log.details.variant) {
-                            <div>Variant: {{ log.details.variant }}</div>
+                            <div>{{ 'logs.variant' | translate }}: {{ log.details.variant }}</div>
                           }
                         </div>
                       }
@@ -257,5 +257,15 @@ export class LogsViewerComponent {
           this.users.set(response.users);
         }
       });
+  }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'ORDERED': return this.i18n.translate('order_state.ordered');
+      case 'ON_PREPARE': return this.i18n.translate('order_state.preparing');
+      case 'SERVED': return this.i18n.translate('order_state.served');
+      case 'CANCELED': return this.i18n.translate('order_state.canceled');
+      default: return status;
+    }
   }
 }

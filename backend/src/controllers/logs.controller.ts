@@ -87,11 +87,11 @@ export async function getLogs(req: Request, res: Response): Promise<void> {
       // Get timestamp from mongoose timestamps
       const timestamp = item.createdAt || item.updatedAt || new Date();
       
-      // Safely get dish name
-      const dishName = dish?.disher_name || 
-        (item.item_name_snapshot && typeof item.item_name_snapshot === 'object' && 'es' in item.item_name_snapshot) 
-          ? (item.item_name_snapshot as { es: string }).es 
-          : i18next.t('common:UNKNOWN');
+      // Safely get dish name (from localized array)
+      const dishNameArr = dish?.disher_name || item.item_name_snapshot;
+      const dishName = (Array.isArray(dishNameArr) && dishNameArr.length > 0)
+        ? dishNameArr[0].value
+        : i18next.t('common:UNKNOWN');
 
       return {
         id: item._id.toString(),

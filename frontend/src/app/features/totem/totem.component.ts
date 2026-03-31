@@ -10,9 +10,10 @@ import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { ThemeService } from '../../core/services/theme.service';
 import { I18nService } from '../../core/services/i18n.service';
+import { MenuLanguageService } from '../../services/menu-language.service';
 import { environment } from '../../../environments/environment';
 import { NotificationService } from '../../core/services/notification.service';
-import type { Dish, Category, LocalizedString, ItemOrder } from '../../types';
+import type { Dish, Category, ItemOrder } from '../../types';
 
 interface SessionInfo {
   session_id: string;
@@ -174,7 +175,7 @@ type ViewTab = 'menu' | 'my-orders' | 'all-orders';
                        [class.opacity-60]="item.item_state === 'CANCELED'">
                       {{ item.item_base_price | currencyFormat }}
                       @if (item.item_disher_extras && item.item_disher_extras.length > 0) {
-                        <span class="text-xs"> + {{ item.item_disher_extras.length }} extras</span>
+                        <span class="text-xs"> + {{ item.item_disher_extras.length }} {{ 'totem.extras' | translate }}</span>
                       }
                     </p>
                   </div>
@@ -231,7 +232,7 @@ type ViewTab = 'menu' | 'my-orders' | 'all-orders';
                     <p class="text-sm text-gray-500 dark:text-gray-400">
                       {{ item.item_base_price | currencyFormat }}
                       @if (item.item_disher_extras && item.item_disher_extras.length > 0) {
-                        <span class="text-xs"> + {{ item.item_disher_extras.length }} extras</span>
+                        <span class="text-xs"> + {{ item.item_disher_extras.length }} {{ 'totem.extras' | translate }}</span>
                       }
                     </p>
                   </div>
@@ -320,7 +321,7 @@ type ViewTab = 'menu' | 'my-orders' | 'all-orders';
             </div>
             <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
               <div class="flex justify-between font-bold text-base mb-3 text-gray-900 dark:text-white">
-                <span>Total</span>
+                <span>{{ 'totem.total' | translate }}</span>
                 <span>{{ cartTotal() | currencyFormat }}</span>
               </div>
               <button
@@ -401,6 +402,7 @@ export class TotemComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   themeService = inject(ThemeService);
   protected i18n = inject(I18nService);
+  private menuLangService = inject(MenuLanguageService);
   private notify = inject(NotificationService);
   private destroy$ = new Subject<void>();
 
@@ -603,11 +605,7 @@ export class TotemComponent implements OnInit, OnDestroy {
   }
 
   addToCart(dish: Dish) {
-    const lang = navigator.language?.split('-')[0] ?? 'es';
-    const name = dish.disher_name?.[lang as keyof LocalizedString] 
-              || dish.disher_name?.es 
-              || dish.disher_name?.en 
-              || '';
+    const name = this.menuLangService.localize(dish.disher_name);
     cartStore.addItem({
       dishId: dish._id!,
       name,

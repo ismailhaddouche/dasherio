@@ -66,7 +66,7 @@ import type { TotemSession, ItemOrder } from '../../types';
                   </span>
                 </div>
                 <p class="text-xs text-gray-500 mt-0.5">
-                  {{ getSessionItemCount(session._id!) }} items
+                  {{ getSessionItemCount(session._id!) }} {{ 'pos.items' | translate }}
                 </p>
               </div>
             }
@@ -105,7 +105,7 @@ import type { TotemSession, ItemOrder } from '../../types';
               }
             </h1>
             @if (selectedSession()) {
-              <p class="text-sm text-gray-500">{{ sessionItems().length }} items</p>
+              <p class="text-sm text-gray-500">{{ sessionItems().length }} {{ 'pos.items' | translate }}</p>
             }
           </div>
         </header>
@@ -132,7 +132,7 @@ import type { TotemSession, ItemOrder } from '../../types';
                         [class.bg-green-100]="item.item_state === 'SERVED'"
                         [class.text-green-700]="item.item_state === 'SERVED'"
                       >
-                        {{ item.item_state }}
+                        {{ getStateLabel(item.item_state) }}
                       </span>
                       @if (item.customer_name) {
                         <span class="text-xs text-gray-500">{{ item.customer_name }}</span>
@@ -167,7 +167,7 @@ import type { TotemSession, ItemOrder } from '../../types';
           @if (!cartItems().length && selectedSession()) {
             <div class="text-sm text-gray-500 text-center mt-4">
               <p>{{ sessionTotal() | currencyFormat }}</p>
-              <p class="text-xs mt-1">{{ sessionItems().length }} items activos</p>
+              <p class="text-xs mt-1">{{ sessionItems().length }} {{ 'pos.active_items' | translate }}</p>
             </div>
           }
           @if (!cartItems().length && !selectedSession()) {
@@ -335,5 +335,15 @@ export class PosComponent implements OnInit, OnDestroy {
     const variantPrice = item.item_disher_variant?.price || 0;
     const extrasPrice = item.item_disher_extras.reduce((sum, e) => sum + e.price, 0);
     return item.item_base_price + variantPrice + extrasPrice;
+  }
+
+  getStateLabel(state: string): string {
+    switch (state) {
+      case 'ORDERED': return this.i18n.translate('order_state.ordered');
+      case 'ON_PREPARE': return this.i18n.translate('order_state.preparing');
+      case 'SERVED': return this.i18n.translate('order_state.served');
+      case 'CANCELED': return this.i18n.translate('order_state.canceled');
+      default: return state;
+    }
   }
 }

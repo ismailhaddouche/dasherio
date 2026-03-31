@@ -1,26 +1,33 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
-const LocalizedStringSchema = {
-  es: { type: String, default: '' },
-  en: { type: String, default: '' },
-  fr: { type: String, default: '' },
-  ar: { type: String, default: '' },
-};
+// Localized field: array of { lang (ref MenuLanguage), value }
+const LocalizedFieldSchema = [
+  {
+    lang: { type: Schema.Types.ObjectId, ref: 'MenuLanguage', required: true },
+    value: { type: String, default: '' },
+    _id: false,
+  },
+];
+
+export interface ILocalizedEntry {
+  lang: string;
+  value: string;
+}
 
 export interface ICategory extends Document {
   restaurant_id: Types.ObjectId;
-  category_name: { es: string; en: string; fr: string; ar: string };
+  category_name: ILocalizedEntry[];
   category_order: number;
-  category_description?: { es: string; en: string; fr: string; ar: string };
+  category_description?: ILocalizedEntry[];
   category_image_url?: string;
 }
 
 const CategorySchema = new Schema<ICategory>(
   {
     restaurant_id: { type: Schema.Types.ObjectId, ref: 'Restaurant', required: true },
-    category_name: LocalizedStringSchema,
+    category_name: LocalizedFieldSchema,
     category_order: { type: Number, default: 0 },
-    category_description: LocalizedStringSchema,
+    category_description: LocalizedFieldSchema,
     category_image_url: String,
   },
   { timestamps: true }
@@ -30,8 +37,8 @@ export const Category = model<ICategory>('Category', CategorySchema);
 
 const VariantSubSchema = new Schema(
   {
-    variant_name: LocalizedStringSchema,
-    variant_description: LocalizedStringSchema,
+    variant_name: LocalizedFieldSchema,
+    variant_description: LocalizedFieldSchema,
     variant_url_image: String,
     variant_price: { type: Number, required: true, min: 0 },
   },
@@ -40,8 +47,8 @@ const VariantSubSchema = new Schema(
 
 const ExtraSubSchema = new Schema(
   {
-    extra_name: LocalizedStringSchema,
-    extra_description: LocalizedStringSchema,
+    extra_name: LocalizedFieldSchema,
+    extra_description: LocalizedFieldSchema,
     extra_price: { type: Number, required: true, min: 0 },
     extra_url_image: String,
   },
@@ -50,16 +57,16 @@ const ExtraSubSchema = new Schema(
 
 export interface IVariant {
   _id: Types.ObjectId;
-  variant_name: { es: string; en: string; fr: string; ar: string };
-  variant_description?: { es: string; en: string; fr: string; ar: string };
+  variant_name: ILocalizedEntry[];
+  variant_description?: ILocalizedEntry[];
   variant_url_image?: string;
   variant_price: number;
 }
 
 export interface IExtra {
   _id: Types.ObjectId;
-  extra_name: { es: string; en: string; fr: string; ar: string };
-  extra_description?: { es: string; en: string; fr: string; ar: string };
+  extra_name: ILocalizedEntry[];
+  extra_description?: ILocalizedEntry[];
   extra_price: number;
   extra_url_image?: string;
 }
@@ -67,8 +74,8 @@ export interface IExtra {
 export interface IDish extends Document {
   restaurant_id: Types.ObjectId;
   category_id: Types.ObjectId;
-  disher_name: { es: string; en: string; fr: string; ar: string };
-  disher_description?: { es: string; en: string; fr: string; ar: string };
+  disher_name: ILocalizedEntry[];
+  disher_description?: ILocalizedEntry[];
   disher_url_image?: string;
   disher_status: 'ACTIVATED' | 'DESACTIVATED';
   disher_price: number;
@@ -83,8 +90,8 @@ const DishSchema = new Schema<IDish>(
   {
     restaurant_id: { type: Schema.Types.ObjectId, ref: 'Restaurant', required: true },
     category_id: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
-    disher_name: LocalizedStringSchema,
-    disher_description: LocalizedStringSchema,
+    disher_name: LocalizedFieldSchema,
+    disher_description: LocalizedFieldSchema,
     disher_url_image: String,
     disher_status: { type: String, enum: ['ACTIVATED', 'DESACTIVATED'], default: 'ACTIVATED' },
     disher_price: { type: Number, required: true, min: 0 },

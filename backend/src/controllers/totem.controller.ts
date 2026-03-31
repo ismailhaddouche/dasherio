@@ -3,6 +3,7 @@ import { asyncHandler, createError } from '../utils/async-handler';
 import * as TotemService from '../services/totem.service';
 import * as DishService from '../services/dish.service';
 import * as OrderService from '../services/order.service';
+import * as MenuLanguageService from '../services/menu-language.service';
 
 export const listTotems = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const totems = await TotemService.getTotemsByRestaurant(req.user!.restaurantId);
@@ -61,11 +62,12 @@ export const getMenuDishes = asyncHandler(async (req: Request, res: Response): P
     throw createError.notFound('TOTEM_NOT_FOUND');
   }
   const restaurantId = totem.restaurant_id.toString();
-  const [categories, dishes] = await Promise.all([
+  const [categories, dishes, menuLanguages] = await Promise.all([
     DishService.getCategoriesByRestaurant(restaurantId),
     DishService.getDishesByRestaurant(restaurantId),
+    MenuLanguageService.getByRestaurant(restaurantId),
   ]);
-  res.json({ categories, dishes });
+  res.json({ categories, dishes, menuLanguages });
 });
 
 export const getActiveSessions = asyncHandler(async (req: Request, res: Response): Promise<void> => {

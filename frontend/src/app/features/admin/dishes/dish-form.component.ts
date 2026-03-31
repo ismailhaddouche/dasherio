@@ -7,50 +7,19 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { ImageUploaderComponent } from '../../../shared/components/image-uploader/image-uploader.component';
+import { LocalizedInputComponent } from '../../../shared/components/localized-input.component';
 import { DishOptionListComponent, OptionItem } from './dish-option-list.component';
 import { TranslatePipe } from '../../../shared/pipes/translate.pipe';
 import { I18nService } from '../../../core/services/i18n.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { Dish, Variant, Extra, Category } from '../../../types';
-
-// Form-specific types matching backend requirements (es, en, fr, ar supported)
-type LocalizedFormString = { es: string; en: string; fr: string; ar: string };
-
-interface VariantForm {
-  variant_name: LocalizedFormString;
-  variant_price: number;
-}
-
-interface ExtraForm {
-  extra_name: LocalizedFormString;
-  extra_price: number;
-}
-
-interface DishForm extends Omit<Dish, 'restaurant_id' | 'disher_status' | 'disher_variant' | 'disher_name' | 'variants' | 'extras'> {
-  disher_name: LocalizedFormString;
-  variants: VariantForm[];
-  extras: ExtraForm[];
-}
+import { Dish, Variant, Extra, Category, LocalizedField } from '../../../types';
 
 const ALLERGEN_CODES = ['GLUTEN','CRUSTACEANS','EGGS','FISH','PEANUTS','SOY','MILK','NUTS','CELERY','MUSTARD','SESAME','SULPHITES','LUPINE','MOLLUSCS'] as const;
-
-const INITIAL_DISH: DishForm = {
-  category_id: '',
-  disher_name: { es: '', en: '', fr: '', ar: '' },
-  disher_price: 0,
-  disher_type: 'KITCHEN',
-  disher_alergens: [],
-  variants: [],
-  extras: []
-};
-
-const INITIAL_VARIANT: VariantForm = { variant_name: { es: '', en: '', fr: '', ar: '' }, variant_price: 0 };
-const INITIAL_EXTRA: ExtraForm = { extra_name: { es: '', en: '', fr: '', ar: '' }, extra_price: 0 };
 
 @Component({
   selector: 'app-dish-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, ImageUploaderComponent, DishOptionListComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, ImageUploaderComponent, LocalizedInputComponent, DishOptionListComponent, TranslatePipe],
   template: `
     <div class="admin-container max-w-4xl">
       <header class="admin-header">
@@ -82,10 +51,11 @@ const INITIAL_EXTRA: ExtraForm = { extra_name: { es: '', en: '', fr: '', ar: '' 
 
         <!-- Basic Info -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label class="admin-label">{{ 'category.name_es' | translate }} *</label>
-            <input [(ngModel)]="dish().disher_name.es" class="admin-input" [placeholder]="'category.name_es' | translate" />
-          </div>
+          <app-localized-input
+            [label]="('dish.name' | translate) + ' *'"
+            [(value)]="dish().disher_name"
+            [required]="true"
+          />
           <div>
             <label class="admin-label">{{ 'dish.base_price' | translate }} *</label>
             <input
@@ -102,12 +72,18 @@ const INITIAL_EXTRA: ExtraForm = { extra_name: { es: '', en: '', fr: '', ar: '' 
           </div>
         </div>
 
+        <app-localized-input
+          [label]="'dish.description' | translate"
+          [(value)]="dish().disher_description"
+          [multiline]="true"
+        />
+
         <div>
           <label class="admin-label">{{ 'dish.category' | translate }} *</label>
           <select [(ngModel)]="dish().category_id" class="admin-select">
             <option value="">{{ 'dish.select_category' | translate }}</option>
             @for (cat of categories(); track cat._id) {
-              <option [value]="cat._id">{{ cat.category_name.es }}</option>
+              <option [value]="cat._id">{{ getCategoryName(cat) }}</option>
             }
           </select>
         </div>
@@ -167,21 +143,33 @@ export class DishFormComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private i18n = inject(I18nService);
+  private menuLangService = inject(MenuLanguageService);
   private notify = inject(NotificationService);
   private destroy$ = new Subject<void>();
 
   readonly allergenCodes = ALLERGEN_CODES;
 
   isEdit = false;
-  dish = signal<DishForm>({
-    ...INITIAL_DISH,
-    disher_name: { es: '', en: '', fr: '', ar: '' },
+  dish = signal<Partial<Dish>>({
+    category_id: '',
+    disher_name: [],
+    disher_description: [],
+    disher_price: 0,
+    disher_type: 'KITCHEN',
+    disher_alergens: [],
+    variants: [],
+    extras: []
   });
   categories = signal<Category[]>([]);
 
   ngOnInit(): void {
     this.loadCategories();
     this.loadDishIfEditing();
+  }
+
+  getCategoryName(cat: Category): string {
+    if (!cat.category_name || cat.category_name.length === 0) return '';
+    return cat.category_name[0]?.value ?? '';
   }
 
   private loadDishIfEditing(): void {
@@ -202,7 +190,7 @@ export class DishFormComponent implements OnInit, OnDestroy {
   }
 
   loadDish(id: string): void {
-    this.http.get<DishForm>(`${environment.apiUrl}/dishes/${id}`)
+    this.http.get<Partial<Dish>>(`${environment.apiUrl}/dishes/${id}`)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (dish) => this.dish.set(dish),
@@ -231,45 +219,60 @@ export class DishFormComponent implements OnInit, OnDestroy {
   }
 
   addVariant(): void {
-    this.addListItem('variants', INITIAL_VARIANT);
+    const newVariant: Partial<Variant> = {
+      variant_name: [],
+      variant_description: [],
+      variant_price: 0
+    };
+    this.dish.update(d => ({
+      ...d,
+      variants: [...(d.variants || []), newVariant as Variant]
+    }));
   }
 
   removeVariant(index: number): void {
-    this.removeListItem('variants', index);
+    this.dish.update(d => ({
+      ...d,
+      variants: (d.variants || []).filter((_, i) => i !== index)
+    }));
   }
 
   addExtra(): void {
-    this.addListItem('extras', INITIAL_EXTRA);
+    const newExtra: Partial<Extra> = {
+      extra_name: [],
+      extra_description: [],
+      extra_price: 0
+    };
+    this.dish.update(d => ({
+      ...d,
+      extras: [...(d.extras || []), newExtra as Extra]
+    }));
   }
 
   removeExtra(index: number): void {
-    this.removeListItem('extras', index);
+    this.dish.update(d => ({
+      ...d,
+      extras: (d.extras || []).filter((_, i) => i !== index)
+    }));
   }
 
-  // Helper methods for template type conversion
   getVariantsAsOptions(): OptionItem[] {
-    return this.dish().variants as unknown as OptionItem[];
+    return (this.dish().variants || []) as unknown as OptionItem[];
   }
 
   getExtrasAsOptions(): OptionItem[] {
-    return this.dish().extras as unknown as OptionItem[];
-  }
-
-  private addListItem(key: 'variants' | 'extras', item: VariantForm | ExtraForm): void {
-    this.dish.update((d) => ({
-      ...d,
-      [key]: [...d[key], item as VariantForm & ExtraForm]
-    }));
-  }
-
-  private removeListItem(key: 'variants' | 'extras', index: number): void {
-    this.dish.update((d) => ({
-      ...d,
-      [key]: d[key].filter((_, i) => i !== index)
-    }));
+    return (this.dish().extras || []) as unknown as OptionItem[];
   }
 
   save(): void {
+    const defaultLang = this.menuLangService.defaultLanguage();
+    const nameInDefault = this.dish().disher_name?.find(e => e.lang === defaultLang?._id)?.value;
+
+    if (!nameInDefault?.trim()) {
+      this.notify.error(this.i18n.translate('validation.default_lang_required'));
+      return;
+    }
+
     const request$ = this.isEdit 
       ? this.http.patch(`${environment.apiUrl}/dishes/${this.dish()._id}`, this.dish())
       : this.http.post(`${environment.apiUrl}/dishes`, this.dish());

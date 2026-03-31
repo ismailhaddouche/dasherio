@@ -1,11 +1,14 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
-const LocalizedStringSchema = {
-  es: { type: String, default: '' },
-  en: { type: String, default: '' },
-  fr: { type: String, default: '' },
-  ar: { type: String, default: '' },
-};
+// Localized field snapshot: array of { lang, value }
+// Uses string for lang (stores the MenuLanguage _id at time of order)
+const LocalizedFieldSnapshotSchema = [
+  {
+    lang: { type: String, required: true },
+    value: { type: String, default: '' },
+    _id: false,
+  },
+];
 
 export interface IOrder extends Document {
   session_id: Types.ObjectId;
@@ -26,6 +29,11 @@ const OrderSchema = new Schema<IOrder>(
 
 export const Order = model<IOrder>('Order', OrderSchema);
 
+export interface ILocalizedSnapshot {
+  lang: string;
+  value: string;
+}
+
 export interface IItemOrder extends Document {
   order_id: Types.ObjectId;
   session_id: Types.ObjectId;
@@ -34,10 +42,10 @@ export interface IItemOrder extends Document {
   customer_name?: string;
   item_state: 'ORDERED' | 'ON_PREPARE' | 'SERVED' | 'CANCELED';
   item_disher_type: 'KITCHEN' | 'SERVICE';
-  item_name_snapshot: { es: string; en: string; fr: string; ar: string };
+  item_name_snapshot: ILocalizedSnapshot[];
   item_base_price: number;
-  item_disher_variant?: { variant_id: string; name: object; price: number } | null;
-  item_disher_extras: { extra_id: string; name: object; price: number }[];
+  item_disher_variant?: { variant_id: string; name: ILocalizedSnapshot[]; price: number } | null;
+  item_disher_extras: { extra_id: string; name: ILocalizedSnapshot[]; price: number }[];
 }
 
 const ItemOrderSchema = new Schema<IItemOrder>(
@@ -54,17 +62,17 @@ const ItemOrderSchema = new Schema<IItemOrder>(
       index: true,
     },
     item_disher_type: { type: String, enum: ['KITCHEN', 'SERVICE'], required: true, index: true },
-    item_name_snapshot: LocalizedStringSchema,
+    item_name_snapshot: LocalizedFieldSnapshotSchema,
     item_base_price: { type: Number, required: true, min: 0 },
     item_disher_variant: {
       variant_id: String,
-      name: LocalizedStringSchema,
+      name: LocalizedFieldSnapshotSchema,
       price: Number,
     },
     item_disher_extras: [
       {
         extra_id: String,
-        name: LocalizedStringSchema,
+        name: LocalizedFieldSnapshotSchema,
         price: Number,
       },
     ],

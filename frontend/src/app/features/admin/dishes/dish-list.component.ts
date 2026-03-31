@@ -45,7 +45,7 @@ import { NotificationService } from '../../../core/services/notification.service
             
             <div class="p-5 flex flex-col gap-1 flex-1">
               <h3 class="font-bold text-lg text-gray-900 dark:text-white line-clamp-1">{{ dish.disher_name | localize }}</h3>
-              <p class="text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">{{ dish.disher_description || ('dish.no_description' | translate) }}</p>
+              <p class="text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">{{ (dish.disher_description | localize) || ('dish.no_description' | translate) }}</p>
               <p class="text-xl font-black text-primary mt-1">{{ dish.disher_price | currency:'EUR' }}</p>
               
               <div class="flex gap-2 mt-auto pt-4">
