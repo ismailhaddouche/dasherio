@@ -88,7 +88,28 @@ export class TotemSessionRepository extends BaseRepository<ITotemSession> {
     
     // Attach totem info to each session
     return sessions.map(session => {
-      const totem = totems.find(t => t._id.toString() === (session.totem_id as Types.ObjectId).toString());
+      // Normalize session totem_id to string
+      let sessionTotemId: string;
+      if (typeof session.totem_id === 'string') {
+        sessionTotemId = session.totem_id;
+      } else if (session.totem_id && typeof session.totem_id === 'object') {
+        sessionTotemId = session.totem_id.toString ? session.totem_id.toString() : String(session.totem_id);
+      } else {
+        sessionTotemId = String(session.totem_id);
+      }
+      
+      const totem = totems.find(t => {
+        // Normalize totem _id to string
+        let totemId: string;
+        if (typeof t._id === 'string') {
+          totemId = t._id;
+        } else if (t._id && typeof t._id === 'object') {
+          totemId = t._id.toString ? t._id.toString() : String(t._id);
+        } else {
+          totemId = String(t._id);
+        }
+        return totemId === sessionTotemId;
+      });
       return { ...session, totem };
     });
   }

@@ -59,6 +59,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
 
     // Dashboard
     'dashboard.title': 'Panel de Control',
+    'dashboard.subtitle': 'Resumen de tu restaurante',
     'dashboard.stats.today': 'Hoy',
     'dashboard.stats.week': 'Esta semana',
     'dashboard.stats.month': 'Este mes',
@@ -107,6 +108,9 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'dish.updated': 'Plato actualizado correctamente',
     'dish.allergens': 'Alérgenos',
     'dish.no_allergens': 'Sin alérgenos',
+    'dish.subtitle': 'Gestiona los platos del menú',
+    'dish.select_category': 'Selecciona una categoría',
+    'dish.name': 'Nombre del plato',
     'allergen.GLUTEN': 'Gluten',
     'allergen.CRUSTACEANS': 'Crustáceos',
     'allergen.EGGS': 'Huevos',
@@ -124,6 +128,9 @@ const TRANSLATIONS: Record<Language, Translations> = {
 
     // TAS (Table Assistance)
     'tas.title': 'Servicio de Mesas',
+    'tas.subtitle': 'Gestiona las mesas y pedidos',
+    'tas.standard': 'Estándar',
+    'tas.temporary': 'Temporal',
     'tas.tables': 'Mesas',
     'tas.tables.free': 'Libre',
     'tas.tables.occupied': 'Ocupada',
@@ -195,6 +202,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
 
     // POS
     'pos.title': 'Punto de Venta',
+    'pos.subtitle': 'Gestiona las ventas y cobros',
     'pos.tables': 'Mesas',
     'pos.no_active_sessions': 'Sin sesiones activas',
     'pos.new_table': 'Nueva Mesa',
@@ -213,6 +221,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
 
     // KDS
     'kds.title': 'Pantalla de Cocina',
+    'kds.subtitle': 'Gestiona los pedidos en cocina',
     'kds.pending': 'pendientes',
     'kds.new_orders': 'Nuevos',
     'kds.prepare': 'Preparar',
@@ -291,6 +300,8 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'category.delete_confirm': '¿Eliminar esta categoría? Los platos asociados podrían quedar sin categoría.',
     'category.created': 'Categoría creada correctamente',
     'category.updated': 'Categoría actualizada correctamente',
+    'category.subtitle': 'Gestiona las categorías del menú',
+    'category.description': 'Descripción',
 
     // Staff
     'staff.title': 'Personal',
@@ -532,6 +543,9 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'dish.updated': 'Dish updated successfully',
     'dish.allergens': 'Allergens',
     'dish.no_allergens': 'No allergens',
+    'dish.subtitle': 'Manage menu dishes',
+    'dish.select_category': 'Select a category',
+    'dish.name': 'Dish name',
     'allergen.GLUTEN': 'Gluten',
     'allergen.CRUSTACEANS': 'Crustaceans',
     'allergen.EGGS': 'Eggs',
@@ -549,6 +563,9 @@ const TRANSLATIONS: Record<Language, Translations> = {
 
     // TAS (Table Assistance)
     'tas.title': 'Table Service',
+    'tas.subtitle': 'Manage tables and orders',
+    'tas.standard': 'Standard',
+    'tas.temporary': 'Temporary',
     'tas.tables': 'Tables',
     'tas.tables.free': 'Free',
     'tas.tables.occupied': 'Occupied',
@@ -620,6 +637,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
 
     // POS
     'pos.title': 'Point of Sale',
+    'pos.subtitle': 'Manage sales and payments',
     'pos.tables': 'Tables',
     'pos.no_active_sessions': 'No active sessions',
     'pos.new_table': 'New Table',
@@ -638,6 +656,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
 
     // KDS
     'kds.title': 'Kitchen Display',
+    'kds.subtitle': 'Manage kitchen orders',
     'kds.pending': 'pending',
     'kds.new_orders': 'New',
     'kds.prepare': 'Prepare',
@@ -957,6 +976,9 @@ const TRANSLATIONS: Record<Language, Translations> = {
     'dish.updated': 'Plat mis à jour avec succès',
     'dish.allergens': 'Allergènes',
     'dish.no_allergens': 'Sans allergènes',
+    'dish.subtitle': 'Gérer les plats du menu',
+    'dish.select_category': 'Sélectionnez une catégorie',
+    'dish.name': 'Nom du plat',
     'allergen.GLUTEN': 'Gluten',
     'allergen.CRUSTACEANS': 'Crustacés',
     'allergen.EGGS': 'Œufs',
@@ -974,6 +996,9 @@ const TRANSLATIONS: Record<Language, Translations> = {
 
     // TAS (Table Assistance)
     'tas.title': 'Service de table',
+    'tas.subtitle': 'Gérer les tables et commandes',
+    'tas.standard': 'Standard',
+    'tas.temporary': 'Temporaire',
     'tas.tables': 'Tables',
     'tas.tables.free': 'Libre',
     'tas.tables.occupied': 'Occupée',
@@ -1045,6 +1070,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
 
     // POS
     'pos.title': 'Point de vente',
+    'pos.subtitle': 'Gérer les ventes et paiements',
     'pos.tables': 'Tables',
     'pos.no_active_sessions': 'Aucune session active',
     'pos.new_table': 'Nouvelle Table',
@@ -1063,6 +1089,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
 
     // KDS
     'kds.title': 'Écran cuisine',
+    'kds.subtitle': 'Gérer les commandes en cuisine',
     'kds.pending': 'en attente',
     'kds.new_orders': 'Nouveaux',
     'kds.prepare': 'Préparer',

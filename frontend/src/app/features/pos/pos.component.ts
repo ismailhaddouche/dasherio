@@ -90,6 +90,27 @@ import type { TotemSession, ItemOrder, Customer, Dish, LocalizedField, PaymentTi
               }
             </div>
           }
+
+          <!-- Create Temporary Table -->
+          <div class="p-3 border-t border-gray-200 dark:border-gray-700">
+            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">{{ 'tas.new_temp_table' | translate }}</p>
+            <div class="flex gap-2">
+              <input
+                type="text"
+                [(ngModel)]="newTotemName"
+                [placeholder]="'totem.name_placeholder' | translate"
+                class="flex-1 px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                (keyup.enter)="createTemporaryTotem()"
+              />
+              <button
+                (click)="createTemporaryTotem()"
+                [disabled]="!newTotemName().trim() || isCreatingTotem()"
+                class="px-3 py-2 bg-primary text-white rounded-lg disabled:opacity-50"
+              >
+                <span class="material-symbols-outlined text-sm">add</span>
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -702,6 +723,10 @@ export class PosComponent implements OnInit, OnDestroy {
   newCustomerName = signal('');
   selectedCustomerId = signal<string | null>(null);
   
+  // Temporary totem creation
+  newTotemName = signal('');
+  isCreatingTotem = signal(false);
+  
   // Menu state
   showMenu = signal(false);
   dishes = signal<Dish[]>([]);
@@ -876,6 +901,34 @@ export class PosComponent implements OnInit, OnDestroy {
           this.notify.error(this.i18n.translate('errors.SERVER_ERROR'));
         },
       });
+  }
+
+  createTemporaryTotem() {
+    const name = this.newTotemName().trim();
+    if (!name) return;
+
+    this.isCreatingTotem.set(true);
+    this.tasService.createTotem({
+      totem_name: name,
+      totem_type: 'TEMPORARY',
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (totem) => {
+        this.allTotems.update(current => [...current, { ...totem, totem_type: 'TEMPORARY' }]);
+        this.newTotemName.set('');
+        this.isCreatingTotem.set(false);
+        this.notify.success(this.i18n.translate('tas.totem_created'));
+
+        // Auto-start session
+        this.startSession(totem._id!);
+      },
+      error: (err) => {
+        console.error('[POS] Error creating totem:', err);
+        this.isCreatingTotem.set(false);
+        this.notify.error(this.i18n.translate('errors.SERVER_ERROR'));
+      },
+    });
   }
 
   getSessionItemCount(sessionId: string): number {
