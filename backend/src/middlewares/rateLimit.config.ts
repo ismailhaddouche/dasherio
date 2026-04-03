@@ -1,4 +1,5 @@
 import { Options } from 'express-rate-limit';
+import { ipKeyGenerator } from 'express-rate-limit';
 import { logger } from '../config/logger';
 
 // Time constants (in milliseconds)
@@ -108,8 +109,8 @@ export const getRateLimitConfig = (
 
 // Custom key generator for rate limiting (can be extended for per-user limits)
 export const generateRateLimitKey = (req: any): string => {
-  // Use user ID if authenticated, otherwise use IP
+  // Use user ID if authenticated, otherwise use IP with proper IPv6 handling
   const userId = req.user?.id;
-  const identifier = userId || req.ip;
+  const identifier = userId || ipKeyGenerator(req);
   return `${req.path}:${identifier}`;
 };
