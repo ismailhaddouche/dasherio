@@ -847,7 +847,7 @@ export class PaymentRepository extends BaseRepository<IPayment> {
   ): Promise<IPayment | null> {
     validateObjectId(paymentId, 'payment_id');
     return this.model.findOneAndUpdate(
-      { _id: new Types.ObjectId(paymentId), 'tickets.ticket_part': ticketPart },
+      { _id: new Types.ObjectId(paymentId), tickets: { $elemMatch: { ticket_part: ticketPart, paid: false } } },
       { $set: { 'tickets.$.paid': true } },
       { new: true, session }
     ).exec();

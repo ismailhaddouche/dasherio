@@ -657,17 +657,8 @@ export class TasComponent implements OnInit, OnDestroy {
     this.socketService.off('kds:item_canceled');
     this.socketService.off('tas:kitchen_item_update');
     
-    // Unregister POS listeners
-    this.socketService.off('pos:item_added');
-    this.socketService.off('pos:item_canceled');
-    this.socketService.off('pos:bill_requested');
-    this.socketService.off('pos:bill_paid');
-    this.socketService.off('pos:session_closed');
-    this.socketService.off('pos:session_paid');
-    this.socketService.off('pos:session_fully_paid');
-    this.socketService.off('pos:ticket_paid');
-    
-    // Unregister TAS session events
+    // Unregister TAS payment/session events
+    this.socketService.off('tas:bill_paid');
     this.socketService.off('tas:session_closed');
     this.socketService.off('tas:session_paid');
     this.socketService.off('tas:session_fully_paid');
@@ -806,46 +797,21 @@ export class TasComponent implements OnInit, OnDestroy {
     });
 
     // ========================================
-    // LISTEN TO POS (Cashier) EVENTS
+    // LISTEN TO TAS PAYMENT/SESSION EVENTS (from POS handler via tas:session: room)
     // ========================================
 
-    // Listen for items added by POS
-    this.socketService.on('pos:item_added', (data: { item: ItemOrder; addedBy?: string; waiterName?: string }) => {
-      if (data.item.session_id === this.selectedSession()?._id) {
-        tasStore.addItem(data.item);
-        this.notify.info(
-          this.i18n.translate('tas.item_added_by_pos')
-        );
-      }
-    });
-
-    // Listen for items canceled by POS
-    this.socketService.on('pos:item_canceled', (data: { itemId: string; itemName?: LocalizedField; canceledByName?: string; reason?: string }) => {
-      tasStore.updateItemState(data.itemId, 'CANCELED');
-      this.notify.warning(
-        this.i18n.translate('tas.item_canceled_by_pos')
-      );
-    });
-
-    // Listen for bill requests from POS
-    this.socketService.on('pos:bill_requested', (data: { sessionId: string; requestedBy?: string }) => {
-      if (data.sessionId === this.selectedSession()?._id) {
-        this.notify.info(this.i18n.translate('tas.bill_requested_by_pos'));
-      }
-    });
-
-    // Listen for bill paid from POS
-    this.socketService.on('pos:bill_paid', (data: { sessionId: string; paidBy?: string }) => {
+    // Listen for bill paid (emitted by tas.handler when TAS marks bill paid)
+    this.socketService.on('tas:bill_paid', (data: { sessionId: string; paidBy?: string }) => {
       if (data.sessionId === this.selectedSession()?._id) {
         this.notify.success(this.i18n.translate('tas.bill_paid_by_pos'));
       }
     });
 
-    // Listen for session closed by POS
-    this.socketService.on('pos:session_closed', (data: { sessionId: string; closedBy?: string; timestamp: string }) => {
+    // Listen for session closed (emitted by pos.handler to tas:session: room)
+    this.socketService.on('tas:session_closed', (data: { sessionId: string; closedBy?: string; timestamp: string }) => {
       // Remove session from active sessions list (makes totem available again)
       tasStore.removeSession(data.sessionId);
-      
+
       if (data.sessionId === this.selectedSession()?._id) {
         this.notify.warning(this.i18n.translate('tas.session_closed_by_pos'));
         // Clear selected session as it's been closed
@@ -855,9 +821,9 @@ export class TasComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Listen for session paid notification from POS
-    this.socketService.on('pos:session_paid', (data: { 
-      sessionId: string; 
+    // Listen for session paid notification (emitted by pos.handler to tas:session: room)
+    this.socketService.on('tas:session_paid', (data: {
+      sessionId: string;
       paymentTotal: number;
       paymentType: 'ALL' | 'BY_USER' | 'SHARED';
       paidBy?: string;
@@ -871,9 +837,9 @@ export class TasComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Listen for session fully paid (all tickets paid) from POS
-    this.socketService.on('pos:session_fully_paid', (data: { 
-      sessionId: string; 
+    // Listen for session fully paid (emitted by pos.handler to tas:session: room)
+    this.socketService.on('tas:session_fully_paid', (data: {
+      sessionId: string;
       paymentTotal: number;
       paymentType: 'ALL' | 'BY_USER' | 'SHARED';
       closedBy?: string;
@@ -882,7 +848,7 @@ export class TasComponent implements OnInit, OnDestroy {
     }) => {
       // Remove session from active sessions list (makes totem available again)
       tasStore.removeSession(data.sessionId);
-      
+
       if (data.sessionId === this.selectedSession()?._id) {
         this.notify.success(
           this.i18n.translate('tas.session_fully_paid')
@@ -894,9 +860,9 @@ export class TasComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Listen for ticket paid (partial payment) from POS
-    this.socketService.on('pos:ticket_paid', (data: { 
-      sessionId: string; 
+    // Listen for ticket paid (partial payment, emitted by pos.handler to tas:session: room)
+    this.socketService.on('tas:ticket_paid', (data: {
+      sessionId: string;
       ticketPart: number;
       ticketAmount: number;
       paidBy?: string;

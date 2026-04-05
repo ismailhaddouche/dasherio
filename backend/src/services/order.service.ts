@@ -302,6 +302,11 @@ const createPaymentBreaker = new CircuitBreaker(
       throw new Error(ErrorCode.NO_ITEMS_TO_PAY);
     }
 
+    const existing = await paymentRepo.findBySessionId(sessionId);
+    if (existing.length > 0) {
+      throw new Error('PAYMENT_ALREADY_EXISTS');
+    }
+
     const tickets = paymentType === 'BY_USER'
       ? await buildByUserTickets(sessionId)
       : buildSharedTickets(total, parts);

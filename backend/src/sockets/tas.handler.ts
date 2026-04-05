@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import i18next from 'i18next';
 import { ItemOrder, IItemOrder } from '../models/order.model';
+import { TotemSession } from '../models/totem.model';
 import { logger } from '../config/logger';
 import { AuthenticatedSocket } from '../middlewares/socketAuth';
 import { getIO } from '../config/socket';
@@ -277,10 +278,32 @@ export function registerTasHandlers(io: Server, socket: AuthenticatedSocket): vo
       // Update activity
       tasLastActivity.set(socket.id, Date.now());
 
+      // Find item first to validate session state
+      const existingItem = await ItemOrder.findOne({
+        _id: itemId,
+        item_disher_type: 'SERVICE',
+        item_state: 'ORDERED',
+      }).select('session_id').lean();
+
+      if (!existingItem) {
+        socket.emit('tas:error', {
+          message: 'ITEM_NOT_FOUND_OR_INVALID_STATE',
+          details: 'Item may not exist, is not a SERVICE item, or is not in ORDERED state',
+        });
+        return;
+      }
+
+      // Validate session is STARTED before serving
+      const itemSession = await TotemSession.findById(existingItem.session_id).select('totem_state').lean();
+      if (!itemSession || itemSession.totem_state !== 'STARTED') {
+        socket.emit('tas:error', { message: 'SESSION_NOT_ACTIVE' });
+        return;
+      }
+
       // Find and update the item atomically
       const item = await ItemOrder.findOneAndUpdate(
-        { 
-          _id: itemId, 
+        {
+          _id: itemId,
           item_disher_type: 'SERVICE',  // Only SERVICE items
           item_state: 'ORDERED'         // Only from ORDERED state
         },
@@ -289,7 +312,7 @@ export function registerTasHandlers(io: Server, socket: AuthenticatedSocket): vo
       );
 
       if (!item) {
-        socket.emit('tas:error', { 
+        socket.emit('tas:error', {
           message: 'ITEM_NOT_FOUND_OR_INVALID_STATE',
           details: 'Item may not exist, is not a SERVICE item, or is not in ORDERED state'
         });
@@ -445,6 +468,17 @@ export function registerTasHandlers(io: Server, socket: AuthenticatedSocket): vo
 
       // Update activity
       tasLastActivity.set(socket.id, Date.now());
+
+      // Validate session is in STARTED state before requesting bill
+      const session = await TotemSession.findById(sessionId).select('totem_state').lean();
+      if (!session) {
+        socket.emit('tas:error', { message: 'SESSION_NOT_FOUND' });
+        return;
+      }
+      if (session.totem_state !== 'STARTED') {
+        socket.emit('tas:error', { message: 'SESSION_NOT_ACTIVE', details: `Session state is ${session.totem_state}` });
+        return;
+      }
 
       const billRequest = {
         sessionId,

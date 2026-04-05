@@ -71,8 +71,8 @@ export const createStaff = asyncHandler(async (req: Request, res: Response): Pro
   }
 
   // Hash password and PIN
-  const password_hash = await bcrypt.hash(password, 10);
-  const pin_code_hash = await bcrypt.hash(pin_code, 10);
+  const password_hash = await bcrypt.hash(password, 12);
+  const pin_code_hash = await bcrypt.hash(pin_code, 12);
 
   const staff = await Staff.create({
     restaurant_id: new Types.ObjectId(restaurantId),
@@ -134,10 +134,10 @@ export const updateStaff = asyncHandler(async (req: Request, res: Response): Pro
   
   // Update passwords if provided
   if (password) {
-    staff.password_hash = await bcrypt.hash(password, 10);
+    staff.password_hash = await bcrypt.hash(password, 12);
   }
   if (pin_code) {
-    staff.pin_code_hash = await bcrypt.hash(pin_code, 10);
+    staff.pin_code_hash = await bcrypt.hash(pin_code, 12);
   }
 
   await staff.save();
