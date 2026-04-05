@@ -4,7 +4,7 @@ import * as TotemService from '../services/totem.service';
 import * as DishService from '../services/dish.service';
 import * as OrderService from '../services/order.service';
 import * as MenuLanguageService from '../services/menu-language.service';
-import { ItemOrder, IOrder } from '../models/order.model';
+import { Order, ItemOrder, IOrder, IItemOrder } from '../models/order.model';
 import { ILocalizedEntry } from '../models/dish.model';
 
 /**
@@ -210,13 +210,15 @@ export const createPublicOrder = asyncHandler(async (req: Request, res: Response
   }
 
   // BATCH INSERT: Crear todos los items en una sola operación
-  let createdItems;
+  let createdItems: IItemOrder[] = [];
   try {
     createdItems = await ItemOrder.insertMany(itemsToCreate, { ordered: false });
   } catch (insertError: any) {
+    // Limpiar la orden huérfana si el insert de items falla
+    await Order.deleteOne({ _id: order._id }).catch(() => {});
     // Log detailed error for debugging
     console.error('[createPublicOrder] InsertMany error:', insertError);
-    if (insertError.name === 'ValidationError') {
+    if (insertError.name === 'ValidationError' || insertError.name === 'BulkWriteError') {
       const validationErrors = Object.entries(insertError.errors || {}).map(([field, err]: [string, any]) => ({
         field,
         message: err.message,
@@ -224,6 +226,11 @@ export const createPublicOrder = asyncHandler(async (req: Request, res: Response
       console.error('[createPublicOrder] Validation errors:', validationErrors);
       throw createError.badRequest('VALIDATION_ERROR');
     }
+    throw createError.badRequest('ORDER_CREATION_FAILED');
+  }
+
+  if (createdItems.length === 0) {
+    await Order.deleteOne({ _id: order._id }).catch(() => {});
     throw createError.badRequest('ORDER_CREATION_FAILED');
   }
 

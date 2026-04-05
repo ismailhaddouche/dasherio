@@ -1,7 +1,7 @@
 import { ErrorCode } from '@disherio/shared';
 import { getIO } from '../config/socket';
 import { notifyTASNewOrder } from '../sockets/tas.handler';
-import { emitSessionFullyPaid, emitTicketPaid } from '../sockets/pos.handler';
+import { emitSessionFullyPaid, emitTicketPaid, notifyPOSNewOrder } from '../sockets/pos.handler';
 import { notifyCustomerItemUpdate } from '../sockets/totem.handler';
 import * as TaxUtils from '../utils/tax';
 import { withTransaction } from '../utils/transactions';
@@ -143,7 +143,7 @@ function emitCustomerAssigned(sessionId: string, itemId: string, customerId: str
 }
 
 function emitNewKitchenItem(sessionId: string, item: unknown): void {
-  getIO().to(`session:${sessionId}`).emit('kds:new_item', item);
+  getIO().to(`kitchen:session:${sessionId}`).emit('kds:new_item', item);
 }
 
 // Legacy function - kept for compatibility
@@ -240,6 +240,12 @@ const addItemBreaker = new CircuitBreaker(
         item,
         addedBy: 'customer',
         dishType: dish.disher_type,
+      });
+
+      notifyPOSNewOrder(sessionId, {
+        items: [item],
+        orderId: orderId,
+        addedBy: 'staff',
       });
 
       return item;
