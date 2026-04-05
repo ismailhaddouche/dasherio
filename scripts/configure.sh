@@ -199,7 +199,7 @@ change_language() {
 show_current_config() {
   step "Configuración actual"
   echo ""
-  grep -v "^#" "$ENV_FILE" | grep -v "^$" | grep -v "JWT_SECRET" | while IFS='=' read -r key val; do
+  grep -v "^#" "$ENV_FILE" | grep -v "^$" | grep -v "JWT_SECRET\|MONGO_ROOT_PASS\|MONGO_APP_PASS" | while IFS='=' read -r key val; do
     echo -e "  ${CYAN}${key}${RESET} = ${BOLD}${val}${RESET}"
   done
   echo ""

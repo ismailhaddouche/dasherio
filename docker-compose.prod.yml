@@ -57,7 +57,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      MONGODB_URI: mongodb://mongo:27017/disherio
+      MONGODB_URI: ${MONGODB_URI:-mongodb://${MONGO_APP_USER:-disherio_app}:${MONGO_APP_PASS:-change-this-app-password}@mongo:27017/disherio?authSource=disherio}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES: 8h
       FRONTEND_URL: ${FRONTEND_URL:-https://localhost}

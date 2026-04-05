@@ -27,6 +27,10 @@ JWT_SECRET=""
 ADMIN_USER="admin"
 ADMIN_PASS=""
 ADMIN_PIN=""
+MONGO_ROOT_USER="admin"
+MONGO_ROOT_PASS=""
+MONGO_APP_USER="disherio_app"
+MONGO_APP_PASS=""
 IS_DOMAIN=false
 DEFAULT_LANGUAGE="es"    # es | en
 DEFAULT_THEME="dark"     # light | dark
@@ -400,13 +404,19 @@ generate_secrets() {
   
   # JWT Secret - 64 alphanumeric characters
   JWT_SECRET=$(openssl rand -base64 48 | tr -dc 'a-zA-Z0-9' | head -c 64)
-  
+
   # Admin Password - 20 characters with uppercase, lowercase, numbers and symbols
   ADMIN_PASS=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9@#$%^&*' | head -c 20)
-  
+
   # PIN - 4 numeric digits
   ADMIN_PIN=$(printf '%04d' $((RANDOM % 10000)))
-  
+
+  # MongoDB credentials
+  MONGO_ROOT_USER="admin"
+  MONGO_ROOT_PASS=$(openssl rand -base64 48 | tr -dc 'a-zA-Z0-9' | head -c 32)
+  MONGO_APP_USER="disherio_app"
+  MONGO_APP_PASS=$(openssl rand -base64 48 | tr -dc 'a-zA-Z0-9' | head -c 32)
+
   ok "Secretos generados"
 }
 
@@ -417,13 +427,17 @@ write_config() {
   # Clean up previous files
   rm -f "$ENV_FILE" "$CADDYFILE"
   
-  # Create .env (no admin credentials, only system configuration)
+  # Create .env with system configuration and MongoDB credentials
   cat > "$ENV_FILE" <<EOF
 NODE_ENV=production
 PORT=${HTTP_PORT}
 HTTPS_PORT=${HTTPS_PORT}
 BACKEND_PORT=${BACKEND_PORT}
-MONGODB_URI=mongodb://mongo:27017/disherio
+MONGO_ROOT_USER=${MONGO_ROOT_USER}
+MONGO_ROOT_PASS=${MONGO_ROOT_PASS}
+MONGO_APP_USER=${MONGO_APP_USER}
+MONGO_APP_PASS=${MONGO_APP_PASS}
+MONGODB_URI=mongodb://${MONGO_APP_USER}:${MONGO_APP_PASS}@mongo:27017/disherio?authSource=disherio
 JWT_SECRET=${JWT_SECRET}
 JWT_EXPIRES=8h
 FRONTEND_URL=${ACCESS_URL}
@@ -750,7 +764,7 @@ NODE_SCRIPT
     --network disherio_disherio_net \
     -v "$seed_dir:/seed" \
     -w /seed \
-    -e MONGODB_URI="mongodb://mongo:27017/disherio" \
+    -e MONGODB_URI="mongodb://${MONGO_APP_USER}:${MONGO_APP_PASS}@mongo:27017/disherio?authSource=disherio" \
     -e SEED_ADMIN_PASSWORD="$ADMIN_PASS" \
     -e SEED_ADMIN_PIN="$ADMIN_PIN" \
     -e DEFAULT_LANGUAGE="$DEFAULT_LANGUAGE" \
@@ -845,10 +859,10 @@ main() {
     fi
   fi
   
-  # Stop and clean up previous containers if they exist
-  if docker compose ps 2>/dev/null | grep -q "disherio"; then
-    log "Deteniendo instalación anterior..."
-    docker compose down --remove-orphans >> "$LOG_FILE" 2>&1 || true
+  # Stop and clean up previous containers and volumes if they exist
+  if docker compose ps -a 2>/dev/null | grep -q "disherio"; then
+    log "Deteniendo instalación anterior y limpiando volúmenes..."
+    docker compose down --remove-orphans --volumes >> "$LOG_FILE" 2>&1 || true
   fi
   
   configure_access
