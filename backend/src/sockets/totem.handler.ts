@@ -735,10 +735,19 @@ export function registerTotemHandlers(io: Server, socket: AuthenticatedSocket): 
         return;
       }
 
-      // Check if session is already closed
+      // Check in-memory lock FIRST to avoid DB race condition
+      if (isSessionClosing(sessionId)) {
+        socket.emit('totem:error', {
+          message: 'SESSION_ALREADY_CLOSED',
+          details: i18next.t('sockets:BILL_ALREADY_REQUESTED'),
+        });
+        return;
+      }
+
+      // Check if session is already closed in DB
       const sessionClosed = await isSessionClosed(sessionId);
       if (sessionClosed) {
-        socket.emit('totem:error', { 
+        socket.emit('totem:error', {
           message: 'SESSION_ALREADY_CLOSED',
           details: i18next.t('sockets:BILL_ALREADY_REQUESTED'),
         });

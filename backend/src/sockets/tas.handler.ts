@@ -5,7 +5,8 @@ import { logger } from '../config/logger';
 import { AuthenticatedSocket } from '../middlewares/socketAuth';
 import { getIO } from '../config/socket';
 import { notifyCustomerFromWaiter, closeSessionForCustomers } from './totem.handler';
-import { notifyKDSNewItem, notifyKDSItemCanceled } from './kds.handler';
+import { notifyKDSItemCanceled } from './kds.handler';
+import { addItemToOrder, updateItemState } from '../services/order.service';
 import { trackSocketConnection, cleanupSocketConnection, trackSocketJoinRoom, trackSocketLeaveRoom, updateSocketActivity } from './middleware/connection-tracker';
 import { rateLimitMiddleware, cleanupSocketRateLimits } from './middleware/rate-limiter';
 import { validateSessionAccess } from './middleware/session-validator';
@@ -212,56 +213,34 @@ export function registerTasHandlers(io: Server, socket: AuthenticatedSocket): vo
     itemData: Partial<IItemOrder>;
   }) => {
     try {
-      const { sessionId, orderId, itemData } = data;
+      const { sessionId, orderId, dishId, customerId, variantId, extras } = data;
 
-      if (!sessionId || !orderId || !itemData) {
-        socket.emit('tas:error', { message: 'INVALID_DATA', details: 'Missing required fields' });
+      if (!sessionId || !orderId || !dishId) {
+        socket.emit('tas:error', { message: 'INVALID_DATA', details: 'Missing required fields: sessionId, orderId, dishId' });
         return;
       }
 
       // Update activity
       tasLastActivity.set(socket.id, Date.now());
 
-      // Create the item (this would typically be done via the order service)
-      // For now, we assume the item is created and we broadcast it
-      const newItem = {
-        ...itemData,
-        order_id: orderId,
-        session_id: sessionId,
-        item_state: 'ORDERED',
-        added_by: staffId,
-        added_at: new Date().toISOString(),
-      };
+      // Persist the item via order service (enforces validation, pricing, state)
+      const newItem = await addItemToOrder(
+        orderId,
+        sessionId,
+        dishId,
+        customerId,
+        variantId,
+        extras ?? []
+      );
 
-      // 1. Emit to TAS room for this session (other waiters)
-      io.to(`tas:session:${sessionId}`).emit('tas:item_added', {
-        item: newItem,
-        addedBy: staffId,
-        addedByName: user.name,
-        timestamp: new Date().toISOString(),
-      });
-
-      // 2. Emit to POS (cashier station)
-      io.to(`pos:session:${sessionId}`).emit('pos:item_added', {
-        item: newItem,
-        addedBy: 'waiter',
-        waiterName: user.name,
-        timestamp: new Date().toISOString(),
-      });
-
-      // 3. Emit to customer room (so customers see new items in real-time)
+      // Broadcasts are handled inside addItemToOrder (KDS, TAS, POS via service)
+      // Emit confirmation and customer-facing event
       emitToCustomers(sessionId, 'order:item_added', {
         item: newItem,
         addedBy: 'waiter',
         waiterName: user.name,
       });
 
-      // 4. If it's a kitchen item, emit to kitchen (KDS)
-      if (itemData.item_disher_type === 'KITCHEN') {
-        notifyKDSNewItem(sessionId, newItem);
-      }
-
-      // 5. Emit generic item:added for compatibility
       io.to(`session:${sessionId}`).emit('item:added', {
         item: newItem,
         addedBy: 'TAS',
@@ -269,16 +248,17 @@ export function registerTasHandlers(io: Server, socket: AuthenticatedSocket): vo
         timestamp: new Date().toISOString(),
       });
 
-      socket.emit('tas:item_added_confirm', { 
-        success: true, 
+      socket.emit('tas:item_added_confirm', {
+        success: true,
         sessionId,
+        item: newItem,
         timestamp: new Date().toISOString(),
       });
 
-      logger.info({ sessionId, staffId, itemType: itemData.item_disher_type }, 'TAS added item');
+      logger.info({ sessionId, staffId, dishId, itemType: (newItem as any).item_disher_type }, 'TAS added item');
     } catch (err: any) {
       logger.error({ err, staffId }, 'tas:add_item error');
-      socket.emit('tas:error', { message: 'INTERNAL_ERROR', details: err.message });
+      socket.emit('tas:error', { message: err.message || 'INTERNAL_ERROR' });
     }
   }));
 
@@ -366,21 +346,26 @@ export function registerTasHandlers(io: Server, socket: AuthenticatedSocket): vo
       // Update activity
       tasLastActivity.set(socket.id, Date.now());
 
-      const item = await ItemOrder.findOneAndUpdate(
-        { _id: itemId, item_state: { $in: ['ORDERED', 'ON_PREPARE'] } },
-        { item_state: 'CANCELED' },
-        { new: true }
-      );
+      // Use service layer to enforce state machine + permission rules
+      // (ON_PREPARE items require ADMIN or POS authorization)
+      let item: IItemOrder | null;
+      try {
+        item = (await updateItemState(itemId, 'CANCELED', staffId, user.permissions ?? [])) as IItemOrder | null;
+      } catch (serviceErr: any) {
+        const msg = serviceErr.message || 'CANCEL_FAILED';
+        socket.emit('tas:error', { message: msg });
+        return;
+      }
 
       if (!item) {
-        socket.emit('tas:error', { 
+        socket.emit('tas:error', {
           message: 'ITEM_NOT_FOUND_OR_INVALID_STATE',
           details: 'Item may not exist or is already served/canceled'
         });
         return;
       }
 
-      const sessionId = item.session_id.toString();
+      const sessionId = item.session_id?.toString();
 
       // Notify TAS in session
       io.to(`tas:session:${sessionId}`).emit('tas:item_canceled', {
