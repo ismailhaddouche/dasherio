@@ -2,7 +2,7 @@
   "name": "DisherIO - Restaurant Management System",
   "short_name": "DisherIO",
   "description": "Sistema integral de gestión para restaurantes: POS, KDS, TAS y Totem",
-  "theme_color":="#3b82f6",
+  "theme_color": "#3b82f6",
   "background_color": "#ffffff",
   "display": "standalone",
   "scope": "./",

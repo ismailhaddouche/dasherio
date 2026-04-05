@@ -1,4 +1,5 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, ErrorHandler } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, ErrorHandler, isDevMode } from '@angular/core';
+import { provideServiceWorker } from '@angular/service-worker';
 import { provideRouter, withPreloading, PreloadAllModules } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -18,5 +19,10 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
     // Configurar manejador global de errores
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
+    // Registrar Service Worker para actualizaciones de aplicación
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
   ],
 };
